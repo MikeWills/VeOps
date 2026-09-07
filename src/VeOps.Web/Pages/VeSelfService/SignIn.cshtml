@@ -1,0 +1,39 @@
+@page
+@model VeOps.Web.Pages.VeSelfService.SignInModel
+@{
+    ViewData["Title"] = "Update your VE details";
+    Layout = "_PublicLayout";
+}
+
+<div class="auth-wrap">
+    <div class="auth-card">
+        <h1>Update your VE details</h1>
+        <p class="session-sub">
+            Enter the email address your VE team holds for you and we will send a link to review and
+            update your contact details. No password needed — the link works once and expires after
+            30 minutes.
+        </p>
+
+        @if (Model.ErrorMessage is not null)
+        {
+            <div class="vesm-alert error">@Model.ErrorMessage</div>
+        }
+
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="vesm-alert error"></div>
+            <div class="field">
+                <label asp-for="Input.Email">Email address</label>
+                <input asp-for="Input.Email" type="email" autocomplete="email" />
+                <span asp-validation-for="Input.Email"></span>
+            </div>
+            <button type="submit" class="btn-primary">Send me a link</button>
+        </form>
+    </div>
+</div>
+
+@* Without this, asp-validation-for renders the markup but nothing populates it: every check becomes
+   a round trip and the message only appears after a POST. Server-side validation is unaffected and
+   remains the actual enforcement (#314, L-15). *@
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

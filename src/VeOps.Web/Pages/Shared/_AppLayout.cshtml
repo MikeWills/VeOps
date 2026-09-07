@@ -1,0 +1,360 @@
+﻿@using Microsoft.AspNetCore.Antiforgery
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@using VeOps.Core.Authorization
+@using VeOps.Core.Data
+@using VeOps.Core.Entities
+@using VeOps.Core.Navigation
+@inject UserManager<User> UserManager
+@inject AppDbContext DbContext
+@inject SessionAccessScope AccessScope
+@inject NavBadgeCountCache NavBadgeCounts
+@inject IAntiforgery Antiforgery
+@{
+    // One load per request, shared with the page handler that already did this — see
+    // CurrentUserLoader.GetCachedUserWithManagerAsync. This block used to issue a bare GetUserAsync
+    // and then a second, fully-included query on top of it, on every authenticated page render.
+    var currentUser = await UserManager.GetCachedUserWithManagerAsync(DbContext, Context, User);
+    var teamName = "All Teams";
+    // null means "every team" for a SystemAdmin, not "no teams" — see NavBadgeCountService's own
+    // remarks. Kept null rather than coalesced so the badge queries below stay unscoped for them.
+    IReadOnlyList<int>? effectiveTeamIds = null;
+    if (currentUser is not null && currentUser.Role != UserRole.SystemAdmin)
+    {
+        // UserTeams (and, for a TeamLead, ManagedByUser.UserTeams) are already included by the
+        // loader above — GetEffectiveTeamIds silently returns an empty set without them.
+        effectiveTeamIds = AccessScope.GetEffectiveTeamIds(currentUser) ?? [];
+        teamName = effectiveTeamIds.Count switch
+        {
+            0 => "Unassigned Team",
+            1 => (await DbContext.Teams.FindAsync(effectiveTeamIds[0]))?.Name ?? "Unassigned Team",
+            _ => $"{effectiveTeamIds.Count} teams"
+        };
+    }
+
+    var badges = currentUser is null
+        ? new NavBadgeCounts(0, 0, 0, 0, 0)
+        : await NavBadgeCounts.GetAsync(effectiveTeamIds, Context.RequestAborted);
+
+    var roleLabel = currentUser?.Role switch
+    {
+        UserRole.SystemAdmin => "System Admin",
+        UserRole.TeamAdmin => "Team Admin",
+        UserRole.SessionManager => "Session Manager",
+        UserRole.TeamLead => "Team Lead",
+        _ => ""
+    };
+
+    // The user menu's trigger answers "who am I signed in as", so it shows the name. Role and team
+    // scope moved inside the menu (2026-08-07): "System Admin All Teams" on the button read as a
+    // filter or a page title rather than an account, which is confusing precisely because it never
+    // said whose account it was. Email is the fallback for a row with no display name.
+    var displayName = !string.IsNullOrWhiteSpace(currentUser?.Name) ? currentUser!.Name
+        : !string.IsNullOrWhiteSpace(currentUser?.Email) ? currentUser!.Email!
+        : "Account";
+
+    // The account's saved colour scheme, rendered onto <html> so the page paints in it immediately —
+    // the CSP forbids an inline script, so this attribute is the only way the server can get the
+    // answer in before first paint. Null for ThemePreference.System, which is "no choice made yet"
+    // and hands the decision to theme.js (localStorage, then the OS setting). Never emit a value for
+    // System: an explicit data-theme is what theme.js treats as authoritative, so doing so would
+    // pin every never-chosen account to light and defeat the OS default.
+    // Built as a whole attribute rather than written as data-theme="@savedTheme", because Razor
+    // renders a null value as data-theme="" rather than omitting the attribute — and an empty
+    // data-theme is not the same thing as none. theme.js reads it as "no server preference" today
+    // (the empty string is falsy) but that is one `!== null` away from pinning every never-chosen
+    // account to light. Html.Raw is safe here by construction: the only two values that reach it are
+    // the literals below.
+    var themeAttribute = currentUser?.ThemePreference switch
+    {
+        ThemePreference.Dark => Html.Raw(" data-theme=\"dark\""),
+        ThemePreference.Light => Html.Raw(" data-theme=\"light\""),
+        _ => null
+    };
+
+    var activeNav = ViewData["ActiveNav"] as string;
+    var mainClass = "vesm-main" + (ViewData["WideMain"] is true ? " wide" : "");
+
+    // Grouped nav dropdowns — whether the trigger itself should show as "active" because the
+    // current page is one of its children (the individual links inside still get their own
+    // .active state too, same as before).
+    var applicantsGroupActive = activeNav is "ApplicantStatus" or "RenewalMonitor";
+    @* Reports split out of the VEs group 2026-08-15: those three answer "how are we doing", while
+       what is left under VEs is roster maintenance. Keep each list in step with the group's own
+       [Authorize] — all six pages are Admins-only, which is why one gate wraps both groups. *@
+    var vesGroupActive = activeNav is "VeDirectory" or "VeTags" or "VeImport" or "VeDiscordSync";
+    var reportsGroupActive = activeNav is "Stats" or "VeRoster" or "AuditioningReport" or "TransactionsReport";
+    var settingsGroupActive = activeNav is "AdminTeams" or "AdminTeamSettings" or "AdminUsers" or "AdminMessageRules"
+        or "AdminFees" or "AdminVecs" or "AdminAuditLog" or "AdminJobHistory" or "AdminJobSchedule" or "Reconciliation" or "AdminSystemSettings";
+}
+<!DOCTYPE html>
+<html lang="en"@themeAttribute>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - VE Ops</title>
+    @* Render-blocking and first in <head> on purpose: it stamps data-theme before anything paints,
+       which is what stops a dark-mode user seeing a white flash on every navigation. See theme.js. *@
+    <script src="~/js/theme.js" asp-append-version="true"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    @* Self-hosted: the CSP allows font-src 'self' only (plus Google Fonts), and a CDN
+       reference would be blocked. Loaded before app.css so the design system can override it. *@
+    <link rel="stylesheet" href="~/lib/bootstrap-icons/bootstrap-icons.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/app.css" asp-append-version="true" />
+    @* For page-specific stylesheets that shouldn't load site-wide — currently only Quill's, on the
+       two message editors. Mirrors the existing Scripts section at the bottom. *@
+    @await RenderSectionAsync("Head", required: false)
+</head>
+<body class="vesm">
+    <header class="chassis">
+        <a class="brand" asp-page="/SessionManager/Index"><span class="dot"></span>VE OPS</a>
+        @* Mobile-only nav toggle (hidden from 768px up by app.css). It reveals both the nav links
+           and the .who cluster, which are one collapsed panel below the breakpoint — see the
+           "Chassis nav" comment in app.css. app.js keeps aria-expanded in step. *@
+        <button type="button" class="nav-toggle" id="navToggle" aria-expanded="false" aria-label="Menu"><span class="bars"></span></button>
+        <nav class="chassis-nav">
+            @* The VEC-submission badge rides on Sessions since the standalone VEC Submission page was
+               removed as redundant — that worklist is now the Sessions page's "Pending VEC submission"
+               status filter. Titled because a bare number next to "Sessions" wouldn't say what it counts. *@
+            @* When the badge is showing, the link carries the filter that reproduces it: the status,
+               and an explicit "any time" date range (#423). The badge has no date bound, while the
+               page defaults to "Last 7 + Upcoming" — so without this, clicking a chip that says 2
+               could land on a list showing 1, and the honest number looked like the broken one.
+               applied=true is the page's own marker that the query string, not the saved cookie,
+               decides the filters. *@
+            <a asp-page="/SessionManager/Index" class="@(activeNav == "Sessions" ? "active" : "")"
+               asp-route-applied="@(badges.SessionsPendingVecSubmission > 0 ? "true" : null)"
+               asp-route-status="@(badges.SessionsPendingVecSubmission > 0 ? "PendingVecSubmission" : null)"
+               asp-route-dateRange="@(badges.SessionsPendingVecSubmission > 0 ? "" : null)"
+               title="@(badges.SessionsPendingVecSubmission > 0 ? $"{badges.SessionsPendingVecSubmission} session(s) pending VEC submission — click to see them" : null)">
+                Sessions
+                @if (badges.SessionsPendingVecSubmission > 0)
+                {
+                    <span class="nav-badge">@badges.SessionsPendingVecSubmission</span>
+                }
+            </a>
+            @* Applicants/VEs are deliberately dropdowns even at one item today — they're the homes
+               more applicant- and VE-facing pages land in, so the nav doesn't reshuffle later. The
+               Applicants badge sits on the trigger since a badge inside a closed menu is invisible. *@
+            <div class="nav-group">
+                <button type="button" class="kebab @(applicantsGroupActive ? "active" : "")">
+                    Applicants
+                    @* The trigger carries the SUM of its items, and each item carries its own share —
+                       so the number on the closed menu always equals what opening it accounts for.
+                       A total that disagreed with its parts is exactly what made a stale-looking chip
+                       read as a bug rather than as two lists. *@
+                    @if (badges.ApplicantsTotal > 0)
+                    {
+                        <span class="nav-badge">@badges.ApplicantsTotal</span>
+                    }
+                    <i class="bi bi-caret-down-fill" aria-hidden="true"></i>
+                </button>
+                <div class="menu">
+                    <a class="item @(activeNav == "ApplicantStatus" ? "active" : "")" asp-page="/SessionManager/ApplicantStatus">
+                        Applicant Status
+                        @if (badges.ApplicantsPendingGrant > 0)
+                        {
+                            <span class="nav-badge">@badges.ApplicantsPendingGrant</span>
+                        }
+                    </a>
+                    @* Filed under Applicants because a renewal is, technically, an application —
+                       and it keeps every "waiting on FCC" screen in one place. No role gate, matching
+                       RenewalMonitor's bare [Authorize]; the two must stay in step. *@
+                    <a class="item @(activeNav == "RenewalMonitor" ? "active" : "")" asp-page="/SessionManager/RenewalMonitor">
+                        Renewal Monitor
+                        @if (badges.RenewalsNeedingAttention > 0)
+                        {
+                            <span class="nav-badge">@badges.RenewalsNeedingAttention</span>
+                        }
+                    </a>
+                </div>
+            </div>
+            @* Gated to match VeRoster.cshtml.cs's own [Authorize] — the roster is a full VE contact
+               list plus a per-VE session-count leaderboard, restricted to admin roles (2026-08-01).
+               Same rule as UnmatchedPayments below: never render a link the user's role will 403 on. *@
+            @if (currentUser?.Role is UserRole.SystemAdmin or UserRole.TeamAdmin)
+            {
+                <div class="nav-group">
+                    <button type="button" class="kebab @(vesGroupActive ? "active" : "")">VEs <i class="bi bi-caret-down-fill" aria-hidden="true"></i></button>
+                    <div class="menu">
+                        <a class="item @(activeNav == "VeDirectory" ? "active" : "")" asp-page="/SessionManager/VeDirectory">VE Directory</a>
+                        <a class="item @(activeNav == "VeTags" ? "active" : "")" asp-page="/SessionManager/VeTags">VE Tags</a>
+                        <a class="item @(activeNav == "VeImport" ? "active" : "")" asp-page="/SessionManager/VeImport">Import VEs</a>
+                        <a class="item @(activeNav == "VeDiscordSync" ? "active" : "")" asp-page="/SessionManager/VeDiscordSync">Discord Tags</a>
+                    </div>
+                </div>
+                @* Requested 2026-08-15. Same Admins gate as the VEs group above — every page in here
+                   shows a per-VE session count, which is why they were admin-only to begin with. *@
+                <div class="nav-group">
+                    <button type="button" class="kebab @(reportsGroupActive ? "active" : "")">Reports <i class="bi bi-caret-down-fill" aria-hidden="true"></i></button>
+                    <div class="menu">
+                        <a class="item @(activeNav == "Stats" ? "active" : "")" asp-page="/SessionManager/Stats">Stats</a>
+                        <a class="item @(activeNav == "VeRoster" ? "active" : "")" asp-page="/SessionManager/VeRoster">VE Session Counts</a>
+                        <a class="item @(activeNav == "AuditioningReport" ? "active" : "")" asp-page="/SessionManager/AuditioningReport">Auditioning Report</a>
+                        <a class="item @(activeNav == "TransactionsReport" ? "active" : "")" asp-page="/SessionManager/TransactionsReport">Transactions Report</a>
+                    </div>
+                </div>
+            }
+            @* Gated to match UnmatchedPayments.cshtml.cs's own [Authorize] — a TeamLead previously
+               saw this link and got a 403 on click. *@
+            @if (currentUser?.Role is not UserRole.TeamLead)
+            {
+                <a asp-page="/SessionManager/UnmatchedPayments" class="@(activeNav == "UnmatchedPayments" ? "active" : "")">
+                    Unmatched Payments
+                    @if (badges.UnresolvedUnmatchedPayments > 0)
+                    {
+                        <span class="nav-badge">@badges.UnresolvedUnmatchedPayments</span>
+                    }
+                </a>
+            }
+            @* FCC (#458). Deliberately ungated: every one of these is a public FCC page, and a VE at
+               any level ends up on them — they are the three tabs people keep open beside this app.
+
+               Every link opens in a new tab, because they are somewhere else entirely and losing an
+               in-progress session screen to a license lookup is the whole reason people keep them
+               open separately. rel="noopener noreferrer" alongside target="_blank", matching the
+               Support link below.
+
+               ⚠️ No activeNav here, and nothing to highlight: these leave the app. And no deep links
+               into a specific licence or application — wireless2.fcc.gov answers automated requests
+               with an Akamai 403, and this app deliberately ships only the one licence link shape it
+               has actually verified (FccUlsLinks). These are the plain search pages, typed by a
+               person, which is what the FCC expects of them. *@
+            <div class="nav-group">
+                <button type="button" class="kebab">FCC <i class="bi bi-caret-down-fill" aria-hidden="true"></i></button>
+                <div class="menu">
+                    <a class="item" href="https://wireless2.fcc.gov/UlsApp/ApplicationSearch/searchAppl.jsp" target="_blank" rel="noopener noreferrer">Application Search</a>
+                    <a class="item" href="https://wireless2.fcc.gov/UlsApp/UlsSearch/searchLicense.jsp" target="_blank" rel="noopener noreferrer">License Search</a>
+                    <a class="item" href="https://apps.fcc.gov/cores/userLogin.do" target="_blank" rel="noopener noreferrer">CORES</a>
+                    @if (currentUser?.Role is UserRole.SystemAdmin or UserRole.TeamAdmin)
+                    {
+                        @* The one item in this menu that stays in the app rather than leaving it —
+                           deliberately an exception to the "these are external tabs" note above,
+                           since an admin flipping this switch is exactly the FCC-related task this
+                           menu already gathers, just handled here instead of at wireless2.fcc.gov. *@
+                        <hr />
+                        <a class="item @(activeNav == "AdminFccStatus" ? "active" : "")" asp-page="/Admin/FccStatus">FCC Status</a>
+                    }
+                </div>
+            </div>
+            @if (currentUser?.Role is UserRole.SystemAdmin or UserRole.TeamAdmin)
+            {
+                <div class="nav-group">
+                    <button type="button" class="kebab @(settingsGroupActive ? "active" : "")">Settings <i class="bi bi-caret-down-fill" aria-hidden="true"></i></button>
+                    <div class="menu">
+                        @* Visible to TeamAdmin as well, scoped to their own teams — it is the entry
+                           point for every per-team page now, so gating it would strand the role. *@
+                        <a class="item @(activeNav == "AdminTeams" ? "active" : "")" asp-page="/Admin/Teams">Teams</a>
+                        @* Team Settings, Team Maintenance and Messages are deliberately NOT
+                           here (2026-08-06). Each needs one team chosen, so a nav link lands on
+                           "Select a team…" while the Teams row menu picks the team for you — a
+                           strictly better route, now that Teams is reachable by TeamAdmin too.
+
+                           Users stays: unlike those three it is genuinely cross-team for a
+                           SystemAdmin (no team selected lists every user), so routing them through
+                           one team's row would make the global list harder to reach, not easier. *@
+                        <a class="item @(activeNav == "AdminUsers" ? "active" : "")" asp-page="/Admin/Users">Users</a>
+                        <hr>
+                        @* Fees is deliberately not here either — it always scopes to exactly one VEC,
+                           so the VECs row menu is the honest way in, and it is SystemAdmin-only
+                           (2026-08-06) because a fee configuration is shared across every team. *@
+                        @if (currentUser?.Role is UserRole.SystemAdmin)
+                        {
+                            <a class="item @(activeNav == "AdminVecs" ? "active" : "")" asp-page="/Admin/Vecs">VECs</a>
+                        }
+                        <hr>
+                        <a class="item @(activeNav == "AdminAuditLog" ? "active" : "")" asp-page="/Admin/AuditLog">Audit Log</a>
+                        <a class="item @(activeNav == "AdminJobHistory" ? "active" : "")" asp-page="/Admin/JobRunHistory">Job History</a>
+                        <a class="item @(activeNav == "AdminJobSchedule" ? "active" : "")" asp-page="/Admin/JobSchedule">Job Schedule</a>
+                        @* Beside Job History and Job Schedule because it is the same kind of thing —
+                           is the machinery actually doing its job — and the badge is what makes it
+                           worth having rather than another page to remember to open. *@
+                        <a class="item @(activeNav == "Reconciliation" ? "active" : "")" asp-page="/Admin/Reconciliation">
+                            Reconciliation
+                            @if (badges.OpenReconciliationFindings > 0)
+                            {
+                                <span class="nav-badge">@badges.OpenReconciliationFindings</span>
+                            }
+                        </a>
+                        @if (currentUser?.Role is UserRole.SystemAdmin)
+                        {
+                            <hr>
+                            <a class="item @(activeNav == "AdminSystemSettings" ? "active" : "")" asp-page="/Admin/SystemSettings">System Settings</a>
+                        }
+                    </div>
+                </div>
+            }
+        </nav>
+        <div class="who">
+            @* First in .who so it sits beside the account menu rather than inside the nav — an alert
+               is not a place to go, it is something that happened (#339). Role and team scope are
+               handed down; the partial resolves the feed itself through its own cache. *@
+            <partial name="_AlertBell" model="new AlertBellContext(currentUser?.Role, effectiveTeamIds)" />
+            <div class="user-menu">
+                <button type="button" class="kebab">@displayName <i class="bi bi-caret-down-fill" aria-hidden="true"></i></button>
+                <div class="menu">
+                    @* Not an action — the role and the team scope this account sees, kept because
+                       they are worth knowing, just not on the button. *@
+                    <div class="menu-head">@roleLabel &middot; @teamName</div>
+                    <hr>
+                    <a class="item" asp-page="/Account/ChangePassword">Change password</a>
+                    <a class="item" asp-page="/Account/TwoFactor">Two-factor authentication</a>
+                    @* Shown to everyone, not only linked accounts: the page's own unlinked state is
+                       how someone finds out the link exists and can be asked for. Hiding it would
+                       make it discoverable only to people who already have it. *@
+                    <a class="item" asp-page="/Account/MyVeDetails">My VE details</a>
+                    @* Directly above Log out on purpose: "log out" is what someone reaches for when
+                       a device goes missing, and this is the thing they actually need. *@
+                    <a class="item" asp-page="/Account/SignOutOtherDevices">Sign out other devices</a>
+                    <form method="post" asp-page="/Account/Logout">
+                        <button type="submit" class="item">Log out</button>
+                    </form>
+                </div>
+            </div>
+            <div class="help-menu">
+                <button type="button" class="kebab" aria-label="Help">Help <i class="bi bi-caret-down-fill" aria-hidden="true"></i></button>
+                <div class="menu">
+                    <a class="item" href="https://github.com/MikeWills/VeOps/issues" target="_blank" rel="noopener noreferrer">Support</a>
+                    <button type="button" class="item" disabled title="Coming soon">Documentation</button>
+                </div>
+            </div>
+            @* The URL and token let app.js save the choice to the account (see Theme.cshtml.cs).
+               Data attributes rather than an inline script or a hardcoded path: the CSP is
+               script-src 'self', and Url.Page keeps this correct under a path base. _PublicLayout
+               deliberately renders neither — with nobody signed in there is no account to save to,
+               and app.js falls back to localStorage alone. *@
+            <button id="themeToggle" class="theme-toggle" type="button"
+                    data-save-url="@Url.Page("/Account/Theme")"
+                    data-antiforgery-token="@Antiforgery.GetAndStoreTokens(Context).RequestToken"></button>
+        </div>
+    </header>
+    <partial name="_TestModeBanner" />
+    <partial name="_SystemBanner" />
+    @* Admin-only, and cached — see the partial's own comments. Passed the role rather than
+       re-querying the user the layout has already loaded. *@
+    <partial name="_IngestionHealthBanner" model="currentUser?.Role" />
+    @* Admin accounts without a second factor (#356). The partial decides whether to render. *@
+    <partial name="_TwoFactorSuggestionBanner" model="currentUser" />
+
+    <main class="@mainClass">
+        @if (TempData["StatusMessage"] is string statusMessage)
+        {
+            <div class="vesm-alert success">@statusMessage</div>
+        }
+        @if (TempData["ErrorMessage"] is string errorMessage)
+        {
+            <div class="vesm-alert error">@errorMessage</div>
+        }
+        @RenderBody()
+    </main>
+
+    <footer class="vesm-footer">
+        <span>VE Ops @VeOps.Core.AppVersion.Display</span>
+        <a asp-page="/Privacy">Privacy</a>
+    </footer>
+
+    <script src="~/js/app.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

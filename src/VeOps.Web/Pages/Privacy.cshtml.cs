@@ -1,0 +1,24 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
+using VeOps.Core.Data;
+
+namespace VeOps.Web.Pages;
+
+// Public by design: A privacy policy behind a login is not a privacy policy.
+[AllowAnonymous]
+public class PrivacyModel(AppDbContext dbContext) : PageModel
+{
+    public int? PiiRetentionWindowDays { get; private set; }
+
+    /// <summary>Years a VE may be inactive before their contact details are cleared. Null = kept
+    /// indefinitely, and the page says so rather than staying silent (#313 / L-07).</summary>
+    public int? VeContactRetentionYears { get; private set; }
+
+    public async Task OnGetAsync(CancellationToken cancellationToken)
+    {
+        var settings = await dbContext.SystemSettings.AsNoTracking().FirstOrDefaultAsync(cancellationToken);
+        PiiRetentionWindowDays = settings?.PiiRetentionWindowDays;
+        VeContactRetentionYears = settings?.VeContactRetentionYears;
+    }
+}

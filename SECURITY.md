@@ -5,7 +5,7 @@
 **Please do not open a public issue for a security problem.**
 
 Report it through GitHub's private vulnerability reporting: go to the
-[Security tab](https://github.com/MikeWills/VeSessionManager/security/advisories/new) and open a
+[Security tab](https://github.com/MikeWills/VeOps/security/advisories/new) and open a
 draft advisory. That channel is private between you and the maintainer until a fix is published.
 
 This is a volunteer-run project maintained by one person, so please allow a few days for a first

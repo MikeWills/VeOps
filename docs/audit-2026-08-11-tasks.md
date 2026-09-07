@@ -63,7 +63,7 @@ biggest reduction in open work per hour spent.
 ## THEME-TRACKER
 
 ### T-01 — `ChangeTracker.Clear()` in the VE license sweep voids the whole batch
-**Area** Traceability L3 · **Files** `src/VeSessionManager.Core/Uls/VolunteerExaminerLicenseWatchService.cs:97`
+**Area** Traceability L3 · **Files** `src/VeOps.Core/Uls/VolunteerExaminerLicenseWatchService.cs:97`
 (batch loaded tracked at `:53-59`, saved at `:92`) · **Effort** S · **Confidence** Confirmed
 
 The per-row catch calls `dbContext.ChangeTracker.Clear()`, which detaches every entity — including the
@@ -78,8 +78,8 @@ written — and because the stamp never persisted, the next run repeats it ident
 actually written.
 
 ### T-02 — The same `Clear()` silently disables per-team ingestion throttling
-**Area** Traceability L4 · **Files** `src/VeSessionManager.Worker/SessionIngestionJob.cs:71,88-89`;
-`src/VeSessionManager.Core/Jobs/JobRunHistoryLogger.cs:126,134,155` · **Effort** S–M · **Confidence** Confirmed
+**Area** Traceability L4 · **Files** `src/VeOps.Worker/SessionIngestionJob.cs:71,88-89`;
+`src/VeOps.Core/Jobs/JobRunHistoryLogger.cs:126,134,155` · **Effort** S–M · **Confidence** Confirmed
 
 `Team` entities are loaded from the same scoped DbContext the pipeline uses. On any failed pipeline
 step, `TryCompleteHistoryAsync` calls `ChangeTracker.Clear()`, detaching `team`. The subsequent
@@ -95,7 +95,7 @@ wrong. This is degrading production behavior today.
 **Related** T-03 (same scope decision), T-24 (scope-per-team).
 
 ### T-03 — Roster sync catches per session but never clears the poisoned tracker
-**Area** Traceability L3 · **Files** `src/VeSessionManager.Core/VolunteerExaminers/VolunteerExaminerSyncService.cs:178-181`
+**Area** Traceability L3 · **Files** `src/VeOps.Core/VolunteerExaminers/VolunteerExaminerSyncService.cs:178-181`
 · **Effort** S · **Confidence** Confirmed
 
 Mirror image of T-01. The per-session catch logs but leaves the failed session's `Add`/`Remove` entries
@@ -105,7 +105,7 @@ team's run.
 **Fix** Scoped detach of that session's entries in the catch.
 
 ### T-04 — Merge rollback leaves the tracker claiming the merge succeeded
-**Area** Traceability L3 · **Files** `src/VeSessionManager.Core/VolunteerExaminers/VolunteerExaminerMergeService.cs:111-118,128-132`
+**Area** Traceability L3 · **Files** `src/VeOps.Core/VolunteerExaminers/VolunteerExaminerMergeService.cs:111-118,128-132`
 · **Effort** XS · **Confidence** Confirmed
 
 `SaveChangesAsync` at `:99` already marked survivor/duplicate/moved rows `Unchanged`. `RollbackAsync`
@@ -144,9 +144,9 @@ merge as applied while the DB does not.
 
 ### T-05 — A TeamAdmin can pull any VE in the deployment onto their own team and read their PII
 **Area** Security (High) · **Files**
-`src/VeSessionManager.Core/VolunteerExaminers/VolunteerExaminerImportService.cs:271-292` (`AddOneAsync`),
+`src/VeOps.Core/VolunteerExaminers/VolunteerExaminerImportService.cs:271-292` (`AddOneAsync`),
 `:212-225` (`ApplyRowAsync`), `:59-62` (CSV path); reached from
-`src/VeSessionManager.Web/Pages/SessionManager/VeDirectory.cshtml.cs:179-208`
+`src/VeOps.Web/Pages/SessionManager/VeDirectory.cshtml.cs:179-208`
 · **Effort** M · **Confidence** Confirmed
 
 `AddOneAsync` matches the submitted call sign against **every** `VolunteerExaminer` row with no team
@@ -165,7 +165,7 @@ new record, or gate the join behind SystemAdmin.
 
 ### T-06 — VeMerge scopes the survivor and not the duplicate
 **Area** Security / Traceability L2 (found independently by two agents) · **Files**
-`src/VeSessionManager.Web/Pages/SessionManager/VeMerge.cshtml.cs:93-108`, POST guard `:54`
+`src/VeOps.Web/Pages/SessionManager/VeMerge.cshtml.cs:93-108`, POST guard `:54`
 · **Effort** S · **Confidence** Confirmed
 
 `LoadAsync` correctly refuses a survivor outside `ResolveViewableTeamIds`. The `others` query
@@ -182,7 +182,7 @@ against that scope before `MergeAsync`.
 
 ### T-07 — Session invitation recipients are not team-scoped
 **Area** Traceability L3 · **Files**
-`src/VeSessionManager.Core/VolunteerExaminers/VeSessionInvitationService.cs:99-101`
+`src/VeOps.Core/VolunteerExaminers/VeSessionInvitationService.cs:99-101`
 · **Effort** S · **Confidence** Confirmed
 
 `Where(v => volunteerExaminerIds.Contains(v.Id))` with no team scope, while `GetCandidatesAsync:48-52`
@@ -194,8 +194,8 @@ teams' rosters and retired members.
 guard already exists two methods away as `mustBelongToVolunteerExaminerId`.
 
 ### T-08 — An admin can claim any VE row as their own login's identity
-**Area** Traceability L2 · **Files** `src/VeSessionManager.Web/Pages/Admin/Users.cshtml.cs:176-177`;
-`src/VeSessionManager.Core/Admin/UserManagementService.cs:198` · **Effort** S · **Confidence** Confirmed
+**Area** Traceability L2 · **Files** `src/VeOps.Web/Pages/Admin/Users.cshtml.cs:176-177`;
+`src/VeOps.Core/Admin/UserManagementService.cs:198` · **Effort** S · **Confidence** Confirmed
 
 `SetVolunteerExaminerAsync`'s `volunteerExaminerId` comes from the form and is validated against
 nothing the acting user can see. `AuthorizeManageAsync` authorizes only the *target user*; the service
@@ -206,7 +206,7 @@ permanently claims the record — the rightful team then hits `VolunteerExaminer
 
 ### T-09 — The CSV import preview is a cross-tenant existence-and-name oracle
 **Area** Security (Medium) · **Files**
-`src/VeSessionManager.Core/VolunteerExaminers/VolunteerExaminerImportService.cs:58-62,119-137`;
+`src/VeOps.Core/VolunteerExaminers/VolunteerExaminerImportService.cs:58-62,119-137`;
 `Pages/SessionManager/VeImport.cshtml.cs` `OnPostUploadAsync` · **Effort** S · **Confidence** Confirmed
 
 Upload 500 call signs with no `Name` column and stop at the preview. Every row returning `AddToTeam` is
@@ -221,7 +221,7 @@ match came from outside the acting user's scope.
 ## THEME-SILENT
 
 ### T-10 — Every status and error message on the VE self-service page is unrendered
-**Area** Traceability L2 · **Files** `src/VeSessionManager.Web/Pages/Shared/_PublicLayout.cshtml`
+**Area** Traceability L2 · **Files** `src/VeOps.Web/Pages/Shared/_PublicLayout.cshtml`
 (the fix); `Pages/VeSelfService/Details.cshtml.cs:108,125-135,149-154,168-169` (the 13 messages)
 · **Effort** XS · **Confidence** Confirmed
 
@@ -237,7 +237,7 @@ only unauthenticated PII-editing surface.
 other 12 pages using that layout.
 
 ### T-11 — Manual refresh reports success after a total pipeline failure
-**Area** Traceability L2 · **Files** `src/VeSessionManager.Web/Pages/Admin/TeamMaintenance.cshtml.cs:162-164`;
+**Area** Traceability L2 · **Files** `src/VeOps.Web/Pages/Admin/TeamMaintenance.cshtml.cs:162-164`;
 `Pages/SessionManager/Detail.cshtml.cs:194-197`; result type in `Core/Ingestion/ManualCandidateRefreshService.cs`
 · **Effort** S · **Confidence** Confirmed
 
@@ -252,7 +252,7 @@ already computes it — and render `ErrorMessage` when non-zero.
 
 ### T-12 — The key-ring guard misses the sixth encrypted column
 **Area** Security (Medium, silent-failure class) · **Files**
-`src/VeSessionManager.Core/Data/DataProtectionKeyRingGuard.cs:44,74-89` vs `Data/AppDbContext.cs:318-327`
+`src/VeOps.Core/Data/DataProtectionKeyRingGuard.cs:44,74-89` vs `Data/AppDbContext.cs:318-327`
 · **Effort** S · **Confidence** Confirmed
 
 Six columns use `EncryptedStringConverter`: five on `Team`, plus `SystemSettings.SystemSmtpPassword`.
@@ -270,7 +270,7 @@ forever. Worst case: a deployment with zero teams checks nothing at all and repo
 `CandidatePiiFieldsTests` already uses — this is what stops the next one.
 
 ### T-13 — `MarkSubmittedAsync`'s three-value result collapsed into two branches
-**Area** Traceability L2 · **Files** `src/VeSessionManager.Web/Pages/SessionManager/Index.cshtml.cs:428-430`
+**Area** Traceability L2 · **Files** `src/VeOps.Web/Pages/SessionManager/Index.cshtml.cs:428-430`
 · **Effort** XS · **Confidence** Confirmed
 
 `SetStatus(result == Marked, …, "Session is already marked submitted.")` against a three-value enum
@@ -287,7 +287,7 @@ explaining it — the list copy was never updated.
 
 ### T-14 — VE roster sync still loads every historical session, every tick
 **Area** Performance (High) · **Files**
-`src/VeSessionManager.Core/VolunteerExaminers/VolunteerExaminerSyncService.cs:95-99`
+`src/VeOps.Core/VolunteerExaminers/VolunteerExaminerSyncService.cs:95-99`
 · **Effort** S · **Confidence** High
 
 `Status == SessionStatus.Active` means "not cancelled", so it bounds nothing. The file *knows* — 45
@@ -302,7 +302,7 @@ cannot translate. The `ignoreRetryWindow: true` historical-import path still wor
 null stamp).
 
 ### T-15 — Ingestion loads the team's entire session→candidate→payment graph every tick
-**Area** Performance (High) · **Files** `src/VeSessionManager.Core/Ingestion/SessionIngestionService.cs:254-257`
+**Area** Performance (High) · **Files** `src/VeOps.Core/Ingestion/SessionIngestionService.cs:254-257`
 · **Effort** M · **Confidence** High
 
 Bounded by `TeamId` alone — no date filter, no `Take`, no `AsNoTracking`, and two nested collection
@@ -316,7 +316,7 @@ Includes or project there. Candidates+payments are only touched for sessions in 
 at `:252-254` stays satisfied.
 
 ### T-16 — `UlsWatcherService` is the only watcher with no per-run cap
-**Area** Performance (High) · **Files** `src/VeSessionManager.Core/Uls/UlsWatcherService.cs:54-58,62-66`
+**Area** Performance (High) · **Files** `src/VeOps.Core/Uls/UlsWatcherService.cs:54-58,62-66`
 · **Effort** M · **Confidence** High
 
 Selects every non-terminal candidate with an FRN, for all time, all teams — then one sequential HTTP
@@ -338,7 +338,7 @@ session age. **Coordinate with T-17** — both touch this service.
 ## Remaining P0
 
 ### T-17 — ULS watcher compares a UTC calendar date against FCC wall-clock dates
-**Area** Traceability L3 (High) · **Files** `src/VeSessionManager.Core/Uls/UlsWatcherService.cs:134,177,185`;
+**Area** Traceability L3 (High) · **Files** `src/VeOps.Core/Uls/UlsWatcherService.cs:134,177,185`;
 `Uls/ExamToolsUlsLookupClient.cs:143` (`AsUtcDate`) · **Effort** S · **Confidence** Confirmed
 
 `candidate.Session.ScheduledStartUtc.Date` is a **UTC** calendar date; FCC's date-only values are
@@ -358,7 +358,7 @@ CLAUDE.md already mandates for this bug class.
 **Test** An evening-ET session with an FCC receipt date on the session's ET calendar day.
 
 ### T-18 — Renewal monitor has no per-row catch on a save documented as expected-to-throw
-**Area** Traceability L3 (High) · **Files** `src/VeSessionManager.Core/Uls/LicenseWatchService.cs:76-96,132-136`
+**Area** Traceability L3 (High) · **Files** `src/VeOps.Core/Uls/LicenseWatchService.cs:76-96,132-136`
 · **Effort** S · **Confidence** Confirmed
 
 The per-row loop has no try/catch, yet `:132` documents a save expected to throw: a vanity rename
@@ -370,7 +370,7 @@ license in that run. "Loud" was intended for the collision; taking the rest of t
 
 ### T-19 — Merge leaves three references dangling behind a global query filter
 **Area** Traceability L3 (High) · **Files**
-`src/VeSessionManager.Core/VolunteerExaminers/VolunteerExaminerMergeService.cs:83-90`;
+`src/VeOps.Core/VolunteerExaminers/VolunteerExaminerMergeService.cs:83-90`;
 `Data/AppDbContext.cs:197` (the filter) · **Effort** M · **Confidence** Confirmed
 
 Merge repoints `SessionVolunteerExaminer`, `VeTeamMembership`, `VeVecAccreditation` and
@@ -388,7 +388,7 @@ and an outstanding link reports "invalid/expired".
 **Fix** Repoint all three inside the existing transaction at `:81`.
 
 ### T-20 — Zoom's duplicate-prevention guard silently stops working past 30 meetings
-**Area** Traceability L4 (High) · **Files** `src/VeSessionManager.Core/Zoom/ZoomClient.cs:86`;
+**Area** Traceability L4 (High) · **Files** `src/VeOps.Core/Zoom/ZoomClient.cs:86`;
 `ZoomMeetingListWireResponse` in `Zoom/ZoomModels.cs` · **Effort** S · **Confidence** Confirmed
 
 `ListMeetingsAsync` requests `/v2/users/{id}/meetings?type=scheduled` with **no `page_size` and no
@@ -402,7 +402,7 @@ was built for after the 2026-07-21 Discord incident.
 **Fix** `?page_size=300` and follow `next_page_token` to exhaustion; add `NextPageToken` to the DTO.
 
 ### T-21 — The Square SDK client is cached per team and never invalidated
-**Area** Traceability L4 (High) · **Files** `src/VeSessionManager.Core/Square/SquareClient.cs:154-168`
+**Area** Traceability L4 (High) · **Files** `src/VeOps.Core/Square/SquareClient.cs:154-168`
 · **Effort** S · **Confidence** Confirmed
 
 `GetOrCreateClient` keys on TeamId only and never rebuilds on credential or environment change — unlike
@@ -417,7 +417,7 @@ revoked token and nothing indicates why.
 `ExamToolsClient`.
 
 ### T-22 — The session filter form's sort direction binds to nothing
-**Area** Traceability L1 (High) · **Files** `src/VeSessionManager.Web/Pages/SessionManager/Index.cshtml:22`
+**Area** Traceability L1 (High) · **Files** `src/VeOps.Web/Pages/SessionManager/Index.cshtml:22`
 vs `Index.cshtml.cs:178` · **Effort** XS · **Confidence** Confirmed
 
 `<input type="hidden" name="sortDirection" …>` but the property is
@@ -482,7 +482,7 @@ than the DB, `VACUUM INTO` per T-24. **Then run the restore test** `BACKUP.md:11
 ## Security
 
 ### T-26 — `SetRoleAsync` does not rotate the security stamp
-`src/VeSessionManager.Core/Admin/UserManagementService.cs:100-116` · S · Confirmed
+`src/VeOps.Core/Admin/UserManagementService.cs:100-116` · S · Confirmed
 `DeactivateAsync:328` correctly calls `UpdateSecurityStampAsync`; `SetRoleAsync` does not, so a demoted
 admin keeps the role claim baked into their cookie until `SecurityStampValidator` next revalidates
 (framework default 30 min). Most admin pages re-read `user.Role` and fail closed — **two do not**:
@@ -493,7 +493,7 @@ data including `ExamToolsCode`, which controls ingestion matching for every team
 attribute is not the sole gate.
 
 ### T-27 — Unvalidated ExamTools base URL exfiltrates the stored password
-`src/VeSessionManager.Core/Admin/TeamSettingsService.cs:55` → `ExamTools/ExamToolsClient.cs:132-142,183-192`
+`src/VeOps.Core/Admin/TeamSettingsService.cs:55` → `ExamTools/ExamToolsClient.cs:132-142,183-192`
 · S · Confirmed
 No scheme check, no host allowlist, no validation. Secrets are deliberately write-only (the page shows a
 masked placeholder), so a TeamAdmin who never knew the password can post
@@ -504,7 +504,7 @@ A malformed value is an unhandled `UriFormatException` on a background job path.
 SystemAdmin — it is deployment topology, not a team setting. **Do with T-28.**
 
 ### T-28 — Unvalidated SMTP host exfiltrates the SMTP password and every candidate email
-`src/VeSessionManager.Core/Admin/TeamSettingsService.cs:128-135` → `Email/SmtpEmailSender.cs:66-73`
+`src/VeOps.Core/Admin/TeamSettingsService.cs:128-135` → `Email/SmtpEmailSender.cs:66-73`
 · S · Confirmed (transport half: Likely)
 Same primitive, worse payload: the attacker also receives a copy of every candidate email. Second half —
 `UseStartTls` is admin-controlled and unchecking it selects `SecureSocketOptions.Auto`, which is
@@ -515,7 +515,7 @@ Same primitive, worse payload: the attacker also receives a copy of every candid
 `SystemSettings.SystemSmtp*`.
 
 ### T-29 — Session invitation email skips the HTML encoding every sibling applies
-`src/VeSessionManager.Core/VolunteerExaminers/VeSessionInvitationService.cs:172-178` · XS · Confirmed
+`src/VeOps.Core/VolunteerExaminers/VeSessionInvitationService.cs:172-178` · XS · Confirmed
 Five placeholders interpolated raw into an HTML body. `EmailTemplateRenderer` exists to prevent exactly
 this and says so; `VeSelfServiceLinkService.cs:113` and `VeEmailChangeService.cs:120-122` both call
 `WebUtility.HtmlEncode`. `Session.Title` and `VolunteerExaminer.Name` come from ExamTools' public
@@ -525,7 +525,7 @@ strip `<script>`).
 lands in an `href`.
 
 ### T-30 — Email subject is not CR/LF-stripped before MimeKit
-`src/VeSessionManager.Core/Email/EmailTemplateRenderer.cs:61` → `Email/SmtpEmailSender.cs:45` · XS ·
+`src/VeOps.Core/Email/EmailTemplateRenderer.cs:61` → `Email/SmtpEmailSender.cs:45` · XS ·
 **Needs-verification**
 Not encoding the subject is correct (it is plain text); missing control-character stripping is not.
 `{{CandidateName}}` originates in ExamTools' public intake. MimeKit re-encodes headers and is generally
@@ -533,7 +533,7 @@ not vulnerable — which is why this is low — but the app relies on an undocum
 for attacker-controlled input with no test pinning it. **The fix is worth applying regardless.**
 
 ### T-31 — Five wrong passwords also disable the victim's password-reset path
-`src/VeSessionManager.Core/Authorization/PasswordResetService.cs:72,129` · XS · Confirmed
+`src/VeOps.Core/Authorization/PasswordResetService.cs:72,129` · XS · Confirmed
 The guard uses `IsLockedOutAsync`, intending to block resets for accounts deactivated via
 `LockoutEnd = MaxValue` — but it is also true during Identity's ordinary 5-minute failed-login lockout.
 An attacker who burns five attempts against a known address silently kills that user's recovery route,
@@ -541,7 +541,7 @@ and the user is told "Accepted" either way, so they wait for mail that never com
 **Fix** Test the deactivation sentinel specifically (`user.LockoutEnd == DateTimeOffset.MaxValue`).
 
 ### T-32 — `TryResolveManageableTeamId` silently retargets a credential write
-`src/VeSessionManager.Core/Authorization/AdminAccessScope.cs:56-62`; callers incl.
+`src/VeOps.Core/Authorization/AdminAccessScope.cs:56-62`; callers incl.
 `Pages/Admin/TeamSettings.cshtml.cs:225-232` · S · Confirmed
 When a TeamAdmin requests a team they do not manage, it falls back to `effectiveTeamIds[0]` rather than
 refusing. No cross-tenant access results — but a multi-team TeamAdmin following a stale link can
@@ -550,7 +550,7 @@ reflects the substitution only after the write.
 **Fix** On credential-writing handlers, `Forbid()` when the requested id is present and not in scope.
 
 ### T-33 — Square webhook is outside every rate-limit partition
-`src/VeSessionManager.Web/Program.cs:305-328` · XS · Confirmed
+`src/VeOps.Web/Program.cs:305-328` · XS · Confirmed
 `/webhooks/square/{teamId:int}` matches neither the `/Account` nor `/VeSelfService` prefix, so it gets
 `GetNoLimiter`. Each request costs a `Teams.FindAsync` plus HMAC over up to 64 KB before rejection.
 Resource exhaustion only — signature verification, replay handling and cross-team blocking are all
@@ -558,7 +558,7 @@ correct.
 **Fix** A generous per-IP partition for `/webhooks` (e.g. 300/min).
 
 ### T-34 — Audit log records no source IP and no authentication events
-`src/VeSessionManager.Core/Entities/AuditLog.cs:1-16`; `Pages/Account/Login.cshtml.cs:57-62` · M ·
+`src/VeOps.Core/Entities/AuditLog.cs:1-16`; `Pages/Account/Login.cshtml.cs:57-62` · M ·
 Confirmed
 No IP, no user agent, no session id — and `Login` writes **no audit entry at all**, success or failure.
 So a credential-stuffing run or a successful compromised-account login leaves nothing: you can see what
@@ -569,7 +569,7 @@ silence an inconsistency rather than a policy.
 `SignedIn` / `SignInFailed` / `LockedOut` events.
 
 ### T-35 — Test environment reverts to the host-header posture Production pins against
-`src/VeSessionManager.Web/appsettings.Test.json` · XS · Confirmed
+`src/VeOps.Web/appsettings.Test.json` · XS · Confirmed
 Sets only `ConnectionStrings` and `DataProtection:KeyRingPath`, inheriting `AllowedHosts: "*"` and
 `PublicBaseUrl: https://localhost:5158` from the base — the exact combination
 `appsettings.Production.json:5-9` explains at length must be pinned. On the beta box every reset and

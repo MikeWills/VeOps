@@ -1,6 +1,6 @@
 # Refunds through Square
 
-Issue [#375](https://github.com/MikeWills/VeSessionManager/issues/375). Built 2026-08-15.
+Issue [#375](https://github.com/MikeWills/VeOps/issues/375). Built 2026-08-15.
 
 Refunds used to be a manual job in the Square dashboard. `Payment.RefundRequested` was a note saying
 somebody intended to do one — its own comment said as much — and the dismiss modal on Unmatched
@@ -90,7 +90,7 @@ error code.
 
 `RefundEligibility.For(...)` answers "can this be refunded, and for how much" for both the service
 (to refuse the call) and the pages (to decide whether to offer the button and what to say when they
-do not). Two copies of that rule drifting is exactly [#274](https://github.com/MikeWills/VeSessionManager/issues/274),
+do not). Two copies of that rule drifting is exactly [#274](https://github.com/MikeWills/VeOps/issues/274),
 where one copy of the youth-program check tested the VEC flag and the other tested nothing.
 
 Two decisions inside it are deliberate and would look like bugs otherwise:

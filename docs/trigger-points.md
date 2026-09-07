@@ -1,6 +1,6 @@
 # Trigger points — configurable outbound messages
 
-Issue [#401](https://github.com/MikeWills/VeSessionManager/issues/401). **PR1: the engine, with
+Issue [#401](https://github.com/MikeWills/VeOps/issues/401). **PR1: the engine, with
 behaviour frozen. PR2: the admin screen, and the parameters become real. PR3: three new trigger
 points. PR4: Discord channel posts, and the envelope.** That completes the issue.
 
@@ -30,7 +30,7 @@ configured is what this team's candidates receive over this team's own SMTP.
 
 The two fields worth explaining:
 
-**`ParameterHours` is hours, never a calendar date.** This is [#220](https://github.com/MikeWills/VeSessionManager/issues/220)
+**`ParameterHours` is hours, never a calendar date.** This is [#220](https://github.com/MikeWills/VeOps/issues/220)
 made structural. The day-before reminder used to compare against "tomorrow" as a UTC calendar date.
 Sessions run in the evening Eastern, and anything from ~8pm ET onward is already tomorrow in raw UTC —
 so a Monday-evening session is stored on Tuesday, "tomorrow in UTC" is the session's own Eastern day,
@@ -66,7 +66,7 @@ How the bound is applied depends on the mechanism:
 
 `TemplateKey` is a string rather than a foreign key, for the same reason
 `CandidateEmailSend.TemplateLabel` is one: a template renamed or removed must not take history with
-it, and a team writes its own templates ([#144](https://github.com/MikeWills/VeSessionManager/issues/144)),
+it, and a team writes its own templates ([#144](https://github.com/MikeWills/VeOps/issues/144)),
 so the set is not fixed by what the code looks up.
 
 ### `MessageRuleRun` — the marker *and* the log
@@ -77,7 +77,7 @@ It replaces a column and does one thing that column could not.
 `Candidate.RegistrationConfirmationSentUtc` conflates three outcomes — sent, suppressed because the
 team was muted, and never applicable — into one nullable timestamp, with no way to tell them apart
 afterwards. `Outcome` is that distinction, and it is what closes
-[#396](https://github.com/MikeWills/VeSessionManager/issues/396).
+[#396](https://github.com/MikeWills/VeOps/issues/396).
 
 **Markers are keyed by rule, never by trigger.** "Remind at 7 days" and "remind at 1 day" are two
 rules on one trigger; a per-trigger marker would let either mark the other done.
@@ -115,7 +115,7 @@ grouping; the rules page gets its "No trigger" group in PR2 by listing templates
 
 ## The engine
 
-`src/VeSessionManager.Core/Messaging/`.
+`src/VeOps.Core/Messaging/`.
 
 - **`MessageTriggerDefinitions`** — the registry. Per trigger: mechanism, subject type, default
   parameter, legal recipients, placeholder set. One file, the way `Jobs/JobSchedules.cs` is one file
@@ -125,7 +125,7 @@ grouping; the rules page gets its "No trigger" group in PR2 by listing templates
   whose condition is met, excluding any with a terminal run for that rule, bounded by `CreatedUtc`.
 - **`MessageDispatchService`** — the single send path. Renders through the existing
   `EmailTemplateRenderer` and never a second renderer; a hand-rolled `Replace` chain is what shipped
-  without HTML-encoding in [#260](https://github.com/MikeWills/VeSessionManager/issues/260).
+  without HTML-encoding in [#260](https://github.com/MikeWills/VeOps/issues/260).
 - **`MessageRuleService`** — one team's pass, optionally narrowed to some triggers.
 - **`Worker/MessageRuleJob`** — daily, on `PerTeamDailyJob`. Replaces `DayBeforeReminderJob`.
 
@@ -598,7 +598,7 @@ orphans its `JobRunHistory` rows, which is why it is its own change rather than 
 
 Password reset, VE self-service sign-in links and VE email-change confirmations stay **outside** this
 model as action-based sends. They carry access tokens, and
-[#207](https://github.com/MikeWills/VeSessionManager/issues/207)'s "no monitoring Bcc" guarantee is
+[#207](https://github.com/MikeWills/VeOps/issues/207)'s "no monitoring Bcc" guarantee is
 structural today precisely because those call sites never populate the field. Bringing any of them in
 would turn that into a runtime guarantee.
 
@@ -609,7 +609,7 @@ subjects.
 
 `SingleDigest` batches everything one scan returned across **all** of a team's sessions into a single
 message. That is fine for "3 new registrations" and useless for anything that names a session — which
-is why [#116](https://github.com/MikeWills/VeSessionManager/issues/116) could not ask for *"x
+is why [#116](https://github.com/MikeWills/VeOps/issues/116) could not ask for *"x
 candidates registered to test at xx:xx"*: there was no single session for the sentence to be about.
 
 Grouping brings the session's own tokens with it, available **only** on `PerSession` because a batch

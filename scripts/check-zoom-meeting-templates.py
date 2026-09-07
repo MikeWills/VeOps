@@ -21,7 +21,7 @@ Usage:
     deployed database where the multi-team Team row has been filled in.
 
     "user-secrets" mode shells out to `dotnet user-secrets list --project <project-path>` (default
-    src/VeSessionManager.Worker) and parses the Zoom:AccountId/ClientId/ClientSecret lines --
+    src/VeOps.Worker) and parses the Zoom:AccountId/ClientId/ClientSecret lines --
     for the pre-multi-team credentials some projects still have sitting in user-secrets. Values
     never pass through this script's own arguments or stdout either way, only through dotnet's own
     subprocess pipe.
@@ -112,7 +112,7 @@ if __name__ == "__main__":
     mode = sys.argv[1] if len(sys.argv) > 1 else "db"
 
     if mode == "user-secrets":
-        project_path = sys.argv[2] if len(sys.argv) > 2 else "src/VeSessionManager.Worker"
+        project_path = sys.argv[2] if len(sys.argv) > 2 else "src/VeOps.Worker"
         team_name, account_id, client_id, client_secret, zoom_user_id = load_credentials_from_user_secrets(project_path)
     else:
         db_path = sys.argv[2] if len(sys.argv) > 2 else "vesessionmanager.db"

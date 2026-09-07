@@ -1,0 +1,18 @@
+@page
+@model VeOps.Web.Pages.Account.ExternalLoginCallbackModel
+@{
+    ViewData["Title"] = "External login";
+    Layout = "_PublicLayout";
+}
+
+<div class="auth-wrap">
+    <div class="auth-card">
+        <h1>External login</h1>
+
+        @if (Model.ErrorMessage is not null)
+        {
+            <div class="auth-error">@Model.ErrorMessage</div>
+            <a class="btn-secondary" style="display:block;text-align:center;" asp-page="./Login">Back to log in</a>
+        }
+    </div>
+</div>

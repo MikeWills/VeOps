@@ -24,14 +24,14 @@ Two consequences shape the whole design:
 
 ```
 src/
-  VeSessionManager.Core/     entities, EF Core DbContext + migrations, every service, API clients
-  VeSessionManager.Worker/   generic Host — the background jobs, one per concern
-  VeSessionManager.Web/      ASP.NET Core Razor Pages — the admin backend
+  VeOps.Core/     entities, EF Core DbContext + migrations, every service, API clients
+  VeOps.Worker/   generic Host — the background jobs, one per concern
+  VeOps.Web/      ASP.NET Core Razor Pages — the admin backend
   Shared/                    appsettings.Shared.json, linked into both hosts
 tests/
-  VeSessionManager.Core.Tests/     services, mostly EF InMemory + fake clients
-  VeSessionManager.Web.Tests/      pages rendered for real via WebApplicationFactory
-  VeSessionManager.Worker.Tests/   each job's tick, driven against real SQLite
+  VeOps.Core.Tests/     services, mostly EF InMemory + fake clients
+  VeOps.Web.Tests/      pages rendered for real via WebApplicationFactory
+  VeOps.Worker.Tests/   each job's tick, driven against real SQLite
 ```
 
 **Web cannot reference Worker, and does not need to.** All behaviour lives in Core; the Worker is

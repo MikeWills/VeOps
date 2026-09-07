@@ -56,7 +56,7 @@ Same cause, one layer quieter — a credential is being sent as an undecryptable
 read-only:
 
 ```bash
-sudo -u vesessionmanager sh -c 'cd /opt/vesessionmanager/worker && exec dotnet ./VeSessionManager.Worker.dll --verify-keyring'
+sudo -u vesessionmanager sh -c 'cd /opt/vesessionmanager/worker && exec dotnet ./VeOps.Worker.dll --verify-keyring'
 ```
 
 Run it from the app directory — the content root is the current directory, not the DLL's. Elsewhere
@@ -78,7 +78,7 @@ It is **not** a recovery tool for a lost key ring.
 destroy the originals. If the guard is refusing, that refusal is protecting you — resolve it first.
 
 ```bash
-sudo -u vesessionmanager sh -c 'cd /opt/vesessionmanager/worker && exec dotnet ./VeSessionManager.Worker.dll --migrate-team-secrets'
+sudo -u vesessionmanager sh -c 'cd /opt/vesessionmanager/worker && exec dotnet ./VeOps.Worker.dll --migrate-team-secrets'
 ```
 
 ## Moving the key ring to a new path
@@ -109,7 +109,7 @@ to skip the copy.
 
 ## Standing rules
 
-- Web and Worker must register Data Protection with the **same application name** (`VeSessionManager`)
+- Web and Worker must register Data Protection with the **same application name** (`VeOps`)
   and the **same** `DataProtection:KeyRingPath`. Drift does not throw; one process's writes just
   become unreadable by the other.
 - The key ring lives at `/var/lib/vesessionmanager-keys/`, mode `0700` — a **sibling** of the

@@ -1,0 +1,416 @@
+﻿@page
+@using VeOps.Core.Entities
+@model VeOps.Web.Pages.Admin.TeamSettingsModel
+@{
+    ViewData["Title"] = "Team Settings";
+    ViewData["ActiveNav"] = "AdminTeamSettings";
+    ViewData["WideMain"] = true;
+    Layout = "_AppLayout";
+}
+
+<div class="page-head">
+    <div>
+        <partial name="_ParentCrumb" model='new ParentCrumb("./Teams", "Teams", "Per-team credentials", RoleGroups.Admins)' />
+        <h1>Team Settings</h1>
+    </div>
+</div>
+
+@if (Model.IsSystemAdmin)
+{
+    @* Same team-picker component as the session list, deliberately WITHOUT an "All teams" option:
+       this page edits one team's configuration, so a merged view has no meaning. The trigger reads
+       "Select a team…" until one is chosen, matching the prompt below. *@
+    <form method="get" id="teamFilter" class="filters" style="margin-bottom:16px; align-items:flex-start;">
+        <partial name="_TeamPicker" model="new VeOps.Web.TeamPicker(Model.TeamId, Model.AvailableTeams, Model.TeamSummaryLabel, IncludeAllTeams: false)" />
+    </form>
+}
+
+@if (Model.Team is null)
+{
+    <p>@(Model.IsSystemAdmin ? "Pick a team above." : "No team assigned to this account.")</p>
+}
+else
+{
+    @if (Model.Team.MutedIntegrations.Count > 0)
+    {
+        @* Same styling as the deployment-wide test-mode banner, for the same reason: a state that
+           silently changes what the app does must be visible without going looking (#64). *@
+        <div style="background:#c0392b;color:#fff;font-weight:600;font-size:13px;padding:8px 16px;letter-spacing:.02em;margin-bottom:16px;">
+            <strong>Integrations muted:</strong> @string.Join(", ", Model.Team.MutedIntegrations).
+            Outbound calls for these are suppressed for this team &mdash; nothing is sent, created, or
+            deleted, and nothing is queued for later. Untick <em>Mute some integrations</em> below to
+            restore normal operation.
+        </div>
+    }
+
+    <p class="eyebrow" style="margin-bottom:16px;">Team ID: @Model.Team.Id — needed to build this team's webhook/callback URLs by hand (e.g. <code>/webhooks/square/@Model.Team.Id</code>).</p>
+    <div class="session-panel" style="display:block;">
+        @* Per-integration mute switches (#64). Placed first because it changes what every panel
+           below actually does, and because "why did nothing send?" is the question it answers.
+
+           The individual switches are hidden while the master is off — an ordinary production team's
+           settings page should not grow a wall of controls nobody touches. Hiding is presentation
+           only: the handler re-resolves the user and re-checks CanManageTeam server-side, and the
+           master is read first when enforcing, so a switch left set from an old testing session
+           cannot silently mute a team that has since gone live. *@
+        <div class="section-head"><h2>Integrations</h2></div>
+        <form method="post" asp-page-handler="UpdateIntegrationSwitches">
+            <input type="hidden" name="TeamId" value="@Model.TeamId" />
+            <div class="field" style="flex-direction:row; align-items:center; gap:12px; max-width:520px;">
+                <span class="switch">
+                    <input id="integrationOverridesEnabled" name="integrationOverridesEnabled" type="checkbox" value="true"
+                           checked="@Model.Team.IntegrationOverridesEnabled" data-toggle-panel="integrationSwitches" />
+                    <span class="slider" aria-hidden="true"></span>
+                </span>
+                <label for="integrationOverridesEnabled" style="margin:0;">Mute some integrations for this team</label>
+            </div>
+            <p class="session-sub">
+                Off for a normal team, and off is also the way back: turning this off restores full
+                normal operation in one action, whatever the individual switches below say.
+            </p>
+
+            <div id="integrationSwitches" style="@(Model.Team.IntegrationOverridesEnabled ? "" : "display:none;")">
+                <div class="meta-grid" style="margin-top:12px;">
+                    <div class="field" style="flex-direction:row; align-items:center; gap:12px; max-width:200px;">
+                        <span class="switch">
+                            <input id="zoomEnabled" name="zoomEnabled" type="checkbox" value="true" checked="@Model.Team.ZoomEnabled" />
+                            <span class="slider" aria-hidden="true"></span>
+                        </span>
+                        <label for="zoomEnabled" style="margin:0;">Zoom</label>
+                    </div>
+                    <div class="field" style="flex-direction:row; align-items:center; gap:12px; max-width:200px;">
+                        <span class="switch">
+                            <input id="discordEnabled" name="discordEnabled" type="checkbox" value="true" checked="@Model.Team.DiscordEnabled" />
+                            <span class="slider" aria-hidden="true"></span>
+                        </span>
+                        <label for="discordEnabled" style="margin:0;">Discord</label>
+                    </div>
+                    <div class="field" style="flex-direction:row; align-items:center; gap:12px; max-width:200px;">
+                        <span class="switch">
+                            <input id="squareEnabled" name="squareEnabled" type="checkbox" value="true" checked="@Model.Team.SquareEnabled" />
+                            <span class="slider" aria-hidden="true"></span>
+                        </span>
+                        <label for="squareEnabled" style="margin:0;">Square</label>
+                    </div>
+                    <div class="field" style="flex-direction:row; align-items:center; gap:12px; max-width:200px;">
+                        <span class="switch">
+                            <input id="emailEnabled" name="emailEnabled" type="checkbox" value="true" checked="@Model.Team.EmailEnabled" />
+                            <span class="slider" aria-hidden="true"></span>
+                        </span>
+                        <label for="emailEnabled" style="margin:0;">Email</label>
+                    </div>
+                </div>
+                <p class="session-sub">
+                    Unticking one suppresses <strong>every</strong> call that system makes for this team,
+                    creation and teardown alike &mdash; a cancelled session's Zoom meeting and Discord event
+                    stay put, and stale payment links are not purged. Anything created before a switch went
+                    off is left in the real account permanently, so when muting a team with live resources,
+                    <strong>clean up first and switch off second</strong>.
+                </p>
+                <p class="session-sub">
+                    Nothing is queued while a switch is off: turning it back on starts fresh from that
+                    moment, so a week of muted reminders cannot suddenly reach a real candidate. ExamTools
+                    ingestion, the ULS watcher and the PII purge are never muted &mdash; they are read-only
+                    or local-only, and reproducing issues against them is the point.
+                </p>
+            </div>
+            <button type="submit" class="btn-primary btn-sm" style="margin-top:12px;">Save integration switches</button>
+        </form>
+
+        <div class="section-head"><h2>Volunteer examiners</h2></div>
+        <form method="post" asp-page-handler="UpdateVeEmail">
+            <input type="hidden" name="TeamId" value="@Model.TeamId" />
+            <label class="switch-row">
+                <span class="switch">
+                    <input id="veEmailSubscriptions" name="veEmailSubscriptionsEnabled" type="checkbox" value="true"
+                           checked="@Model.Team.VeEmailSubscriptionsEnabled" />
+                    <span class="slider" aria-hidden="true"></span>
+                </span>
+                <span>Let VEs subscribe to email about this team's sessions</span>
+            </label>
+            @* The reason this is a switch rather than always-on: a team that does not email every VE
+               about every session must not show them a box implying it does. Somebody who ticked it
+               would wait for mail nobody sends, instead of checking the schedule. *@
+            <p class="session-sub">
+                Only turn this on if you actually email your VEs about sessions. When it is on, VEs see a
+                subscribe box on their own details page; when it is off, they do not, and anyone who
+                subscribed earlier keeps their answer for if you turn it back on.
+            </p>
+            <p class="session-sub">
+                Separate from unsubscribing, which is always available from a link in every message and
+                stops <strong>all</strong> email to that VE, session invitations included.
+            </p>
+            <button type="submit" class="btn-primary btn-sm" style="margin-top:12px;">Save VE email settings</button>
+        </form>
+
+        <div class="section-head"><h2>ExamTools</h2></div>
+        <form method="post" asp-page-handler="UpdateExamTools">
+            <input type="hidden" name="TeamId" value="@Model.TeamId" />
+            <div class="meta-grid">
+                <div class="field" style="max-width:220px;"><label for="etTeamCode">Team code</label><input id="etTeamCode" name="teamCode" value="@Model.Team.ExamToolsTeamCode" /></div>
+                <div class="field" style="max-width:220px;"><label for="etUsername">Username</label><input id="etUsername" name="username" value="@Model.Team.ExamToolsUsername" /></div>
+                <div class="field" style="max-width:220px;"><label for="etPassword">Password</label><input id="etPassword" name="password" type="password" placeholder="@(Model.Team.IsExamToolsConfigured ? "•••••••• (unchanged)" : "Not set")" /></div>
+                <div class="field" style="max-width:260px;"><label for="etBaseUrl">Base URL override</label><input id="etBaseUrl" name="baseUrl" value="@Model.Team.ExamToolsBaseUrl" placeholder="Leave blank for the deployment default" /></div>
+            </div>
+            <button type="submit" class="btn-primary btn-sm" style="margin-top:12px;">Save ExamTools</button>
+        </form>
+
+        <div class="section-head" style="margin-top:28px;"><h2>Zoom</h2></div>
+        <form method="post" asp-page-handler="UpdateZoom">
+            <input type="hidden" name="TeamId" value="@Model.TeamId" />
+            <div class="meta-grid">
+                <div class="field" style="max-width:220px;"><label for="zoomAccountId">Account ID</label><input id="zoomAccountId" name="accountId" value="@Model.Team.ZoomAccountId" /></div>
+                <div class="field" style="max-width:220px;"><label for="zoomClientId">Client ID</label><input id="zoomClientId" name="clientId" value="@Model.Team.ZoomClientId" /></div>
+                <div class="field" style="max-width:220px;"><label for="zoomClientSecret">Client secret</label><input id="zoomClientSecret" name="clientSecret" type="password" placeholder="@(Model.Team.IsZoomConfigured ? "•••••••• (unchanged)" : "Not set")" /></div>
+                @* "(optional)" in the label, not just the faint `me` placeholder: this field sits in a
+                   row with Account ID / Client ID / Client secret, which genuinely are required, so a
+                   blank one reads as something the admin forgot rather than a deliberate default. *@
+                <div class="field" style="max-width:220px;"><label for="zoomUserId">Zoom user ID <span style="text-transform:none; font-weight:400;">(optional)</span></label><input id="zoomUserId" name="zoomUserId" value="@Model.Team.ZoomUserId" placeholder="me" /></div>
+                <div class="field" style="max-width:160px;"><label for="breakoutRoomCount">Breakout rooms</label><input id="breakoutRoomCount" name="breakoutRoomCount" type="number" min="0" value="@Model.Team.ZoomBreakoutRoomCount" /></div>
+            </div>
+            <p class="session-sub"><b>Zoom user ID:</b> leave blank to use the account that owns the API credentials — only needed if your Zoom organization has multiple users and sessions should be hosted by a specific one.</p>
+            <p class="session-sub">Every session's Zoom meeting gets this many empty "Exam Room N" breakout rooms pre-created — VEs move candidates into them manually during the meeting. Set to 0 to skip creating any.</p>
+            <button type="submit" class="btn-primary btn-sm" style="margin-top:12px;">Save Zoom</button>
+        </form>
+
+        <div class="section-head" style="margin-top:28px;"><h2>Discord</h2></div>
+        <form method="post" asp-page-handler="UpdateDiscord">
+            <input type="hidden" name="TeamId" value="@Model.TeamId" />
+            <div class="field" style="max-width:280px;"><label for="discordGuildId">Guild ID</label><input id="discordGuildId" name="guildId" value="@Model.Team.DiscordGuildId" /></div>
+            <div class="field" style="max-width:420px;">
+                <label for="discordMentionableRoleIds">Roles this team may mention</label>
+                <input id="discordMentionableRoleIds" name="mentionableRoleIds" value="@Model.Team.DiscordMentionableRoleIds" placeholder="e.g. 1042938475610293847" />
+                @* An allow-list, not a switch. Channel posts resolve no mentions at all by default,
+                   which is what stops a candidate named "@@everyone" pinging the server — naming the
+                   roles grants the ask without giving that back (#116). *@
+                <span class="session-sub">Role IDs, comma-separated. Leave blank and posts ping nobody, which is the default. <strong>@@everyone and @@here can never be pinged</strong>, however a message is written.</span>
+            </div>
+            <div class="field" style="max-width:520px;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <label class="switch">
+                        <input id="tagSyncEnabled" name="tagSyncEnabled" type="checkbox" value="true"
+                               checked="@Model.Team.DiscordTagSyncEnabled" />
+                        <span class="slider" aria-hidden="true"></span>
+                    </label>
+                    @* Posts false when the switch is off. Without it an unchecked box sends nothing at
+                       all and the setting could be turned on but never off. *@
+                    <input name="tagSyncEnabled" type="hidden" value="false" />
+                    <label for="tagSyncEnabled" style="margin:0;">Keep VE tags in step with Discord roles</label>
+                </div>
+                @* Off by default, and worth leaving off until the check has been run by hand: this
+                   removes tags as well as adding them, so a VE whose Discord name stops showing their
+                   call sign loses a matched tag with nobody watching (#519). *@
+                <span class="session-sub">
+                    Runs daily. Only affects tags you've matched to a Discord role.
+                    Try it first on <a asp-page="/SessionManager/VeDiscordSync">Discord Tags</a>, which shows
+                    what would change without changing anything.
+                </span>
+            </div>
+            <p class="session-sub">The shared bot's token is a deployment-wide setting (Discord:BotToken), not editable per-team here.</p>
+            <button type="submit" class="btn-primary btn-sm" style="margin-top:8px;">Save Discord</button>
+        </form>
+
+        <div class="section-head" style="margin-top:28px;"><h2>Square</h2></div>
+        <form method="post" asp-page-handler="UpdateSquare">
+            <input type="hidden" name="TeamId" value="@Model.TeamId" />
+            <div class="meta-grid">
+                @* First field, before the token: the token is issued FOR an environment and fails
+                   against the other, so choosing it after pasting credentials is backwards. *@
+                <div class="field" style="max-width:220px;">
+                    <label for="squareEnvironment">Environment</label>
+                    <select id="squareEnvironment" name="environment">
+                        <option value="@((int)SquareApiEnvironment.Sandbox)" selected="@(Model.Team.SquareEnvironment == SquareApiEnvironment.Sandbox)">Sandbox (test money)</option>
+                        <option value="@((int)SquareApiEnvironment.Production)" selected="@(Model.Team.SquareEnvironment == SquareApiEnvironment.Production)">Production (real money)</option>
+                    </select>
+                </div>
+                <div class="field" style="max-width:220px;"><label for="squareAccessToken">Access token</label><input id="squareAccessToken" name="accessToken" type="password" placeholder="@(Model.Team.IsSquareConfigured ? "•••••••• (unchanged)" : "Not set")" /></div>
+                <div class="field" style="max-width:220px;"><label for="squareLocationId">Location ID</label><input id="squareLocationId" name="locationId" value="@Model.Team.SquareLocationId" /></div>
+                <div class="field" style="max-width:220px;"><label for="squareWebhookKey">Webhook signature key</label><input id="squareWebhookKey" name="webhookSignatureKey" type="password" placeholder="@(Model.Team.IsSquareWebhookConfigured ? "•••••••• (unchanged)" : "Not set")" /></div>
+                <div class="field" style="max-width:280px;"><label for="squareWebhookUrl">Webhook notification URL</label><input id="squareWebhookUrl" name="webhookNotificationUrl" value="@Model.Team.SquareWebhookNotificationUrl" placeholder="https://host/webhooks/square/@Model.TeamId" /></div>
+            </div>
+            <button type="submit" class="btn-primary btn-sm" style="margin-top:12px;">Save Square</button>
+        </form>
+
+        <div class="section-head" style="margin-top:28px;"><h2>Payment link purge</h2></div>
+        <form method="post" asp-page-handler="UpdatePurgeSettings">
+            <input type="hidden" name="TeamId" value="@Model.TeamId" />
+            <div class="field" style="max-width:160px;"><label for="purgeUnpaidLinkDays">Purge unpaid links after (days)</label><input id="purgeUnpaidLinkDays" name="purgeUnpaidLinkDays" type="number" min="1" value="@Model.Team.PurgeUnpaidLinkDays" required /></div>
+            <p class="session-sub">An Unpaid payment's Square link is deleted once it's been outstanding this many days — Square links never auto-expire otherwise.</p>
+            <button type="submit" class="btn-primary btn-sm" style="margin-top:8px;">Save</button>
+        </form>
+
+        <div class="section-head" style="margin-top:28px;"><h2>ARRL submissions</h2></div>
+        @* ARRL only, deliberately: every VEC has its own process and there is no shared shape to
+           abstract over, so this panel is not "VEC submissions" with ARRL as one case. Nothing here
+           has a default value — "Remote Online" is right for both teams on this deployment and would
+           still be wrong to prefill, because a team that meets in person and never opened this screen
+           would then file "Remote Online" with ARRL and nothing would look broken. *@
+        <form method="post" asp-page-handler="UpdateArrlSubmission">
+            <input type="hidden" name="TeamId" value="@Model.TeamId" />
+
+            <div class="field" style="max-width:420px;">
+                <label for="arrlNamePostfix">Add after the session lead's name</label>
+                <input id="arrlNamePostfix" name="namePostfix" type="text" value="@Model.Team.ArrlSubmissionNamePostfix" />
+            </div>
+            <p class="session-sub">
+                ARRL's form asks for one name. This app fills in whoever led the session in ExamTools, then
+                adds this text exactly as typed &mdash; no space is inserted. Leave it blank to file the
+                lead's name on its own. Example: <code>/Nick Booth (CC)/HRCC VE Team</code>.
+            </p>
+
+            <div class="field" style="max-width:420px;">
+                <label for="arrlEmailSource">Email address to give ARRL</label>
+                <select id="arrlEmailSource" name="emailSource">
+                    <option value="@ArrlSubmissionEmailSource.SessionLead" selected="@(Model.Team.ArrlSubmissionEmailSource == ArrlSubmissionEmailSource.SessionLead)">The session lead's own address</option>
+                    <option value="@ArrlSubmissionEmailSource.TeamAddress" selected="@(Model.Team.ArrlSubmissionEmailSource == ArrlSubmissionEmailSource.TeamAddress)">A team address</option>
+                </select>
+            </div>
+            <div class="field" style="max-width:420px;">
+                <label for="arrlEmail">Team address</label>
+                <input id="arrlEmail" name="email" type="email" value="@Model.Team.ArrlSubmissionEmail" />
+            </div>
+            <p class="session-sub">Only used when "a team address" is chosen above.</p>
+
+            <div class="field" style="max-width:420px;">
+                <label for="arrlLocation">Exam session location</label>
+                <input id="arrlLocation" name="location" type="text" value="@Model.Team.ArrlSubmissionLocation" required />
+            </div>
+            <p class="session-sub">
+                <code>Remote Online</code> for a remote session. If you test in person, ARRL wants city and
+                state (or city and country outside the USA).
+            </p>
+
+            <div class="field" style="max-width:420px;">
+                <label for="arrlPaymentMethod">Method of payment for test fees</label>
+                <select id="arrlPaymentMethod" name="paymentMethod">
+                    <option value="@ArrlPaymentMethod.MailIn" selected="@(Model.Team.ArrlSubmissionPaymentMethod == ArrlPaymentMethod.MailIn)">Mail in payment</option>
+                    <option value="@ArrlPaymentMethod.PhoneIn" selected="@(Model.Team.ArrlSubmissionPaymentMethod == ArrlPaymentMethod.PhoneIn)">Phone in payment</option>
+                    <option value="@ArrlPaymentMethod.CreditCardOnFile" selected="@(Model.Team.ArrlSubmissionPaymentMethod == ArrlPaymentMethod.CreditCardOnFile)">Credit card on file with VEC</option>
+                </select>
+            </div>
+
+            <div class="field" style="max-width:640px;">
+                <label for="arrlNote">Starting text for the Notes field</label>
+                <textarea id="arrlNote" name="note" rows="3">@Model.Team.ArrlSubmissionNote</textarea>
+            </div>
+            <p class="session-sub">
+                Prefilled into every submission and editable before it is sent, so put what you write most
+                times here. Leave it blank if you usually send nothing.
+            </p>
+
+            @if (!Model.Team.IsArrlSubmissionConfigured)
+            {
+                <p class="session-sub"><strong>Not set up yet.</strong> A location, a payment method and an email choice are all needed before a session can be filed with ARRL from this app.</p>
+            }
+
+            <button type="submit" class="btn-primary btn-sm" style="margin-top:12px;">Save ARRL submissions</button>
+        </form>
+
+        <div class="section-head" style="margin-top:28px;"><h2>Email logo</h2></div>
+        @* enctype is required — without it the browser posts only the file NAME and the handler
+           sees an empty upload. The preview is a data URI rather than a served route: the image is
+           small, this page is admin-only, and it avoids adding a public endpoint that hands out
+           team images. *@
+        <form method="post" asp-page-handler="UpdateLogo" enctype="multipart/form-data">
+            <input type="hidden" name="TeamId" value="@Model.TeamId" />
+            @if (Model.Team.LogoBytes is { Length: > 0 } logo)
+            {
+                <div style="margin-bottom:12px;">
+                    <img src="data:@(Model.Team.LogoContentType ?? "image/png");base64,@Convert.ToBase64String(logo)"
+                         alt="Current team logo" style="max-width:220px;height:auto;border:1px solid var(--line);border-radius:5px;padding:6px;background:#fff;" />
+                    <p class="session-sub" style="margin:6px 0 0;">@(logo.Length / 1024)KB @(Model.Team.LogoContentType)@(Model.Team.LogoUpdatedUtc is { } up ? $" · updated {EasternTimeFormatter.Format(up, "MMM d, yyyy")}" : "")</p>
+                </div>
+            }
+            <div class="field" style="max-width:400px;">
+                <label for="logoFile">PNG or JPEG, up to 200KB</label>
+                <input id="logoFile" name="logoFile" type="file" accept="image/png,image/jpeg" />
+            </div>
+            <p class="session-sub" style="margin:8px 0 0;max-width:520px;">
+                Add <span class="mono">{{Logo}}</span> to any email template to place it. Templates without that placeholder are unaffected, and a team with no logo renders it as nothing &mdash; so the placeholder is always safe to leave in.
+            </p>
+            <button type="submit" class="btn-primary btn-sm" style="margin-top:8px;">Upload logo</button>
+        </form>
+        @if (Model.Team.LogoBytes is { Length: > 0 })
+        {
+            <form method="post" asp-page-handler="RemoveLogo" style="margin-top:8px;">
+                <input type="hidden" name="TeamId" value="@Model.TeamId" />
+                <button type="submit" class="btn-danger btn-sm">Remove logo</button>
+            </form>
+        }
+
+        <div class="section-head" style="margin-top:28px;"><h2>SMTP</h2></div>
+        <form method="post" asp-page-handler="UpdateSmtp">
+            <input type="hidden" name="TeamId" value="@Model.TeamId" />
+            <div class="meta-grid">
+                <div class="field" style="max-width:220px;"><label for="smtpHost">Host</label><input id="smtpHost" name="host" value="@Model.Team.SmtpHost" /></div>
+                <div class="field" style="max-width:120px;"><label for="smtpPort">Port</label><input id="smtpPort" name="port" type="number" value="@Model.Team.SmtpPort" placeholder="587" /></div>
+                <div class="field" style="max-width:220px;"><label for="smtpUsername">Username</label><input id="smtpUsername" name="username" value="@Model.Team.SmtpUsername" /></div>
+                <div class="field" style="max-width:220px;"><label for="smtpPassword">Password</label><input id="smtpPassword" name="password" type="password" placeholder="@(Model.Team.IsEmailConfigured ? "•••••••• (unchanged)" : "Not set")" /></div>
+                <div class="field" style="max-width:160px;">
+                    <p class="hint" style="margin:0;">Connections always use TLS — implicit on port 465, required STARTTLS otherwise. The old opt-out was removed in issue #259: it fell back to plaintext when a server declined, which sent the password in the clear.</p>
+                </div>
+            </div>
+            <button type="submit" class="btn-primary btn-sm" style="margin-top:12px;">Save SMTP</button>
+        </form>
+
+        <div class="section-head" style="margin-top:28px;"><h2>Email Settings</h2></div>
+        <form method="post" asp-page-handler="UpdateEmailSettings">
+            <input type="hidden" name="TeamId" value="@Model.TeamId" />
+            <div class="meta-grid">
+                <div class="field" style="max-width:220px;"><label for="fromAddress">From address</label><input id="fromAddress" name="fromAddress" type="email" value="@Model.EmailSettings?.FromAddress" required /></div>
+                <div class="field" style="max-width:220px;"><label for="fromDisplayName">From display name</label><input id="fromDisplayName" name="fromDisplayName" value="@Model.EmailSettings?.FromDisplayName" /></div>
+                <div class="field" style="max-width:220px;"><label for="replyToAddress">Reply-to address</label><input id="replyToAddress" name="replyToAddress" type="email" value="@Model.EmailSettings?.ReplyToAddress" required /></div>
+                <div class="field" style="max-width:280px;"><label for="privacyPolicyUrl">Privacy policy URL</label><input id="privacyPolicyUrl" name="privacyPolicyUrl" value="@Model.EmailSettings?.PrivacyPolicyUrl" required /></div>
+                <div class="field" style="max-width:220px;"><label for="adminNotificationEmail">Admin notification email</label><input id="adminNotificationEmail" name="adminNotificationEmail" type="email" value="@Model.EmailSettings?.AdminNotificationEmail" required /></div>
+                <div class="field" style="max-width:220px;">
+                    <label for="bccAddress">Blind-copy candidate email to</label>
+                    <input id="bccAddress" name="bccAddress" type="email" value="@Model.EmailSettings?.BccAddress" placeholder="(off)" />
+                    <p class="hint">
+                        Sends a silent copy of every <strong>candidate</strong> email to this address, so you
+                        can see what actually goes out. Never applied to password resets or VE self-service
+                        links &mdash; those carry access tokens.
+                        <br />
+                        Those copies contain candidate names and email addresses, and stay in that mailbox
+                        even after the candidate&rsquo;s details are purged from this system. Best used as a
+                        temporary check and cleared afterwards. Leave blank to turn off.
+                    </p>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-primary btn-sm" style="margin-top:12px;">Save Email Settings</button>
+        </form>
+
+        <div class="section-head" style="margin-top:28px;"><h2>Youth-Rate Confirmation Page</h2></div>
+        <form method="post" asp-page-handler="UpdateYouthConfirmIntro">
+            <input type="hidden" name="TeamId" value="@Model.TeamId" />
+            <div class="field" style="max-width:640px;">
+                <label for="youthConfirmIntroHtml">Intro paragraph</label>
+                <p class="hint" style="margin-top:0;">
+                    Shown at the top of the public page a candidate reaches when confirming they
+                    qualify for the reduced youth exam fee — today, ARRL's note about claiming the FCC
+                    license fee back after passing. Leave blank to use the standard wording.
+                </p>
+                <div class="message-editor">
+                    <div class="editor-tabs" role="tablist">
+                        <button type="button" class="editor-tab" role="tab" data-mode="visual" aria-selected="true">Visual</button>
+                        <button type="button" class="editor-tab" role="tab" data-mode="html" aria-selected="false">HTML</button>
+                    </div>
+                    <div class="editor-visual" data-editor-for="youthConfirmIntroHtml">
+                        <div class="editor-surface"></div>
+                    </div>
+                    <textarea id="youthConfirmIntroHtml" name="youthConfirmIntroHtml" rows="6">@Model.EmailSettings?.YouthConfirmIntroHtml</textarea>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-primary btn-sm" style="margin-top:12px;">Save Youth-Rate Confirmation</button>
+        </form>
+    </div>
+}
+
+@section Scripts {
+    <script src="~/lib/quill/quill.js"></script>
+    <script src="~/js/message-editor.js" asp-append-version="true"></script>
+}
+@section Head {
+    <link rel="stylesheet" href="~/lib/quill/quill.snow.css" />
+}

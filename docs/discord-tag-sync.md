@@ -4,7 +4,7 @@ Reading a team's Discord server to keep VE tags in step with Discord roles ([#51
 
 Most VEs carry their call sign in their Discord display name, and teams already manage "who is a full
 member / auditioning / a session manager" with Discord roles. That is a second, hand-maintained copy
-of something this app also stores as [`VeTag`](../src/VeSessionManager.Core/Entities/VeTag.cs)
+of something this app also stores as [`VeTag`](../src/VeOps.Core/Entities/VeTag.cs)
 assignments, and the two drift. This closes that gap in one direction only.
 
 **Status: all four steps are built, merged, and deployed in `v0.34.0` (2026-09-02) — and every one of
@@ -277,6 +277,6 @@ Steps 2 and 3 are split from 4 on purpose. Removals are in scope, so an unattend
 real tag; the manual preview is what makes the first runs inspectable. Same report-then-act shape as
 [#88]'s `--report-historical-imports`.
 
-[#88]: https://github.com/MikeWills/VeSessionManager/issues/88
-[#503]: https://github.com/MikeWills/VeSessionManager/issues/503
-[#519]: https://github.com/MikeWills/VeSessionManager/issues/519
+[#88]: https://github.com/MikeWills/VeOps/issues/88
+[#503]: https://github.com/MikeWills/VeOps/issues/503
+[#519]: https://github.com/MikeWills/VeOps/issues/519

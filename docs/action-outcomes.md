@@ -1,10 +1,10 @@
 # Action outcomes and candidate capabilities
 
-*Issues [#304](https://github.com/MikeWills/VeSessionManager/issues/304) (DUP-01),
-[#244](https://github.com/MikeWills/VeSessionManager/issues/244) (T-13),
-[#274](https://github.com/MikeWills/VeSessionManager/issues/274) (T-43), 2026-08-11.*
+*Issues [#304](https://github.com/MikeWills/VeOps/issues/304) (DUP-01),
+[#244](https://github.com/MikeWills/VeOps/issues/244) (T-13),
+[#274](https://github.com/MikeWills/VeOps/issues/274) (T-43), 2026-08-11.*
 
-Two new types in `src/VeSessionManager.Web/`:
+Two new types in `src/VeOps.Web/`:
 
 | File | Owns |
 |---|---|
@@ -76,7 +76,7 @@ Once each mapping had one home, being exhaustive over its enum cost nothing:
 
 | Test | Guards |
 |---|---|
-| `ActionMessageSingleSourceTests.NoActionMessageIsWrittenInMoreThanOnePlace` | 19 known-copied messages each have exactly one home in `src/VeSessionManager.Web` |
+| `ActionMessageSingleSourceTests.NoActionMessageIsWrittenInMoreThanOnePlace` | 19 known-copied messages each have exactly one home in `src/VeOps.Web` |
 | `…CapabilityRulesAreNotComputedInsidePageModels` | No page model computes an `isWithdrawn &&` capability clause — except the one named above |
 | `…EveryMessageInTheListActuallyExistsSomewhereInTheApp` | The list above is not silently checking nothing after a rename |
 | `ActionOutcomesTests.MarkSubmittedToVec_TellsTheThreeOutcomesApart` | #244 itself |

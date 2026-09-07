@@ -1,6 +1,6 @@
 # ExamTools/HamStudy API Reference
 
-What the Phase 1 ingestion client (`VeSessionManager.Core/ExamTools/`) relies on. Shapes were
+What the Phase 1 ingestion client (`VeOps.Core/ExamTools/`) relies on. Shapes were
 verified against real responses on the dev site (`examtools.dev`) on 2026-07-19; runnable
 requests live in `api-examples/` (Bruno collection). ExamTools has no published API docs — this
 is all discovered behavior, so re-verify if something starts failing after an upstream deploy.

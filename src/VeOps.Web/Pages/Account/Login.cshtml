@@ -1,0 +1,85 @@
+@page
+@model VeOps.Web.Pages.Account.LoginModel
+@{
+    ViewData["Title"] = "Log in";
+    Layout = "_PublicLayout";
+}
+
+<div class="auth-wrap">
+    <div class="auth-card">
+        <h1>Log in</h1>
+
+        @if (TempData["StatusMessage"] is string statusMessage)
+        {
+            <div class="auth-status">@statusMessage</div>
+        }
+
+        @if (Model.NoAccountsExist)
+        {
+            <div class="auth-error">
+                No administrator account exists on this deployment yet, so no sign-in can succeed.
+                Create one on the server with
+                <code>dotnet VeOps.Web.dll --create-admin --email you@example.org --name "Your Name"</code>
+                — it prints a generated password once.
+            </div>
+        }
+
+        @if (Model.ErrorMessage is not null)
+        {
+            <div class="auth-error">@Model.ErrorMessage</div>
+        }
+
+        <form method="post">
+            @* ReturnUrl arrives in the query string and asp-page-handler-less POSTs keep it, but the
+               bound property is only repopulated if it is posted back — without this the redirect
+               target is lost the moment validation fails and the page re-renders. *@
+            <input type="hidden" asp-for="ReturnUrl" />
+            <div asp-validation-summary="ModelOnly" class="field-error"></div>
+            <div class="field">
+                <label asp-for="Input.UserName"></label>
+                <input asp-for="Input.UserName" autocomplete="username" />
+                <span asp-validation-for="Input.UserName" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="Input.Password"></label>
+                <input asp-for="Input.Password" autocomplete="current-password" />
+                <span asp-validation-for="Input.Password" class="field-error"></span>
+            </div>
+            <div class="field field-check">
+                <label>
+                    <input asp-for="Input.RememberMe" />
+                    Keep me signed in on this device
+                </label>
+                <span class="field-hint">
+                    Stays signed in for @LoginModel.RememberMeDurationLabel. Leave this off on a
+                    shared or public computer.
+                </span>
+            </div>
+            <button type="submit" class="btn-primary">Log in</button>
+
+            @* The provider buttons live in THIS form, not one of their own, so the checkbox above is
+               posted with them — otherwise "keep me signed in" would work with a password and be
+               silently ignored with Google, which is the split this feature exists to remove. They
+               carry formnovalidate because the browser would otherwise demand the empty username and
+               password fields before allowing a submit that does not use them. asp-page-handler puts
+               the handler in each button's formaction; the antiforgery token is the form's own. *@
+            @if (Model.ExternalLogins.Count > 0)
+            {
+                <div class="auth-divider">or</div>
+                @foreach (var provider in Model.ExternalLogins)
+                {
+                    <button type="submit" class="btn-secondary" name="provider" value="@provider.Name"
+                            asp-page-handler="ExternalLogin" formnovalidate>
+                        Sign in with @provider.DisplayName
+                    </button>
+                }
+            }
+        </form>
+
+        <p class="session-sub"><a asp-page="/Account/ForgotPassword">Forgot your password?</a></p>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

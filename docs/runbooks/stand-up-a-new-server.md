@@ -24,7 +24,7 @@ Two things that will silently bite:
   your umask, and sudo **silently ignores** a file with any other mode — every sudo call then
   demands a password, which reads like a broken SSH key.
 - The units set `WorkingDirectory`, because the content root is the current directory. Any by-hand
-  invocation needs `sh -c 'cd /opt/vesessionmanager/worker && exec dotnet ./VeSessionManager.Worker.dll <switch>'`.
+  invocation needs `sh -c 'cd /opt/vesessionmanager/worker && exec dotnet ./VeOps.Worker.dll <switch>'`.
 
 ## 2. Create the archive directory (ARRL filing)
 
@@ -69,7 +69,7 @@ A Production database starts with **no account anyone can sign into**. `DevAuthS
 Development, and every route that could create a user is itself `[Authorize]`d.
 
 ```bash
-dotnet /opt/vesessionmanager/web/VeSessionManager.Web.dll --create-admin \
+dotnet /opt/vesessionmanager/web/VeOps.Web.dll --create-admin \
   --email you@example.org --name "Your Name" [--callsign WX0MIK]
 ```
 

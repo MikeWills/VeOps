@@ -1,7 +1,7 @@
 # Admin Backend Auth (Phase 9a)
 
-What the auth/scaffolding slice (`VeSessionManager.Web`'s Identity wiring +
-`VeSessionManager.Core/Authorization/SessionAccessScope.cs`) does and why.
+What the auth/scaffolding slice (`VeOps.Web`'s Identity wiring +
+`VeOps.Core/Authorization/SessionAccessScope.cs`) does and why.
 
 ## Role model: four roles, not the spec's original three
 
@@ -20,7 +20,7 @@ well once the multi-team foundation (Phase 6.5) gave each `Team` its own credent
   with two deliberate exceptions: the Renewal Monitor, and the two day-of session actions
   (Refresh candidates, Create retest payment); each has its own section below.
 
-`UserRole` (`VeSessionManager.Core/Entities/Enums.cs`) is `{ SystemAdmin, TeamAdmin,
+`UserRole` (`VeOps.Core/Entities/Enums.cs`) is `{ SystemAdmin, TeamAdmin,
 SessionManager, TeamLead }`. Deliberately **not** using ASP.NET Core Identity's own Role tables
 (`AspNetRoles`/`AspNetUserRoles`) — Role stays one plain enum column on `User`, matching every
 other "pick one of N" field in this codebase. `AppDbContext` uses `IdentityUserContext<User, int>`
@@ -45,7 +45,7 @@ filter the session list down to just one at a time:
   grants no access whatsoever.** It used to determine the lead's team scope transitively; see
   "TeamLead scope" below for why that was removed.
 
-`SessionAccessScope` (`VeSessionManager.Core/Authorization/SessionAccessScope.cs`) is the actual
+`SessionAccessScope` (`VeOps.Core/Authorization/SessionAccessScope.cs`) is the actual
 mechanism, plain C# with no ASP.NET dependency so it's directly unit-tested
 (`SessionAccessScopeTests.cs`) rather than requiring a web host:
 
@@ -87,20 +87,20 @@ there's barely any real data to filter yet"); it isn't wired into a real data pa
 
 ## Identity setup
 
-`User` (`VeSessionManager.Core/Entities/User.cs`) is `IdentityUser<int>` — inherits `UserName`/
+`User` (`VeOps.Core/Entities/User.cs`) is `IdentityUser<int>` — inherits `UserName`/
 `Email` (now nullable, superseding the old `required string Email`)/`PasswordHash`/
 `SecurityStamp`/etc. Adds `Name` (required display name), `Role`, `UserTeams` (the multi-team join
 collection, replacing the old single `TeamId`/`Team` — see "Team scoping" above),
 `ManagedByUserId`/`ManagedByUser`.
 
-`VeSessionManager.Web`'s `Program.cs` uses `AddIdentityCore<User>()`, not `AddIdentity<User,
+`VeOps.Web`'s `Program.cs` uses `AddIdentityCore<User>()`, not `AddIdentity<User,
 TRole>()` — deliberately skips Identity's Role system (see above). `AddIdentityCookies()` supplies
 the `ApplicationScheme`/`ExternalScheme` cookie schemes that `AddIdentity` would otherwise add for
 you automatically; with `AddIdentityCore` you wire that up explicitly. `app.UseAuthentication()`
 was **missing entirely** before this phase — `app.UseAuthorization()` alone never populated
 `HttpContext.User`, so authorization had been a silent no-op since Phase 0's scaffold.
 
-A custom `AppClaimsPrincipalFactory` (`VeSessionManager.Web/AppClaimsPrincipalFactory.cs`) adds a
+A custom `AppClaimsPrincipalFactory` (`VeOps.Web/AppClaimsPrincipalFactory.cs`) adds a
 `ClaimTypes.Role` claim from `user.Role` at sign-in, so `[Authorize(Roles = "...")]` reads straight
 from the signed-in cookie's claims — no extra DB hit per request. It no longer adds a `TeamId`
 claim (dropped for issues #17/#19) — a user can belong to more than one team now, which a
@@ -150,10 +150,10 @@ in this app (see CLAUDE.md's Security & Data Handling section): user-secrets loc
 variables on the systemd unit in production.
 
 ```bash
-dotnet user-secrets set "Authentication:Google:ClientId" "<Google OAuth client id>" --project src/VeSessionManager.Web
-dotnet user-secrets set "Authentication:Google:ClientSecret" "<Google OAuth client secret>" --project src/VeSessionManager.Web
-dotnet user-secrets set "Authentication:Microsoft:ClientId" "<Entra app registration client id>" --project src/VeSessionManager.Web
-dotnet user-secrets set "Authentication:Microsoft:ClientSecret" "<Entra app registration client secret>" --project src/VeSessionManager.Web
+dotnet user-secrets set "Authentication:Google:ClientId" "<Google OAuth client id>" --project src/VeOps.Web
+dotnet user-secrets set "Authentication:Google:ClientSecret" "<Google OAuth client secret>" --project src/VeOps.Web
+dotnet user-secrets set "Authentication:Microsoft:ClientId" "<Entra app registration client id>" --project src/VeOps.Web
+dotnet user-secrets set "Authentication:Microsoft:ClientSecret" "<Entra app registration client secret>" --project src/VeOps.Web
 ```
 
 On the server: `Authentication__Google__ClientId` / `Authentication__Google__ClientSecret` /
@@ -162,7 +162,7 @@ variables.
 
 ## Dev seeding: four test users
 
-`DevAuthSeeder` (`VeSessionManager.Web/DevAuthSeeder.cs`), Development-only, runs from Web's
+`DevAuthSeeder` (`VeOps.Web/DevAuthSeeder.cs`), Development-only, runs from Web's
 `Program.cs` startup (not the Worker's `DevDataSeeder`, since `UserManager<User>` — needed to hash
 passwords — is naturally a Web-hosted service). Seeds one user per role:
 
@@ -198,7 +198,7 @@ then a real browser click-through: logged in as `sessionmanager@example.com`, la
 `/SessionManager`; navigated to `/SystemAdmin` and got redirected to `/Account/AccessDenied`
 (correctly blocked); logged out, logged in as `teamlead@example.com`, landed on `/TeamLead`. Not
 yet live-tested: Google/Microsoft sign-in (no real OAuth app credentials configured yet — see
-[issue #185](https://github.com/MikeWills/VeSessionManager/issues/185)).
+[issue #185](https://github.com/MikeWills/VeOps/issues/185)).
 
 ### The one place "TeamLead is read-only" does not hold — Renewal Monitor (recorded 2026-08-14)
 
@@ -268,7 +268,7 @@ requires that navigation eager-loaded — but `UserManager.GetUserAsync(ClaimsPr
 every page used) never loads it, and since no page had ever actually exercised the TeamLead path
 before this fix, nothing had caught it: a TeamLead would sign in successfully and silently see zero
 sessions regardless of their real team assignment. Fixed with `CurrentUserLoader.GetUserWithManagerAsync`
-(`VeSessionManager.Web/CurrentUserLoader.cs`), a `UserManager<User>` extension that loads the user
+(`VeOps.Web/CurrentUserLoader.cs`), a `UserManager<User>` extension that loads the user
 via `dbContext.Users.Include(u => u.ManagedByUser)` instead — this gotcha is also in CLAUDE.md's
 Known Constraints, since it's easy to reintroduce in a brand-new page.
 

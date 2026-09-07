@@ -1,0 +1,18 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".gitignore" />
+    <File Path="CLAUDE.md" />
+    <File Path="README.md" />
+    <File Path="TODO.md" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/VeOps.Core/VeOps.Core.csproj" />
+    <Project Path="src/VeOps.Web/VeOps.Web.csproj" />
+    <Project Path="src/VeOps.Worker/VeOps.Worker.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/VeOps.Core.Tests/VeOps.Core.Tests.csproj" />
+    <Project Path="tests/VeOps.Web.Tests/VeOps.Web.Tests.csproj" />
+    <Project Path="tests/VeOps.Worker.Tests/VeOps.Worker.Tests.csproj" />
+  </Folder>
+</Solution>

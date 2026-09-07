@@ -1,0 +1,506 @@
+﻿@page "{id:int}"
+@model VeOps.Web.Pages.SessionManager.DetailModel
+@{
+    ViewData["Title"] = Model.Session.BreadcrumbLabel;
+    ViewData["ActiveNav"] = "Sessions";
+    ViewData["WideMain"] = true;
+    Layout = "_AppLayout";
+}
+
+@* Back to the list as it was — filters, sort and page — rather than the unfiltered first page.
+   Validated, because it arrives in the query string. See SafeReturnUrl. *@
+<div class="crumb"><a href="@SafeReturnUrl.Or(Url, Model.ReturnUrl, Url.Page("./Index")!)"><i class="bi bi-arrow-left" aria-hidden="true"></i> Sessions</a> / @Model.Session.BreadcrumbLabel</div>
+
+@if (Model.Session.RescheduleFlagged)
+{
+    <div class="flag-banner">
+        <span><i class="bi bi-flag-fill" aria-hidden="true"></i></span>
+        <span><b>Reschedule flagged for review</b> — this session's date changed while candidates were already registered.</span>
+        @if (Model.CanEdit)
+        {
+            <form method="post" asp-page-handler="ClearFlag">
+                <button type="submit" class="btn-secondary btn-sm">Clear flag</button>
+            </form>
+        }
+    </div>
+}
+
+<div class="session-panel">
+    <div>
+        <h1>@Model.Session.Heading</h1>
+        <div class="meta-grid">
+            <div class="meta-item"><span class="k">VEC</span><span class="v">@Model.Session.VecName</span></div>
+            <div class="meta-item">
+                <span class="k">Zoom</span>
+                <span class="v">
+                    @if (Model.Session.ZoomJoinUrl is not null)
+                    {
+                        <a href="@Model.Session.ZoomJoinUrl" target="_blank" rel="noopener">Join link <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+                    }
+                    else
+                    {
+                        <text>—</text>
+                    }
+                </span>
+            </div>
+            <div class="meta-item">
+                <span class="k">Discord event</span>
+                <span class="v">
+                    @if (Model.Session.DiscordEventUrl is not null)
+                    {
+                        <a href="@Model.Session.DiscordEventUrl" target="_blank" rel="noopener">View <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+                    }
+                    else
+                    {
+                        <text>—</text>
+                    }
+                </span>
+            </div>
+            <div class="meta-item"><span class="k">Fee</span><span class="v mono">@Model.Session.FeeLine</span></div>
+            <div class="meta-item"><span class="k">Total collected</span><span class="v mono">@Model.Session.TotalCollectedLine</span></div>
+            <div class="meta-item">
+                <span class="k">Total retained</span>
+                <span class="v mono">
+                    @Model.Session.TotalRetainedLine
+                    @if (Model.Session.RetainedAmountOverridden)
+                    {
+                        <span class="chip chip-amber" style="margin-left:6px;">Overridden</span>
+                    }
+                    @if (Model.CanEdit)
+                    {
+                        <button type="button" class="btn-secondary btn-sm" style="margin-left:6px;" data-open-modal="retainedAmountOverrideModal">Edit</button>
+                    }
+                </span>
+            </div>
+            <div class="meta-item"><span class="k">Remit to VEC</span><span class="v mono">@Model.Session.TotalRemitToVecLine</span></div>
+            <div class="meta-item"><span class="k">Testing status</span><span class="v">@Model.Session.TestingStatusLine</span></div>
+            <div class="meta-item">
+                <span class="k">VEC submission</span>
+                <span class="v">
+                    <span class="chip @Model.Session.VecSubmissionChipClass">@Model.Session.VecSubmissionChipLabel</span>
+                    @if (!Model.Session.VecSubmitted && Model.CanEdit)
+                    {
+                        @* An ARRL session goes to the preview instead, and goes there as a GET (#197):
+                           the only request that can ever reach ARRL lives on that page, behind a form a
+                           human has read. Every other VEC keeps the toggle, which files nothing and only
+                           records that somebody did it out of band. *@
+                        @if (Model.Session.IsArrlSession)
+                        {
+                            <a asp-page="SubmitToVec" asp-route-id="@Model.Session.Id" class="btn-secondary btn-sm">Submit to ARRL&hellip;</a>
+                        }
+                        else
+                        {
+                            <form method="post" asp-page-handler="ToggleVecSubmission" style="display:inline">
+                                <button type="submit" class="btn-secondary btn-sm">Mark submitted</button>
+                            </form>
+                        }
+                    }
+                </span>
+            </div>
+        </div>
+    </div>
+    <div class="panel-actions">
+        @if (!Model.Session.TestingCompleted && !Model.Session.Cancelled && Model.CanEdit)
+        {
+            <form method="post" asp-page-handler="MarkCompleted">
+                <button type="submit" class="btn-primary">Mark session completed</button>
+            </form>
+        }
+        @if (Model.CanDeleteSession)
+        {
+            <button type="button" class="btn-danger" data-open-modal="deleteSessionModal">Delete session</button>
+        }
+    </div>
+</div>
+
+<div class="section-head">
+    <div>
+        <p class="eyebrow">@Model.Candidates.Count candidates</p>
+        <h2>Candidate roster</h2>
+    </div>
+    @if (Model.CanRunDayOfActions)
+    {
+        <span class="header-actions">
+            @if (Model.CanEdit)
+            {
+                @* A link, not a form: nothing sends until the draft has been read (#144). Beside Refresh
+                   for the same reason "Invite VEs" sits beside the VE roster — the action belongs to the
+                   list it acts on. *@
+                <a class="btn-secondary btn-sm" asp-page="/SessionManager/CandidateEmail" asp-route-id="@Model.Session.Id">
+                    <i class="bi bi-envelope" aria-hidden="true"></i> Email candidates
+                </a>
+                @* The same destination, one click shorter: pick which email you are writing and land on
+                   the compose screen with it already loaded. The plain button above stays, because
+                   "just open it" is still the common case and a menu is a worse way to say that. *@
+                @if (Model.EmailTemplateChoices.Count > 0)
+                {
+                    <div class="nav-group" style="position:relative;">
+                        <button type="button" class="kebab" aria-label="Email candidates from a template">
+                            <i class="bi bi-caret-down-fill" aria-hidden="true"></i>
+                        </button>
+                        <div class="menu">
+                            <div class="menu-head">Start from</div>
+                            @foreach (var choice in Model.EmailTemplateChoices)
+                            {
+                                <a class="item" asp-page="/SessionManager/CandidateEmail"
+                                   asp-route-id="@Model.Session.Id" asp-route-message="@choice.Id">@choice.Label</a>
+                            }
+                            <hr>
+                            <a class="item" asp-page="/SessionManager/CandidateEmail" asp-route-id="@Model.Session.Id">Write your own</a>
+                        </div>
+                    </div>
+                }
+            }
+            @* Rendered for CanRunDayOfActions, not CanEdit: pulling in a last-minute registrant is a
+               day-of action a TeamLead running the session may take — see the page model's doc comment. *@
+            <form method="post" asp-page-handler="RefreshCandidates">
+                <button type="submit" class="btn-secondary btn-sm"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Refresh candidates</button>
+            </form>
+        </span>
+    }
+</div>
+
+<div class="table-scroll">
+<table class="cards" data-sortable="session-candidates">
+    <thead>
+        <tr>
+            <th>Candidate</th>
+            @* #463 — "who's local." Its own column rather than folded into the Candidate cell's
+               call sign/FRN sub-line: that sub-line is identity data, this is a filter/scan
+               question someone answers by scanning the column, not by opening a row. *@
+            <th>City</th>
+            <th>Application status</th>
+            <th>Payment</th>
+            <th>Tested</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model.Candidates.Count == 0)
+        {
+            <tr><td colspan="6">No candidates registered for this session yet.</td></tr>
+        }
+        @foreach (var candidate in Model.Candidates)
+        {
+            <tr>
+                @* Explicit sort values throughout: each of these cells renders more than one piece
+                   of text (call sign + FRN sub-line, refund/mismatch tags, a <i class="bi bi-check-lg" aria-hidden="true"></i>/· glyph), and the
+                   concatenation of all of it is not what the column means. *@
+                <td data-sort-value="@candidate.DisplayName">
+                    <div class="cand-name">
+                        @if (candidate.IsWithdrawn)
+                        {
+                            <span class="no-show">@candidate.DisplayName</span>
+                        }
+                        else
+                        {
+                            <a asp-page="./CandidateDetail" asp-route-id="@candidate.Id">@candidate.DisplayName</a>
+                        }
+                    </div>
+                    <div class="id-cell mono">@candidate.CallSignOrDash <span class="frn">@candidate.FrnLine</span></div>
+                    @* Replaces what the automatic send used to guarantee (#221): without a marker,
+                       "this person still needs the FCC disclosure instructions" is something someone
+                       has to remember rather than something they can see. In the candidate cell
+                       rather than a column of its own — it is a fact about the person, and a whole
+                       column would be empty for almost every row. *@
+                    @if (candidate.AwaitingFelonyInstructions)
+                    {
+                        <div><span class="refund-tag" title="Declared a felony disclosure and has not been sent the FCC instructions. Send them from this row's menu.">Needs BQQ disclosure info</span></div>
+                    }
+                    @* Same reasoning as the BQQ tag above: facts about the person a VE needs at the
+                       door, not columns that would be empty for almost every row. Youth first; the
+                       second tag then answers the age question distinctly (Mike, 2026-08-27) —
+                       "Over 13" needs no COPPA form, under 13 shows whether the form is on file,
+                       and an under-13 with NO form on file is the one state that must read as a
+                       warning, since the form is required before they may test. *@
+                    @if (candidate.DeclaredUnder13 is not null)
+                    {
+                        <div>
+                            <span class="youth-tag" title="Confirmed the reduced youth exam rate — verify under-18 status at the session.">Youth</span>
+                            @if (candidate.DeclaredUnder13 == false)
+                            {
+                                <span class="youth-tag" title="Declared 13 or older on the youth-rate confirmation — no COPPA consent form needed.">Over 13</span>
+                            }
+                            else if (candidate.CoppaFormSent)
+                            {
+                                <span class="youth-tag" title="Confirmed the COPPA parental-consent form was sent to ExamTools — required before an under-13 candidate may test.">COPPA form sent</span>
+                            }
+                            else
+                            {
+                                <span class="refund-tag" title="Declared under 13 with no COPPA parental-consent form confirmed — the form must be on file with ExamTools before they may test.">COPPA form needed</span>
+                            }
+                        </div>
+                    }
+                </td>
+                <td data-sort-value="@candidate.CityStateLine">@candidate.CityStateLine</td>
+                <td>
+                    <div class="status-row">
+                        <div class="meter">
+                            @foreach (var seg in candidate.MeterSegments)
+                            {
+                                <div class="seg @seg"></div>
+                            }
+                        </div>
+                        <span class="status-label">@candidate.StatusLabel</span>
+                    </div>
+                </td>
+                <td data-sort-value="@candidate.PaymentChipLabel">
+                    <span class="chip @candidate.PaymentChipClass">@candidate.PaymentChipLabel</span>
+                    @* Payment.Status stays "Paid" forever once refunded — see SessionChips.Refund's
+                       own doc comment — so without this a refunded candidate read identically to one
+                       who was never refunded. *@
+                    @if (candidate.RefundChipLabel is not null)
+                    {
+                        <span class="chip @candidate.RefundChipClass">@candidate.RefundChipLabel</span>
+                    }
+                    @if (candidate.AmountMismatchLine is not null)
+                    {
+                        <span class="mismatch-tag" title="Matched via Square anyway — this team's real-world payments don't always equal the amount owed (e.g. the ARRL youth rate) until confirmed at test time.">@candidate.AmountMismatchLine</span>
+                    }
+                </td>
+                <td data-sort-value="@(candidate.Tested ? 1 : 0)"><span class="tested-check @(candidate.Tested ? "on" : "")">@if (candidate.Tested) { <i class="bi bi-check-lg" aria-hidden="true"></i> } else { <text>·</text> }</span></td>
+                <td class="row-actions">
+                    @if (!Model.CanRunDayOfActions)
+                    {
+                        <!-- read-only view — no actions -->
+                    }
+                    else if (candidate.IsWithdrawn)
+                    {
+                        <button class="kebab" disabled style="opacity:.35"><i class="bi bi-three-dots-vertical" aria-hidden="true"></i></button>
+                    }
+                    else
+                    {
+                        @* A TeamLead (CanRunDayOfActions without CanEdit) gets this menu with only the
+                           retest item in it — the one candidate action in the day-of grant. *@
+                        <button type="button" class="kebab"><i class="bi bi-three-dots-vertical" aria-hidden="true"></i></button>
+                        <div class="menu">
+                            @if (Model.CanEdit)
+                            {
+                            <button type="button" class="item" data-open-modal="emailHistoryModal-@candidate.Id">Email history</button>
+                            <form method="post" asp-page-handler="ResendConfirmation">
+                                <input type="hidden" name="candidateId" value="@candidate.Id" />
+                                <button type="submit" class="item" disabled="@(!candidate.CanResendConfirmation)">Resend confirmation email</button>
+                            </form>
+                            @* Rendered only when there is a payment id to send (#277). An int? of
+                               null posts "", which cannot bind to the handler's non-nullable int, so
+                               it arrives as 0 and the IDOR re-check turns it into a 403. Latent
+                               while the disabled= holds, and a 403 rather than a wrong-record write
+                               because that check is doing its job — but the form should not be able
+                               to post a value it does not have. *@
+                            @if (candidate.PrimaryPaymentId is { } markPaymentId)
+                            {
+                                <form method="post" asp-page-handler="MarkPaid">
+                                    <input type="hidden" name="paymentId" value="@markPaymentId" />
+                                    <button type="submit" class="item" disabled="@(!candidate.CanMarkPaid)">Mark paid manually</button>
+                                </form>
+                            }
+                            <button type="button" class="item" data-open-modal="frnModal-@candidate.Id">Add / edit FRN</button>
+                            <hr>
+                            <form method="post" asp-page-handler="MarkFailed">
+                                <input type="hidden" name="candidateId" value="@candidate.Id" />
+                                <button type="submit" class="item" disabled="@(!candidate.CanMarkFailed)">Mark failed</button>
+                            </form>
+                            }
+                            <form method="post" asp-page-handler="CreateRetestPayment">
+                                <input type="hidden" name="candidateId" value="@candidate.Id" />
+                                <button type="submit" class="item" disabled="@(!candidate.CanCreateRetestPayment)">Create retest payment</button>
+                            </form>
+                            @if (Model.CanEdit && candidate.CanSendYouthProgram)
+                            {
+                                <form method="post" asp-page-handler="SendYouthProgram">
+                                    <input type="hidden" name="candidateId" value="@candidate.Id" />
+                                    <button type="submit" class="item">Send Youth Program instructions</button>
+                                </form>
+                            }
+                            @* Manual since #221. It was sent automatically on marking the session
+                               complete, which meant it always arrived after the session — when the
+                               candidate can no longer easily ask anyone about it. The label names the
+                               person because telling the wrong one that their felony disclosure needs
+                               FCC paperwork is the mistake worth designing against. *@
+                            @if (Model.CanEdit && candidate.CanSendFelonyInstructions)
+                            {
+                                <form method="post" asp-page-handler="SendFelonyInstructions">
+                                    <input type="hidden" name="candidateId" value="@candidate.Id" />
+                                    <button type="submit" class="item">Send felony disclosure instructions to @candidate.DisplayName</button>
+                                </form>
+                            }
+                            @if (Model.CanEdit)
+                            {
+                            <hr>
+                            <form method="post" asp-page-handler="DeleteCandidate">
+                                <input type="hidden" name="candidateId" value="@candidate.Id" />
+                                <button type="submit" class="item danger" disabled="@(!candidate.CanDelete)">Delete (no-show / withdrew)</button>
+                            </form>
+                            }
+                        </div>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+</div>
+
+@* Withdrawn candidates are kept out of the roster above but not hidden outright: they still hold a
+   record for statistics, and someone occasionally needs to confirm that a name they remember really
+   did move rather than vanish. A native <details> keeps that one tap away with no JavaScript, no
+   query parameter and no extra page load, and renders nothing at all when there are none. *@
+@if (Model.WithdrawnCandidates.Count > 0)
+{
+    <details class="withdrawn-roster">
+        <summary>@Model.WithdrawnCandidates.Count withdrawn or moved candidate(s)</summary>
+        <p class="session-sub">Left this session in ExamTools. Their personal details were cleared; the record is kept so session statistics stay accurate.</p>
+        <div class="table-scroll">
+        <table class="cards">
+            <thead>
+                <tr>
+                    <th>Candidate</th>
+                    <th>Application status</th>
+                    <th>Payment</th>
+                    <th>Tested</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var candidate in Model.WithdrawnCandidates)
+                {
+                    <tr class="row-past">
+                        <td class="cand-name"><span class="no-show">@candidate.DisplayName</span></td>
+                        <td>@candidate.StatusLabel</td>
+                        <td><span class="chip @candidate.PaymentChipClass">@candidate.PaymentChipLabel</span></td>
+                        <td><span class="tested-check@(candidate.Tested ? " on" : "")">@if (candidate.Tested) { <i class="bi bi-check-lg" aria-hidden="true"></i> } else { <text>·</text> }</span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        </div>
+    </details>
+}
+
+<footer class="roster">
+    <div class="section-head" style="margin:0">
+        <div>
+            <p class="eyebrow">Volunteer examiners</p>
+            <h2>VE roster</h2>
+        </div>
+        @* Read-only on purpose: the roster comes from ExamTools and is fully reconciled there on
+           every poll, so an in-app add/remove was undone on the next tick. See docs/session-manager-ui.md. *@
+        @if (Model.CanEdit)
+        {
+            <a class="btn-secondary btn-sm" asp-page="/SessionManager/VeInvite" asp-route-id="@Model.Session.Id">Invite VEs</a>
+        }
+    </div>
+    <div class="roster-list">
+        @if (Model.VeRoster.Count == 0)
+        {
+            <span class="mono">No VEs on this session's roster yet.</span>
+        }
+        @foreach (var ve in Model.VeRoster)
+        {
+            @* Marker only when there is something to say — a tick on every clear VE would make the
+               warning invisible by familiarity. Problem and unverified are visually distinct: one
+               means they cannot serve, the other means nobody has checked. *@
+            <span class="ve-chip" title="@ve.Eligibility.Summary">
+                @ve.CallSign — @ve.Name
+                @if (ve.Eligibility.HasProblem)
+                {
+                    <i class="bi bi-exclamation-triangle-fill ve-flag-problem" aria-hidden="true"></i>
+                    <span class="visually-hidden">Cannot serve this session</span>
+                }
+                else if (ve.Eligibility.HasUnknown)
+                {
+                    <i class="bi bi-question-circle ve-flag-unknown" aria-hidden="true"></i>
+                    <span class="visually-hidden">Eligibility unverified</span>
+                }
+            </span>
+        }
+    </div>
+</footer>
+
+@if (Model.CanDeleteSession)
+{
+    <!-- Delete session modal — TeamAdmin/SystemAdmin-only, see docs/session-manager-ui.md -->
+    <div class="modal-backdrop" id="deleteSessionModal">
+        <div class="modal">
+            <h3>Delete session @Model.Session.BreadcrumbLabel?</h3>
+            <p>
+                This permanently deletes this session, along with @Model.TotalCandidateCount candidate(s),
+                every payment record attached to them, and @Model.VeRoster.Count VE roster assignment(s).
+                <b>This cannot be undone.</b>
+            </p>
+            <form method="post" asp-page-handler="DeleteSession">
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary btn-sm" data-close-modal>Cancel</button>
+                    <button type="submit" class="btn-danger btn-sm">Delete session</button>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+
+@if (Model.CanEdit)
+{
+    <!-- Retained amount override modal -->
+    <div class="modal-backdrop" id="retainedAmountOverrideModal">
+        <div class="modal">
+            <h3>Override total retained for this session</h3>
+            <p class="session-sub">
+                The default is @Model.Session.FeeLine, applied per candidate and summed. Most sessions'
+                real costs (pencils, paper, postage) are a flat session expense, not a per-candidate
+                one — enter the actual total your team is keeping from this session instead. Leave
+                blank to clear the override and go back to the per-candidate default.
+            </p>
+            <form method="post" asp-page-handler="SetRetainedAmountOverride">
+                <div class="field">
+                    <label for="retainedAmountOverride">Total retained ($)</label>
+                    <input id="retainedAmountOverride" name="overrideAmount" type="number" step="0.01" min="0" value="@Model.Session.RetainedAmountOverrideRawValue" placeholder="Use per-candidate default" />
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary btn-sm" data-close-modal>Cancel</button>
+                    <button type="submit" class="btn-primary btn-sm">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @foreach (var candidate in Model.Candidates.Where(c => !c.IsWithdrawn))
+    {
+        <div class="modal-backdrop" id="emailHistoryModal-@candidate.Id">
+            <div class="modal">
+                <h3>Email history — @candidate.DisplayName</h3>
+                @if (candidate.EmailHistory.Count == 0)
+                {
+                    <p class="mono">No emails sent yet.</p>
+                }
+                else
+                {
+                    <table>
+                        <tbody>
+                            @foreach (var line in candidate.EmailHistory)
+                            {
+                                <tr><td>@line.Label</td><td class="mono">@line.SentDisplay</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary btn-sm" data-close-modal>Close</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-backdrop" id="frnModal-@candidate.Id">
+            <div class="modal">
+                <h3>Add / edit FRN</h3>
+                <form method="post" asp-page-handler="SetFrn">
+                    <input type="hidden" name="candidateId" value="@candidate.Id" />
+                    <div class="field"><label for="frn-@candidate.Id">FRN</label><input id="frn-@candidate.Id" name="frn" required /></div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary btn-sm" data-close-modal>Cancel</button>
+                        <button type="submit" class="btn-primary btn-sm">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    }
+}

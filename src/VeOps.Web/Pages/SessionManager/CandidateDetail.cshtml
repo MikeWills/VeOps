@@ -1,0 +1,355 @@
+@page "{id:int}"
+@model VeOps.Web.Pages.SessionManager.CandidateDetailModel
+@{
+    ViewData["Title"] = Model.Candidate.DisplayName;
+    ViewData["ActiveNav"] = "Sessions";
+    Layout = "_AppLayout";
+    var c = Model.Candidate;
+}
+
+<div class="crumb">
+    <a asp-page="./Index"><i class="bi bi-arrow-left" aria-hidden="true"></i> Sessions</a> /
+    <a asp-page="./Detail" asp-route-id="@c.SessionId">@c.SessionBreadcrumbLabel</a> /
+    @c.DisplayName
+</div>
+
+<div class="session-panel">
+    <div>
+        <h1>@c.DisplayName</h1>
+        <div class="meta-grid">
+            <div class="meta-item"><span class="k">Session</span><span class="v"><a asp-page="./Detail" asp-route-id="@c.SessionId">@c.SessionDateLine</a></span></div>
+            <div class="meta-item"><span class="k">Status</span><span class="v">@c.StatusLabel</span></div>
+            <div class="meta-item">
+                <span class="k">Call sign</span>
+                <span class="v mono">
+                    @(c.CallSign ?? "—")
+                    @if (c.FccLicenseUrl is not null)
+                    {
+                        <a href="@c.FccLicenseUrl" target="_blank" rel="noopener">(FCC license <i class="bi bi-arrow-up-right" aria-hidden="true"></i>)</a>
+                    }
+                </span>
+            </div>
+            <div class="meta-item"><span class="k">FRN</span><span class="v mono">@c.FrnLine</span></div>
+            @if (!c.IsWithdrawn)
+            {
+                <div class="meta-item"><span class="k">Email</span><span class="v">@(c.Email ?? "—")</span></div>
+                <div class="meta-item">
+                    <span class="k">Felony disclosure</span>
+                    <span class="v">
+                        @(c.HasFelonyDisclosure is null ? "—" : c.HasFelonyDisclosure.Value ? "Yes" : "No")
+                        @if (c.AwaitingFelonyInstructions)
+                        {
+                            <span class="refund-tag" title="Declared a disclosure and has not been sent the FCC instructions. Send them from the actions menu.">FCC instructions not sent</span>
+                        }
+                    </span>
+                </div>
+            }
+            @* The honor-system answers from the public youth-rate confirmation page (2026-08-27) —
+               shown only once that form was completed, since "—" on every ordinary adult candidate
+               would just be noise. The COPPA line survives PII purge (compliance record); the
+               under-13 answer does not. *@
+            @if (c.DeclaredUnder13 is not null)
+            {
+                <div class="meta-item">
+                    <span class="k">Youth rate</span>
+                    <span class="v">
+                        Confirmed — under 13: @(c.DeclaredUnder13.Value ? "Yes" : "No")@(c.DeclaredUnder13.Value && c.CoppaFormSentLine is not null ? $", COPPA form sent to ExamTools (confirmed {c.CoppaFormSentLine})" : "")
+                    </span>
+                </div>
+            }
+            else if (c.CoppaFormSentLine is not null)
+            {
+                @* PII purge cleared the under-13 answer but the COPPA compliance record remains. *@
+                <div class="meta-item">
+                    <span class="k">Youth rate</span>
+                    <span class="v">COPPA form sent to ExamTools (confirmed @c.CoppaFormSentLine)</span>
+                </div>
+            }
+            <div class="meta-item"><span class="k">Registered</span><span class="v mono">@c.RegisteredLine</span></div>
+            <div class="meta-item"><span class="k">FCC application entered</span><span class="v mono">@(c.ApplicationDateLine ?? "—")</span></div>
+            <div class="meta-item"><span class="k">License granted</span><span class="v mono">@(c.LicenseGrantDateLine ?? "—")</span></div>
+            @if (c.ApplicationTimeline.Count > 0)
+            {
+                @* #195. FCC's own application history, from the ULS lookup the watcher already makes.
+                   Rendered here rather than linked because wireless2.fcc.gov Akamai-403s this
+                   deployment — there is no FCC page to send anyone to. *@
+                <div class="meta-item" style="flex-basis:100%">
+                    <span class="k">FCC application history</span>
+                    <span class="v">
+                        <ul class="uls-timeline">
+                            @foreach (var entry in c.ApplicationTimeline)
+                            {
+                                <li>
+                                    <span class="mono">@entry.DateLine</span>
+                                    <span>@entry.Description</span>
+                                    @if (entry.Code != entry.Description)
+                                    {
+                                        <span class="mono" style="color:var(--ink-soft)">@entry.Code</span>
+                                    }
+                                </li>
+                            }
+                        </ul>
+                    </span>
+                </div>
+            }
+            @if (c.LicenseNote is not null)
+            {
+                <div class="meta-item" style="flex-basis:100%"><span class="v" style="color:var(--ink-soft)">@c.LicenseNote</span></div>
+            }
+            <div class="meta-item">
+                <span class="k">Tested</span>
+                <span class="v"><span class="tested-check @(c.Tested ? "on" : "")">@if (c.Tested) { <i class="bi bi-check-lg" aria-hidden="true"></i> } else { <text>·</text> }</span></span>
+            </div>
+            @if (c.LicenseClassLine is not null)
+            {
+                <div class="meta-item"><span class="k">License class</span><span class="v">@c.LicenseClassLine</span></div>
+            }
+            @if (c.ResultMarkedLine is not null)
+            {
+                <div class="meta-item"><span class="k">Result marked</span><span class="v mono">@c.ResultMarkedLine @(c.ResultMarkedByName is not null ? $"by {c.ResultMarkedByName}" : "")</span></div>
+            }
+        </div>
+    </div>
+    @if (Model.CanEdit && !c.IsWithdrawn)
+    {
+        <div class="panel-actions">
+            <div class="row-actions">
+                <button type="button" class="kebab"><i class="bi bi-three-dots-vertical" aria-hidden="true"></i></button>
+                <div class="menu">
+                    <button type="button" class="item" data-open-modal="frnModal">Add / edit FRN</button>
+                    <form method="post" asp-page-handler="ResendConfirmation">
+                        <button type="submit" class="item" disabled="@(!c.CanResendConfirmation)">Resend confirmation email</button>
+                    </form>
+                    <hr>
+                    <form method="post" asp-page-handler="MarkFailed">
+                        <button type="submit" class="item" disabled="@(!c.CanMarkFailed)">Mark failed</button>
+                    </form>
+                    <form method="post" asp-page-handler="CreateRetestPayment">
+                        <button type="submit" class="item" disabled="@(!c.CanCreateRetestPayment)">Create retest payment</button>
+                    </form>
+                    @if (c.CanSendYouthProgram)
+                    {
+                        <form method="post" asp-page-handler="SendYouthProgram">
+                            <button type="submit" class="item">Send Youth Program instructions</button>
+                        </form>
+                    }
+                    @* Manual since #221 — it used to ride along with marking the session complete,
+                       which meant it always arrived after the session. *@
+                    @if (c.CanSendFelonyInstructions)
+                    {
+                        <form method="post" asp-page-handler="SendFelonyInstructions">
+                            <button type="submit" class="item">Send felony disclosure instructions</button>
+                        </form>
+                    }
+                    <hr>
+                    <form method="post" asp-page-handler="DeleteCandidate">
+                        <button type="submit" class="item danger" disabled="@(!c.CanDelete)">Delete (no-show / withdrew)</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<div class="section-head">
+    <div>
+        <p class="eyebrow">@c.Payments.Count payment(s)</p>
+        <h2>Payments</h2>
+    </div>
+</div>
+
+<div class="table-scroll">
+<table class="cards" data-sortable="candidate-payments">
+    <thead>
+        <tr>
+            <th>Reason</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Paid</th>
+            @* Just an "Open link <i class="bi bi-arrow-up-right" aria-hidden="true"></i>" anchor or an em dash — nothing meaningful to order by. *@
+            <th data-sort="none">Payment link</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (c.Payments.Count == 0)
+        {
+            <tr><td colspan="6">No payments on file.</td></tr>
+        }
+        @foreach (var payment in c.Payments)
+        {
+            <tr>
+                <td>@payment.ReasonLabel</td>
+                <td class="mono">@payment.AmountLine</td>
+                @* Explicit sort value — the cell also carries refund/mismatch/expiry tags, which
+                   aren't part of what the Status column means. *@
+                <td data-sort-value="@payment.ChipLabel">
+                    <span class="chip @payment.ChipClass">@payment.ChipLabel</span>
+                    @if (payment.AmountMismatchLine is not null)
+                    {
+                        <span class="mismatch-tag" title="Matched via Square anyway — this team's real-world payments don't always equal the amount owed (e.g. the ARRL youth rate) until confirmed at test time.">@payment.AmountMismatchLine</span>
+                    }
+                    @if (payment.SquareOrderCompleted)
+                    {
+                        <span class="mono" style="font-size:.85em;color:var(--ink-soft)">Square order completed</span>
+                    }
+                    @* Real refunds (#375), as opposed to the "refund requested" note above them.
+                       Listed rather than summarized because a payment can have several — a partial
+                       refund is the right remedy for an amount mismatch — and because a rejected one
+                       has to stay visible; a count would hide exactly the case somebody must act on. *@
+                    @foreach (var refund in payment.Refunds)
+                    {
+                        <div>
+                            <span class="chip @refund.ChipClass">@refund.ChipLabel @refund.AmountLine</span>
+                            @if (refund.Reason is not null)
+                            {
+                                <span class="mono" style="font-size:.85em;color:var(--ink-soft)">@refund.Reason</span>
+                            }
+                            @if (refund.FailureDetail is not null)
+                            {
+                                <div class="mismatch-tag">@refund.FailureDetail</div>
+                            }
+                        </div>
+                    }
+                    @if (payment.RefundBlockedReason is not null)
+                    {
+                        <span class="mono" style="font-size:.85em;color:var(--ink-soft)">@payment.RefundBlockedReason</span>
+                    }
+                </td>
+                <td class="mono" data-sort-value="@payment.PaidDateSortValue">@(payment.PaidDateLine ?? "—")</td>
+                <td>
+                    @if (payment.PaymentLinkUrl is not null)
+                    {
+                        <a href="@payment.PaymentLinkUrl" target="_blank" rel="noopener">Open link <i class="bi bi-arrow-up-right" aria-hidden="true"></i></a>
+                    }
+                    else
+                    {
+                        <text>—</text>
+                    }
+                </td>
+                <td class="row-actions">
+                    @if (Model.CanEdit && !c.IsWithdrawn)
+                    {
+                        <button type="button" class="kebab"><i class="bi bi-three-dots-vertical" aria-hidden="true"></i></button>
+                        <div class="menu">
+                            <form method="post" asp-page-handler="MarkPaid">
+                                <input type="hidden" name="paymentId" value="@payment.Id" />
+                                <button type="submit" class="item" disabled="@(!payment.CanMarkPaid)">Mark paid manually</button>
+                            </form>
+                            <button type="button" class="item" data-open-modal="issueRefundModal-@payment.Id" disabled="@(!payment.CanRefund)">Refund…</button>
+                        </div>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+</div>
+
+<div class="section-head">
+    <div><h2>Email history</h2></div>
+</div>
+@if (c.EmailHistory.Count == 0)
+{
+    <p class="mono">No emails sent yet.</p>
+}
+else
+{
+    <table>
+        <tbody>
+            @foreach (var line in c.EmailHistory)
+            {
+                <tr><td>@line.Label</td><td class="mono">@line.SentDisplay</td></tr>
+            }
+        </tbody>
+    </table>
+}
+
+@if (c.OtherAttempts.Count > 0)
+{
+    <div class="section-head">
+        <div>
+            <p class="eyebrow">Same FRN, different registration@(c.OtherAttempts.Count == 1 ? "" : "s")</p>
+            <h2>Other sessions with this FRN</h2>
+        </div>
+    </div>
+    <div class="table-scroll">
+    <table class="cards" data-sortable="other-attempts">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Session</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var other in c.OtherAttempts)
+            {
+                <tr>
+                    <td>@other.Name</td>
+                    <td class="mono" data-sort-value="@other.SessionDateSortValue"><a asp-page="./CandidateDetail" asp-route-id="@other.CandidateId">@other.SessionDateLine</a></td>
+                    <td>@other.StatusLabel</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    </div>
+}
+
+@if (Model.CanEdit && !c.IsWithdrawn)
+{
+    <div class="modal-backdrop" id="frnModal">
+        <div class="modal">
+            <h3>Add / edit FRN</h3>
+            <form method="post" asp-page-handler="SetFrn">
+                <div class="field"><label for="frn">FRN</label><input id="frn" name="frn" required /></div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary btn-sm" data-close-modal>Cancel</button>
+                    <button type="submit" class="btn-primary btn-sm">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @foreach (var payment in c.Payments)
+    {
+        @* The refund modal (#375). Rendered only where it can be used, rather than always present
+           with a disabled trigger: this form moves money, and a modal that cannot be reached is a modal
+           whose form cannot be posted by hand either. *@
+        @if (payment.CanRefund)
+        {
+            <div class="modal-backdrop" id="issueRefundModal-@payment.Id">
+                <div class="modal">
+                    <h3>Refund</h3>
+                    <p>
+                        This sends money back to the candidate through Square straight away. It cannot be
+                        undone from here. <strong>@payment.AmountLine</strong> was charged;
+                        <strong>@Usd.Format(payment.RemainingRefundableUsd)</strong> is still refundable.
+                    </p>
+                    <form method="post" asp-page-handler="Refund">
+                        <input type="hidden" name="paymentId" value="@payment.Id" />
+                        <div class="field">
+                            <label for="refund-amount-@payment.Id">Amount to refund</label>
+                            @* Defaults to the full remaining amount — the common case is a whole refund,
+                               and a partial one is a deliberate edit rather than something to assemble
+                               from an empty box. step/min are the browser's help only; RefundService
+                               re-checks the number against what Square will actually accept. *@
+                            <input id="refund-amount-@payment.Id" name="amount" type="number" step="0.01"
+                                   min="0.01" max="@payment.RemainingRefundableRaw"
+                                   value="@payment.RemainingRefundableRaw" required />
+                        </div>
+                        <div class="field">
+                            <label for="refund-reason-@payment.Id">Reason (optional)</label>
+                            <input id="refund-reason-@payment.Id" name="reason" maxlength="192" />
+                            <span class="mono" style="font-size:.85em;color:var(--ink-soft)">Shown in the Square dashboard as well as here.</span>
+                        </div>
+                        <div class="modal-actions">
+                            <button type="button" class="btn-secondary btn-sm" data-close-modal>Cancel</button>
+                            <button type="submit" class="btn-primary btn-sm">Refund</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        }
+    }
+}

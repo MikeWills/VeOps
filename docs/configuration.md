@@ -76,7 +76,7 @@ most single-license accounts.
 Discord's bot token is one shared credential:
 
 ```bash
-dotnet user-secrets set "Discord:BotToken" "<token>" --project src/VeSessionManager.Worker
+dotnet user-secrets set "Discord:BotToken" "<token>" --project src/VeOps.Worker
 ```
 
 Each team then sets its own `DiscordGuildId` — not a secret, and `null`/`0` reads as "not configured"
@@ -133,10 +133,10 @@ ExamTools is configured, this works. Cadence is set by `UlsWatcherStartHourEt` /
 Username and password work out of the box. Google and Microsoft are optional:
 
 ```bash
-dotnet user-secrets set "Authentication:Google:ClientId" "<id>" --project src/VeSessionManager.Web
-dotnet user-secrets set "Authentication:Google:ClientSecret" "<secret>" --project src/VeSessionManager.Web
-dotnet user-secrets set "Authentication:Microsoft:ClientId" "<id>" --project src/VeSessionManager.Web
-dotnet user-secrets set "Authentication:Microsoft:ClientSecret" "<secret>" --project src/VeSessionManager.Web
+dotnet user-secrets set "Authentication:Google:ClientId" "<id>" --project src/VeOps.Web
+dotnet user-secrets set "Authentication:Google:ClientSecret" "<secret>" --project src/VeOps.Web
+dotnet user-secrets set "Authentication:Microsoft:ClientId" "<id>" --project src/VeOps.Web
+dotnet user-secrets set "Authentication:Microsoft:ClientSecret" "<secret>" --project src/VeOps.Web
 ```
 
 Apple sign-in is deliberately not built (cost tradeoff — see [`admin-auth.md`](admin-auth.md)).

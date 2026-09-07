@@ -10,7 +10,7 @@
 - Business logic (state machines, date/threshold calculations, matching/join logic) must be unit-testable in isolation from external I/O — wrap Zoom/Discord/Square/FCC/email calls behind interfaces so they can be mocked (e.g. `IZoomClient`, `ISquareClient`, `IUlsFileParser`, `IEmailSender`)
 - External API calls themselves are not unit tested against the live service — verify those manually per the phase's "Deliverable" step; unit tests instead cover your code's handling of known request/response shapes (mocked)
 - File-parsing logic (ULS pipe-delimited records) gets tests against small fixture files, not live downloads
-- Keep test projects mirroring the main projects (e.g. `VeSessionManager.Core.Tests` next to `VeSessionManager.Core`)
+- Keep test projects mirroring the main projects (e.g. `VeOps.Core.Tests` next to `VeOps.Core`)
 
 ---
 
@@ -166,7 +166,7 @@ JobRunHistory
 - Source control: private GitHub repository, deployed similarly to NcsScheduler — set this up as part of this phase (repo created as private, not public)
 - Deployment trigger: **only on tags, not on every commit to main/master** — set up the deploy workflow (e.g. GitHub Actions) to fire on tag push (e.g. `v1.0.0`) rather than continuous deployment on every push, so releases are deliberate
 
-**Unit Tests:** Test project scaffolded now (`VeSessionManager.Core.Tests`), even though there's little logic yet — establishes the pattern for every later phase. Cover the `JobRunHistory` logging helper (success path, exception-caught path).
+**Unit Tests:** Test project scaffolded now (`VeOps.Core.Tests`), even though there's little logic yet — establishes the pattern for every later phase. Cover the `JobRunHistory` logging helper (success path, exception-caught path).
 
 **Deliverable:** Solution builds, migration creates the DB, a dummy "hello world" job runs on a timer and logs to `JobRunHistory`.
 
@@ -426,7 +426,7 @@ features (ARRL's own youth discount program), not a generic VEC concept.
   - Microsoft (`Microsoft.AspNetCore.Authentication.MicrosoftAccount` — standard `AddMicrosoftAccount(...)`, pairs naturally with existing Entra ID familiarity)
   - Apple (community package `AspNet.Security.OAuth.Apple` — more involved setup: requires a signed JWT client secret generated from a `.p8` private key, Team ID, and Key ID from an active Apple Developer account; confirm the $99/year Developer account cost is worth it before committing to this provider, versus just Google + Microsoft + username/password)
   - Reference: https://learn.microsoft.com/en-us/aspnet/core/security/authentication/social/?view=aspnetcore-10.0 and https://github.com/aspnet-contrib/AspNet.Security.OAuth.Providers/blob/dev/docs/sign-in-with-apple.md
-- Role assignment (`User.Role`) and the authorization scoping rules described above — build the *mechanism* (policies/handlers that filter queries by role) even though there's barely any real data to filter yet. Landed as `SessionAccessScope` (`VeSessionManager.Core/Authorization/`), plain C# so it's unit-tested without a web host.
+- Role assignment (`User.Role`) and the authorization scoping rules described above — build the *mechanism* (policies/handlers that filter queries by role) even though there's barely any real data to filter yet. Landed as `SessionAccessScope` (`VeOps.Core/Authorization/`), plain C# so it's unit-tested without a web host.
 - Basic navigation shell reflecting every role (empty/placeholder pages are fine — this phase proves the auth and scoping work, not the features)
 - **Built username/password + Google + Microsoft; Apple decided against** (confirmed with the user 2026-07-22 — not just deferred, the $99/year Developer account cost was judged not worth it, matching this section's own suggested fallback)
 
@@ -502,10 +502,10 @@ features (ARRL's own youth discount program), not a generic VEC concept.
 
 ## Backlog (not scoped into a phase yet)
 
-- **VEC discount programs** — [issue #189](https://github.com/MikeWills/VeSessionManager/issues/189). Structure varies by VEC and is not standardized, so it needs real examples before it can be scoped.
-- **No-FRN batch export** — [issue #190](https://github.com/MikeWills/VeSessionManager/issues/190). Export `FrnMissingAtRegistration` candidates once their FRNs are collected. Not needed until the scenario recurs; the flag is already tracked, so the data will be there.
-- **VE license expiration tracking** — **DONE (2026-08-07)**, [issue #107](https://github.com/MikeWills/VeSessionManager/issues/107) closed with the VE management work. See `docs/ve-license-tracking.md`. Not to be confused with the Renewal Monitor (`docs/renewal-monitor.md`), which watches a hand-curated list of arbitrary call signs; this is the roster itself.
-- **VE contact list + in-platform messaging** — [issue #191](https://github.com/MikeWills/VeSessionManager/issues/191). The blocker is the data source: ExamTools' `DEVDOC.VEs` carries only `call`/`name`/`number?`, so phone/email would need hand entry. Partially overtaken — an admin can now set a VE's email (2026-08-07).
+- **VEC discount programs** — [issue #189](https://github.com/MikeWills/VeOps/issues/189). Structure varies by VEC and is not standardized, so it needs real examples before it can be scoped.
+- **No-FRN batch export** — [issue #190](https://github.com/MikeWills/VeOps/issues/190). Export `FrnMissingAtRegistration` candidates once their FRNs are collected. Not needed until the scenario recurs; the flag is already tracked, so the data will be there.
+- **VE license expiration tracking** — **DONE (2026-08-07)**, [issue #107](https://github.com/MikeWills/VeOps/issues/107) closed with the VE management work. See `docs/ve-license-tracking.md`. Not to be confused with the Renewal Monitor (`docs/renewal-monitor.md`), which watches a hand-curated list of arbitrary call signs; this is the roster itself.
+- **VE contact list + in-platform messaging** — [issue #191](https://github.com/MikeWills/VeOps/issues/191). The blocker is the data source: ExamTools' `DEVDOC.VEs` carries only `call`/`name`/`number?`, so phone/email would need hand entry. Partially overtaken — an admin can now set a VE's email (2026-08-07).
 
 ## Suggested order of attack
 

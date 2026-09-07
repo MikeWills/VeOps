@@ -16,26 +16,26 @@ race (T07, T08), the FRN-is-not-PII decision (T03, T19), and the Square/ExamTool
 done 2026-08-06 before live payment testing).
 
 The remaining 25 are now issues, one per task, keeping their original T-numbers in the title:
-→ **[label: `audit-2026-08-03`](https://github.com/MikeWills/VeSessionManager/labels/audit-2026-08-03)**
+→ **[label: `audit-2026-08-03`](https://github.com/MikeWills/VeOps/labels/audit-2026-08-03)**
 
 | | P1 | P2 | P3 | P4 |
 |---|---|---|---|---|
-| | [T09](https://github.com/MikeWills/VeSessionManager/issues/156) jQuery not loaded | [T15](https://github.com/MikeWills/VeSessionManager/issues/158) fallback authz policy | [T22](https://github.com/MikeWills/VeSessionManager/issues/163) Users dropdown / filter loss | [T26](https://github.com/MikeWills/VeSessionManager/issues/167) `Session.IsCompleted` |
-| | [T12](https://github.com/MikeWills/VeSessionManager/issues/157) **key ring beside the DB** | [T16](https://github.com/MikeWills/VeSessionManager/issues/159) auth cookie expiry | [T23](https://github.com/MikeWills/VeSessionManager/issues/164) sort wiped by filter | [T27](https://github.com/MikeWills/VeSessionManager/issues/168) `TeamEmailDispatcher` |
-| | | [T18](https://github.com/MikeWills/VeSessionManager/issues/160) silent decrypt fallback | [T24](https://github.com/MikeWills/VeSessionManager/issues/165) `.pill-count` unstyled | [T28](https://github.com/MikeWills/VeSessionManager/issues/169) `CandidatePresentation` |
-| | | [T20](https://github.com/MikeWills/VeSessionManager/issues/161) serialize pipeline runs | [T25](https://github.com/MikeWills/VeSessionManager/issues/166) call sign normalize | [T29](https://github.com/MikeWills/VeSessionManager/issues/170) Sessions list `Include` |
-| | | [T21](https://github.com/MikeWills/VeSessionManager/issues/162) schema hygiene migration | | [T30](https://github.com/MikeWills/VeSessionManager/issues/171) `AsNoTracking` pass |
-| | | | | [T31](https://github.com/MikeWills/VeSessionManager/issues/172) credential helpers |
-| | | | | [T32](https://github.com/MikeWills/VeSessionManager/issues/173) money/chip formatters |
-| | | | | [T33](https://github.com/MikeWills/VeSessionManager/issues/174) inline `AuditLog` sites |
-| | | | | [T34](https://github.com/MikeWills/VeSessionManager/issues/175) split giant methods |
-| | | | | [T35](https://github.com/MikeWills/VeSessionManager/issues/176) small perf batch |
-| | | | | [T36](https://github.com/MikeWills/VeSessionManager/issues/177) dead-code removal |
-| | | | | [T37](https://github.com/MikeWills/VeSessionManager/issues/178) low-severity security |
-| | | | | [T38](https://github.com/MikeWills/VeSessionManager/issues/179) Worker polish |
-| | | | | [T39](https://github.com/MikeWills/VeSessionManager/issues/180) consistency cosmetics |
+| | [T09](https://github.com/MikeWills/VeOps/issues/156) jQuery not loaded | [T15](https://github.com/MikeWills/VeOps/issues/158) fallback authz policy | [T22](https://github.com/MikeWills/VeOps/issues/163) Users dropdown / filter loss | [T26](https://github.com/MikeWills/VeOps/issues/167) `Session.IsCompleted` |
+| | [T12](https://github.com/MikeWills/VeOps/issues/157) **key ring beside the DB** | [T16](https://github.com/MikeWills/VeOps/issues/159) auth cookie expiry | [T23](https://github.com/MikeWills/VeOps/issues/164) sort wiped by filter | [T27](https://github.com/MikeWills/VeOps/issues/168) `TeamEmailDispatcher` |
+| | | [T18](https://github.com/MikeWills/VeOps/issues/160) silent decrypt fallback | [T24](https://github.com/MikeWills/VeOps/issues/165) `.pill-count` unstyled | [T28](https://github.com/MikeWills/VeOps/issues/169) `CandidatePresentation` |
+| | | [T20](https://github.com/MikeWills/VeOps/issues/161) serialize pipeline runs | [T25](https://github.com/MikeWills/VeOps/issues/166) call sign normalize | [T29](https://github.com/MikeWills/VeOps/issues/170) Sessions list `Include` |
+| | | [T21](https://github.com/MikeWills/VeOps/issues/162) schema hygiene migration | | [T30](https://github.com/MikeWills/VeOps/issues/171) `AsNoTracking` pass |
+| | | | | [T31](https://github.com/MikeWills/VeOps/issues/172) credential helpers |
+| | | | | [T32](https://github.com/MikeWills/VeOps/issues/173) money/chip formatters |
+| | | | | [T33](https://github.com/MikeWills/VeOps/issues/174) inline `AuditLog` sites |
+| | | | | [T34](https://github.com/MikeWills/VeOps/issues/175) split giant methods |
+| | | | | [T35](https://github.com/MikeWills/VeOps/issues/176) small perf batch |
+| | | | | [T36](https://github.com/MikeWills/VeOps/issues/177) dead-code removal |
+| | | | | [T37](https://github.com/MikeWills/VeOps/issues/178) low-severity security |
+| | | | | [T38](https://github.com/MikeWills/VeOps/issues/179) Worker polish |
+| | | | | [T39](https://github.com/MikeWills/VeOps/issues/180) consistency cosmetics |
 
-**[T12](https://github.com/MikeWills/VeSessionManager/issues/157) leads what's left:** the Data
+**[T12](https://github.com/MikeWills/VeOps/issues/157) leads what's left:** the Data
 Protection key ring sits beside the SQLite database, so one leaked backup carries both the ciphertext
 and the key that decrypts it.
 

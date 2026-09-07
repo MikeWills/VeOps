@@ -1,7 +1,7 @@
 # The alert bell (2026-08-16)
 
 One place in the chassis that answers "is anything wrong right now", and takes you to the row it is
-about. Issue [#339](https://github.com/MikeWills/VeSessionManager/issues/339).
+about. Issue [#339](https://github.com/MikeWills/VeOps/issues/339).
 
 ## Why a bell rather than another badge
 
@@ -106,7 +106,7 @@ page listing forty is worse than no bell.
 
 ## Third source: sessions skipped for missing configuration (#440, 2026-08-20)
 
-Split out of [#402](https://github.com/MikeWills/VeSessionManager/issues/402), where it was diagnosed
+Split out of [#402](https://github.com/MikeWills/VeOps/issues/402), where it was diagnosed
 and then buried in a comment for three days.
 
 `SessionIngestionService` refuses to create a session it cannot configure — no `Vec` matches the

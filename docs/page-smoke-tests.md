@@ -1,6 +1,6 @@
 # Page smoke tests (2026-08-10)
 
-`tests/VeSessionManager.Web.Tests` boots the real Web app in-process with `WebApplicationFactory`,
+`tests/VeOps.Web.Tests` boots the real Web app in-process with `WebApplicationFactory`,
 against a throwaway SQLite database, and requests every Razor page.
 
 ## Why

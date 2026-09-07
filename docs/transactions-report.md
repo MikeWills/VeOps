@@ -50,8 +50,8 @@ that happen to share a `Payment` row underneath.
 
 `TransactionsReportModel.BuildRows(payments, fromUtc, toUtc)` is `internal static` and pulled out of
 `OnGetAsync` on purpose, so the flattening/signing logic — the part actually worth getting right — is
-testable without a database, `HttpContext`, or a signed-in user. `VeSessionManager.Web`'s
-`InternalsVisibleTo` for its test project is new for this (`VeSessionManager.Core` already had the
+testable without a database, `HttpContext`, or a signed-in user. `VeOps.Web`'s
+`InternalsVisibleTo` for its test project is new for this (`VeOps.Core` already had the
 same arrangement for its own tests).
 
 `SessionChips.Refund` (added alongside the roster's refund indicator the same day) supplies the

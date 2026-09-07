@@ -8,6 +8,13 @@ that window, or immediately if it's phase-numbered work already summarized in "C
 design rationale for any entry still lives in its linked `/docs/*.md` file, not here or in
 CLAUDE.md — this file, like CLAUDE.md's Change Log, is pointers only.
 
+- **The product's display name became "VE Ops" (2026-08-25).** Nav brand, page `<title>`, footer,
+  login page, the 2FA issuer string, and the default email `FromDisplayName`/subject lines
+  (password reset, VE self-service/email-change) all changed from "VE Session Manager"/
+  "VESESSIONMGR" to "VE Ops". At the time this was deliberately display-string-only — the repo,
+  namespaces, classes and doc paths stayed `VeSessionManager`. **Superseded 2026-09-06**, when the
+  codebase itself was renamed to `VeOps`; see `docs/veops-rename.md`.
+
 - **Refunds and payments show, tie to a candidate, and report (2026-08-26).** Issue #431 (live
   verification) and a same-day follow-on ask. See `docs/transactions-report.md`. Live-verified end to
   end on WX0MIK: a real Square payment taken and refunded from inside the app. **Settlement to

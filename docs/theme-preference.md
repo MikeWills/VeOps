@@ -96,7 +96,7 @@ trip to change a colour would be worse than the thing it fixes.
 
 ## Testing
 
-`tests/VeSessionManager.Web.Tests/ThemePreferenceTests.cs`. `theme.js` itself runs in a browser and
+`tests/VeOps.Web.Tests/ThemePreferenceTests.cs`. `theme.js` itself runs in a browser and
 no test here executes it — what is pinned is the half the server owns, which is where both silent
 failure modes live (the `System` attribute above, and the script's position in the document).
 
