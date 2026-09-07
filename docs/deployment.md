@@ -79,8 +79,8 @@ sudo ls -l /var/lib/vesessionmanager-keys/
 # 3. Only now deploy (tag a release). Both services pick up the new path together.
 
 # 4. Verify: the startup log should read
-#    "Data Protection key ring verified — N team(s), all stored credentials readable".
-sudo journalctl -u vesessionmanager-worker -n 30 --no-pager | grep -i "key ring"
+#    "Data Protection key ring verified — N team(s) plus system settings, all stored credentials readable".
+sudo journalctl -u vesessionmanager-worker --since "30 min ago" --no-pager | grep -i "key ring"
 
 # 5. Confirm in the UI that a team's credentials still work (Team Settings shows them set, and the
 #    next ingestion poll succeeds), then remove the old copy:

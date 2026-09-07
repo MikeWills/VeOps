@@ -299,8 +299,8 @@ jobs:
       - name: Package binaries
         run: |
           mkdir -p artifacts
-          (cd publish/worker && zip -qr ../../artifacts/vesessionmanager-worker-${{ github.ref_name }}.zip .)
-          (cd publish/web    && zip -qr ../../artifacts/vesessionmanager-web-${{ github.ref_name }}.zip .)
+          (cd publish/worker && zip -qr ../../artifacts/veops-worker-${{ github.ref_name }}.zip .)
+          (cd publish/web    && zip -qr ../../artifacts/veops-web-${{ github.ref_name }}.zip .)
           ls -lh artifacts
 
       # Notes come from the annotated tag message, which is where the release notes for this repo

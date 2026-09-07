@@ -72,9 +72,10 @@ The assemblies renamed, so the published entry points are `VeOps.Worker.dll` and
 two systemd units on the live box still name the old DLL in `ExecStart`, and `deploy.yml`'s
 `rsync --delete` removes it.
 
-**The units must be edited before the first tag deploy built from the renamed code.** Steps are at
-the top of [`docs/runbooks/deploy-a-release.md`](runbooks/deploy-a-release.md); delete that section
-once it has been done.
+**Done 2026-09-06.** Both units were edited by hand and `daemon-reload`ed before `v0.35.0` was
+tagged, and that deploy succeeded — including the "confirm Worker is healthy before starting Web"
+gate. The one-time section that carried the steps has been removed from the deploy runbook. A fresh
+box needs nothing, since `ops/setup-server.sh` emits the new names.
 
 This one fails loudly, which is the good case: `rsync` succeeds, `systemctl start` reports
 `Could not execute because the specified command or file was not found`, and the workflow's "confirm
@@ -97,6 +98,12 @@ to issues and PRs, so nothing breaks immediately. Still worth knowing:
   `git remote set-url origin https://github.com/MikeWills/VeOps.git`.
 
 ## Verification
+
+Live-verified on production 2026-09-06. `v0.35.0` deployed clean, and the Worker logged
+`Data Protection key ring verified — 3 team(s) plus system settings, all stored credentials
+readable` at startup. That line is the one that matters here: it proves the deliberately-unrenamed
+`SetApplicationName` is still deriving the same keys and every stored credential across all three
+teams still decrypts.
 
 `dotnet build` clean with `-warnaserror`, and the full suite green across all three test projects.
 Several tests assert on source paths and namespace strings (`FormBindingTests`,

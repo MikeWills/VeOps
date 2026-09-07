@@ -126,7 +126,7 @@ the database — putting the copy next to the ciphertext would rebuild the exact
 
 Migration runbook (copy keys → verify → deploy → verify → remove the old directory) is in
 `docs/deployment.md`. Done on the beta server 2026-08-11; the startup log confirmed
-`Data Protection key ring verified — 3 team(s), all stored credentials readable`.
+`Data Protection key ring verified — 3 team(s) plus system settings, all stored credentials readable`.
 
 ### `DataProtectionKeyRingGuard`: why config alone was not enough
 
