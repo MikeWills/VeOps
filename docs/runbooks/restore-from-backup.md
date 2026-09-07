@@ -63,8 +63,8 @@ tree came back populated.
 
    ```bash
    sudo systemctl start vesessionmanager-worker
-   sudo journalctl -u vesessionmanager-worker -n 30 --no-pager | grep -i "key ring"
-   # Data Protection key ring verified — N team(s), all stored credentials readable
+   sudo journalctl -u vesessionmanager-worker --since "30 min ago" --no-pager | grep -i "key ring"
+   # Data Protection key ring verified — N team(s) plus system settings, all stored credentials readable
    sudo systemctl start vesessionmanager-web
    ```
 

@@ -6,42 +6,6 @@
 
 ---
 
-## One-time: the first deploy after the VeOps rename (2026-09-06)
-
-⚠️ **Do this before tagging the first release built from the renamed code, or that deploy will
-leave both services dead.**
-
-The 2026-09-06 rename changed the *assembly* names — the published entry points are now
-`VeOps.Worker.dll` and `VeOps.Web.dll`. Every server-side name stayed as it was on purpose
-(`/opt/vesessionmanager`, `/var/lib/vesessionmanager/vesessionmanager.db`,
-`/var/lib/vesessionmanager-keys`, the `vesessionmanager` service account, both unit names, the
-sudoers allowlist and the two backup scripts), so nothing else needs touching — but the two units
-still name the old DLL in `ExecStart`, and `rsync --delete` removes it.
-
-The failure is loud rather than subtle: `rsync` succeeds, then `systemctl start` fails with
-`Could not execute because the specified command or file was not found`, and the workflow's
-"confirm Worker is active" gate stops the run before Web is started.
-
-```bash
-sudo sed -i 's|VeSessionManager\.Worker\.dll|VeOps.Worker.dll|'   /etc/systemd/system/vesessionmanager-worker.service
-sudo sed -i 's|VeSessionManager\.Web\.dll|VeOps.Web.dll|'   /etc/systemd/system/vesessionmanager-web.service
-sudo systemctl daemon-reload
-grep ExecStart /etc/systemd/system/vesessionmanager-{worker,web}.service
-```
-
-Edit the units *before* the deploy runs. The old DLL is still in place until `rsync` replaces the
-tree, so a unit pointing at the new name will not start until the new build lands — plan on the
-short window between the edit and the tag, or edit them while the services are already stopped
-mid-deploy.
-
-If you deploy first and only then notice, the recovery is the same two `sed` commands plus
-`sudo systemctl start vesessionmanager-worker vesessionmanager-web`; no data is at risk, since the
-key-ring and database snapshots were taken before the sync.
-
-Delete this section once it has been done.
-
----
-
 ## Preconditions
 
 - The change is merged to `main` and `ci.yml` is green. A push to `main` is rejected by branch
@@ -71,8 +35,8 @@ Delete this section once it has been done.
 3. **Verify the key ring loaded.** This is the line that proves credentials are still readable:
 
    ```bash
-   sudo journalctl -u vesessionmanager-worker -n 30 --no-pager | grep -i "key ring"
-   # Data Protection key ring verified — N team(s), all stored credentials readable
+   sudo journalctl -u vesessionmanager-worker --since "30 min ago" --no-pager | grep -i "key ring"
+   # Data Protection key ring verified — N team(s) plus system settings, all stored credentials readable
    ```
 
 4. **Verify the app answers.** Load the site, sign in, and confirm one ingestion poll succeeds

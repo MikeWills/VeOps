@@ -98,7 +98,7 @@ sudo ls -l /var/lib/vesessionmanager-keys/
 # 3. Deploy (tag a release). Both services pick up the new path together.
 
 # 4. Verify
-sudo journalctl -u vesessionmanager-worker -n 30 --no-pager | grep -i "key ring"
+sudo journalctl -u vesessionmanager-worker --since "30 min ago" --no-pager | grep -i "key ring"
 
 # 5. Only after the UI confirms a team's credentials still work
 sudo rm -rf /var/lib/vesessionmanager/dataprotection-keys
