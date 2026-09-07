@@ -1,6 +1,6 @@
 # Zoom + Discord Scheduling (Phase 2)
 
-What `SessionEventSchedulingService` (`VeSessionManager.Core/Scheduling/`) relies on. Unlike
+What `SessionEventSchedulingService` (`VeOps.Core/Scheduling/`) relies on. Unlike
 `docs/examtools-api.md`, these are official, documented APIs — this page just records the exact
 shapes/gotchas this codebase depends on, with sources, so a future change doesn't need to
 re-derive them.
@@ -16,7 +16,7 @@ Discord's own dashboards, done once by whoever owns the accounts.
    developer permissions (needs to be an account **admin**, not just a regular user — S2S OAuth
    scopes require admin-level "User and Permission Management" access).
 2. **Developer** (lower-left) → **Build an app** → choose **Server-to-Server OAuth** → **Create**.
-3. Name it (e.g. "VE Session Manager"), fill in the required basic info/company/contact fields.
+3. Name it (e.g. "VE Ops"), fill in the required basic info/company/contact fields.
 4. **Scopes** tab → **Add Scopes** → search "meeting" and add the create/update/delete/read
    scopes for meetings. Zoom's scope naming has shifted over time and varies by account; look for
    entries like `meeting:write:meeting:admin`, `meeting:update:meeting:admin`,
@@ -33,7 +33,7 @@ Discord's own dashboards, done once by whoever owns the accounts.
 ### Discord: create the bot and invite it to your server
 
 1. Go to the [Discord Developer Portal](https://discord.com/developers/applications), sign in,
-   **New Application**, give it a name (e.g. "VE Session Manager").
+   **New Application**, give it a name (e.g. "VE Ops").
 2. Left sidebar → **Bot**. A bot user is created automatically with the application. Click
    **Reset Token** to reveal it (2FA confirmation if you have it enabled) — this is `Discord:BotToken`.
    Treat it like a password; Discord will silently invalidate it if it ever leaks into a public repo.
@@ -50,7 +50,7 @@ Secrets" section and the Worker's next poll cycle will pick up any session still
 
 ## Zoom
 
-Client: `VeSessionManager.Core/Zoom/ZoomClient.cs`. Hand-rolled `HttpClient` wrapper, not a NuGet
+Client: `VeOps.Core/Zoom/ZoomClient.cs`. Hand-rolled `HttpClient` wrapper, not a NuGet
 package — Zoom doesn't publish an official lightweight .NET SDK for this surface.
 
 **Auth — Server-to-Server OAuth** ([docs](https://developers.zoom.us/docs/internal-apps/s2s-oauth/)):
@@ -92,7 +92,7 @@ request entirely, not `enable: false`).
 
 ## Discord
 
-Client: `VeSessionManager.Core/Discord/DiscordEventClient.cs`, wrapping `Discord.Net.Rest`
+Client: `VeOps.Core/Discord/DiscordEventClient.cs`, wrapping `Discord.Net.Rest`
 (`DiscordRestClient` — REST-only, no gateway connection, which a periodic background job doesn't
 need). See [Discord.Net's guild scheduled events guide](https://docs.discordnet.dev/guides/guild_events/creating-guild-events.html).
 

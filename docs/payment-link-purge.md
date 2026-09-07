@@ -6,8 +6,8 @@ See also `docs/square-payments.md` (Square integration overview) and
 
 Square payment links never auto-expire. Left alone, an Unpaid `Payment`'s link stays live and
 clickable forever, even long after a session has come and gone — confirmed while researching this
-feature, not assumed. `SquarePaymentLinkPurgeService` (`src/VeSessionManager.Core/Payments/`) +
-`SquareLinkPurgeJob` (`src/VeSessionManager.Worker/`) close that gap with a daily, per-team,
+feature, not assumed. `SquarePaymentLinkPurgeService` (`src/VeOps.Core/Payments/`) +
+`SquareLinkPurgeJob` (`src/VeOps.Worker/`) close that gap with a daily, per-team,
 scan-based pass, same shape as every other job in this app: diff stored state against a threshold,
 use a tracking field as both the query filter and the idempotency guard.
 

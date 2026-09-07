@@ -10,7 +10,7 @@ over SQLite.
 
 When invoked:
 1. Identify the untested or under-tested code in the diff.
-2. Write focused xUnit tests in tests/VeSessionManager.Tests/.
+2. Write focused xUnit tests in tests/VeOps.Tests/.
 
 Guidelines:
 - Use the EF Core SQLite in-memory / connection-kept-open pattern for

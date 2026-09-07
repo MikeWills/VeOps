@@ -34,7 +34,7 @@ maintainer approval, so your checks may sit queued until someone starts them.
 ## Building and testing
 
 See the [README](README.md) for prerequisites, build/run commands, and the `DOTNET_ENVIRONMENT` /
-`ASPNETCORE_ENVIRONMENT` gotcha. Tests are xUnit in `tests/VeSessionManager.Core.Tests`:
+`ASPNETCORE_ENVIRONMENT` gotcha. Tests are xUnit in `tests/VeOps.Core.Tests`:
 
 ```bash
 dotnet build

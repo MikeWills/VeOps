@@ -55,7 +55,7 @@ Where a runbook states a rule without arguing for it, it links to the doc that d
 3. **The pre-deploy `.bak-<stamp>` snapshots are rollback points, not backups** — same disk, newest
    five. The backup that survives losing the box is the separate off-box job.
 4. **Any by-hand `dotnet` invocation on the box needs its working directory**
-   (`sh -c 'cd /opt/vesessionmanager/worker && exec dotnet ./VeSessionManager.Worker.dll …'`).
+   (`sh -c 'cd /opt/vesessionmanager/worker && exec dotnet ./VeOps.Worker.dll …'`).
    Elsewhere it finds no `appsettings` at all and reports `no such table: Teams`, which reads as a
    damaged database when the real one was never opened.
 

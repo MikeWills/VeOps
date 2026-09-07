@@ -1,6 +1,6 @@
 # Square Payment Links + Webhook (Phase 3)
 
-What `PaymentGenerationService` and `SquareWebhookHandler` (`VeSessionManager.Core/{Payments,Square}/`)
+What `PaymentGenerationService` and `SquareWebhookHandler` (`VeOps.Core/{Payments,Square}/`)
 rely on. Like Zoom/Discord, these are official, documented APIs — this records the exact shapes
 and account setup this codebase depends on, with sources.
 
@@ -16,7 +16,7 @@ added later.
 Account-dashboard setup only the account owner can do — not runnable from this repo.
 
 1. Sign into the [Square Developer Dashboard](https://developer.squareup.com/) → **+ New
-   Application** → name it (e.g. "VE Session Manager") → **Create Application**.
+   Application** → name it (e.g. "VE Ops") → **Create Application**.
 2. **Credentials** tab, **Sandbox** mode → **Show** the Sandbox Access Token → this is the team's
    **Access token**, with **Environment** set to **Sandbox**. There's a separate **Production** mode
    token for real payments — see the note below before using it.
@@ -62,7 +62,7 @@ restarts unless the tunnel tool is configured for a fixed subdomain).
 
 ## Payment Links (Checkout API)
 
-Client: `VeSessionManager.Core/Square/SquareClient.cs`, wrapping the official
+Client: `VeOps.Core/Square/SquareClient.cs`, wrapping the official
 [Square .NET SDK](https://github.com/square/square-dotnet-sdk) (`Square` on NuGet). Uses the
 **Order**-based request shape, not QuickPay — only `Order` supports `ReferenceId`
 ([confirmed](https://developer.squareup.com/reference/square/objects/Order)), which the spec
@@ -81,8 +81,8 @@ calls for.
 
 ## Webhook (`payment.updated`)
 
-Handler: `VeSessionManager.Core/Square/SquareWebhookHandler.cs`. Endpoint:
-`VeSessionManager.Web/SquareWebhookEndpoint.cs` (`POST /webhooks/square`).
+Handler: `VeOps.Core/Square/SquareWebhookHandler.cs`. Endpoint:
+`VeOps.Web/SquareWebhookEndpoint.cs` (`POST /webhooks/square`).
 
 - Signature: `x-square-hmacsha256-signature` header. Verified via the SDK's own
   `Square.WebhooksHelper.VerifySignature(rawBody, signatureHeader, signatureKey, notificationUrl)`
@@ -111,7 +111,7 @@ Handler: `VeSessionManager.Core/Square/SquareWebhookHandler.cs`. Endpoint:
 
 ## Unmatched payments (post-launch addition)
 
-Handler: `VeSessionManager.Core/Payments/SquarePaymentMatchingService.cs`. This team also takes
+Handler: `VeOps.Core/Payments/SquarePaymentMatchingService.cs`. This team also takes
 some payments through a separate Square-hosted page that isn't one of `PaymentGenerationService`'s
 own generated links — a `COMPLETED` event for one of those has no matching `Payment.
 SquarePaymentReferenceId`, so `SquareWebhookHandler` hands it off here instead of discarding it.

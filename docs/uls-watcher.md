@@ -157,7 +157,7 @@ Investigated to a conclusion and abandoned for three independent reasons, any on
 `Candidate.UlsApplicationFileNumber` is still captured — it is real data, cheap to store, and usable
 by anyone who can reach FCC's search — it is simply not rendered as a link.
 
-**Built instead, 2026-08-20 ([#195](https://github.com/MikeWills/VeSessionManager/issues/195)):**
+**Built instead, 2026-08-20 ([#195](https://github.com/MikeWills/VeOps/issues/195)):**
 `pendingApplications[].history[]` returns human-readable entries (`code_text: "Redlight Review
 Completed"`) with dates, and the watcher used to discard everything but the hold flag. Those entries
 are now carried through the mapper, stored as `CandidateUlsHistoryEntry`, and rendered as an **FCC
@@ -172,7 +172,7 @@ Three things worth carrying forward:
 - **Reconciled, not rewritten.** `UlsTimeline.Reconcile` returns whether anything actually differs
   and the caller saves only then. The naive clear-and-re-add would rewrite an unchanged timeline for
   every open candidate on every run — pure write churn on a single-writer file, on exactly the
-  contended path [#434](https://github.com/MikeWills/VeSessionManager/issues/434) instruments.
+  contended path [#434](https://github.com/MikeWills/VeOps/issues/434) instruments.
 - **`code_text` is optional in the code, though it has always been present in practice.** It was
   observed on a live response, not specified anywhere, so both `UlsHistoryEntry.Description` and the
   page fall back to the raw code. A row rendering `RDLCOM` is worse than one rendering a sentence and
@@ -189,6 +189,6 @@ Undocumented and unauthenticated, so it can change shape, add auth, or rate-limi
 and it is ExamTools' mirror rather than FCC direct, so it inherits their refresh behaviour (the
 `/lookup/` vs `/lookup2/` disagreement is direct evidence their indexing has moving parts). **Asking
 ExamTools whether this endpoint is supported, and at what polling rate, is still an open action** —
-see [issue #194](https://github.com/MikeWills/VeSessionManager/issues/194). If the answer is
+see [issue #194](https://github.com/MikeWills/VeOps/issues/194). If the answer is
 "internal, please don't", the fallback is FCC's files, recoverable from
 git history.

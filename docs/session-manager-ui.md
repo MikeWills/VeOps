@@ -1,6 +1,6 @@
 # Session Manager Candidate Actions (Phase 9b)
 
-The Claude Design mockup handoff (`design_handoff_vesessionmanager_admin_ui/`, delivered as a zip
+The Claude Design mockup handoff (`design_handoff_veops_admin_ui/`, delivered as a zip
 and extracted into the repo — the design pass the spec's Phase 9 checkpoint calls for) drove the
 UI; recreated pixel-close in Razor Pages (`Pages/SessionManager/`) with a self-contained
 `wwwroot/css/app.css` design-system stylesheet (dark chassis, IBM Plex Sans/Mono, chip/meter/kebab/

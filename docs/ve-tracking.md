@@ -1,7 +1,7 @@
 # VE Tracking (Phase 7)
 
 What `VolunteerExaminerSyncService`/`VolunteerExaminerReportService`
-(`VeSessionManager.Core/VolunteerExaminers/`) do and why.
+(`VeOps.Core/VolunteerExaminers/`) do and why.
 
 ## Data source: automatic, not manual
 

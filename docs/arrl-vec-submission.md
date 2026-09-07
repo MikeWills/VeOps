@@ -1,6 +1,6 @@
 # Filing a session with ARRL-VEC
 
-**Built 2026-08-19, issue [#197](https://github.com/MikeWills/VeSessionManager/issues/197).** Replaces
+**Built 2026-08-19, issue [#197](https://github.com/MikeWills/VeOps/issues/197).** Replaces
 a four-step manual routine: download the VEC archive from ExamTools, upload it to ARRL's form, print
 the confirmation to PDF, file the PDF and zip together.
 
@@ -99,7 +99,7 @@ placeholder syntax would be generality invented for a case nobody has.
 
 Every FCC date arrives date-only; a session start is a real instant. **697 of 867 stored sessions
 start between 23:00 and 04:00 UTC**, so `.Date` answers "what day is it in London" and is *tomorrow*
-for most of them — the [#248](https://github.com/MikeWills/VeSessionManager/issues/248) bug class.
+for most of them — the [#248](https://github.com/MikeWills/VeOps/issues/248) bug class.
 
 Confirmed against a real receipt: a session starting `2026-04-22 01:30Z` files as `2026-04-21`.
 
@@ -327,7 +327,7 @@ top would have hidden it from exactly the Session Managers who press the button.
   `vesessionmanager` account, **outside the app path** — `deploy.yml` runs `rsync --delete` over that
   on every release, which is why the database lives under `/var/lib` too.
 - ⚠️ **Add it to the off-box backup.** Done on the live box (confirmed 2026-08-20) — backed up
-  alongside the database and key ring from [#256](https://github.com/MikeWills/VeSessionManager/issues/256),
+  alongside the database and key ring from [#256](https://github.com/MikeWills/VeOps/issues/256),
   which originally covered those two only. Any other deployment must arrange this itself: an
   unbacked-up archive fails silently, and nothing looks wrong until a receipt is wanted and missing.
 - Fill in each team's ARRL settings. Nothing is defaulted.

@@ -8,9 +8,9 @@ second.
 ## Current design (2026-07-23)
 
 `SystemSettings.SessionIngestionIntervalMinutes` (SystemAdmin-configurable, default `60`) is the
-flat cadence for every `Team` — `IngestionScheduleService.IsDue` (`VeSessionManager.Core/Ingestion/`,
+flat cadence for every `Team` — `IngestionScheduleService.IsDue` (`VeOps.Core/Ingestion/`,
 a plain sync method, no DB/HTTP dependency of its own, registered as a singleton in
-`VeSessionManager.Worker`) just compares `Team.LastIngestionRunUtc` against that interval.
+`VeOps.Worker`) just compares `Team.LastIngestionRunUtc` against that interval.
 `SessionIngestionIntervalMinutes` is read fresh every tick (one trivial extra query per tick, not
 per team) rather than once at Worker startup, so an admin's edit takes effect on the very next tick
 instead of requiring a restart — a deliberate divergence from the Fcc jobs' own precedent of reading
@@ -19,7 +19,7 @@ settings once at startup.
 For the case where a Session Manager needs a last-minute registrant pulled in *right now* — a
 "Refresh candidates" button on the session detail page (`Pages/SessionManager/Detail.cshtml(.cs)`,
 `OnPostRefreshCandidatesAsync`) runs `ManualCandidateRefreshService`
-(`VeSessionManager.Core/Ingestion/`), which is the exact same five-step per-team pipeline
+(`VeOps.Core/Ingestion/`), which is the exact same five-step per-team pipeline
 `SessionIngestionJob` runs on its own tick — ingestion → VE roster sync → Zoom/Discord scheduling →
 Square payment links → registration confirmation emails, same order, same reasoning (so by the time
 confirmation emails render, Zoom/payment links have their best chance of already existing) — just
@@ -31,8 +31,8 @@ run synchronously in the Razor Pages request instead of a background tick.
   real external calls including emails, not just a display refresh.
 - Runs for the *whole team*, not just the session being viewed — same scope as the background job.
 - Web now registers the same `IExamToolsClient`/`IZoomClient`/`IDiscordEventClient` stack as the
-  Worker (all singletons, `VeSessionManager.Web/Program.cs` mirrors
-  `VeSessionManager.Worker/Program.cs`'s registrations) — previously Web only needed Square/Email/
+  Worker (all singletons, `VeOps.Web/Program.cs` mirrors
+  `VeOps.Worker/Program.cs`'s registrations) — previously Web only needed Square/Email/
   notification services for its own admin actions.
 - Deliberately still runs the whole team's block, not just an ExamTools-only fetch — same "gated
   together" simplicity tradeoff the original design established, so this button's behavior stays
@@ -42,7 +42,7 @@ run synchronously in the Razor Pages request instead of a background tick.
 (and the background job) triggers — confirm how many emails a candidate actually receives and when,
 across registration confirmation/day-before-reminder/payment-reminder paths, before this on-demand
 trigger trains Session Managers to expect "one click, one email" if the real behavior turns out to
-be noisier. See `docs/email-reference.md` and [issue #193](https://github.com/MikeWills/VeSessionManager/issues/193).
+be noisier. See `docs/email-reference.md` and [issue #193](https://github.com/MikeWills/VeOps/issues/193).
 
 ## Superseded design (2026-07-21 – 2026-07-23)
 

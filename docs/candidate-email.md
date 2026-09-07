@@ -1,7 +1,7 @@
 # Emailing candidates from a session (2026-08-16)
 
 Pick candidates on a session, start from a template, edit the message, send it.
-Issue [#144](https://github.com/MikeWills/VeSessionManager/issues/144).
+Issue [#144](https://github.com/MikeWills/VeOps/issues/144).
 
 ## What this is, and what it is not
 
@@ -40,8 +40,8 @@ Available: `{{CandidateName}}`, `{{CandidateFirstName}}`, `{{CallSign}}`, `{{Ses
 **Which templates the picker offers.** Getting started locally, Registration confirmation, Day-before
 reminder — plus the blank draft. Felony disclosure and Youth Program stay the per-candidate buttons
 they already are: both carry applicability rules that exist because sending them to the wrong person
-is a real harm ([#221](https://github.com/MikeWills/VeSessionManager/issues/221),
-[#274](https://github.com/MikeWills/VeSessionManager/issues/274)), and bulk is the shape #221
+is a real harm ([#221](https://github.com/MikeWills/VeOps/issues/221),
+[#274](https://github.com/MikeWills/VeOps/issues/274)), and bulk is the shape #221
 deliberately moved away from. Payment expiration is excluded outright — it goes to the team's own
 admin address, not to candidates.
 
@@ -59,7 +59,7 @@ loaded from the database; the draft here is text that is not in the database, so
 `RenderTextAsync` and the old method delegates to it. The alternative — a private `Replace` chain —
 is exactly what `VeSessionInvitationService` did, and it shipped without HTML-encoding: a session
 title carrying markup rendered as a live link in every invited VE's mail client, inside a genuine
-message from the team's real address ([#260](https://github.com/MikeWills/VeSessionManager/issues/260)).
+message from the team's real address ([#260](https://github.com/MikeWills/VeOps/issues/260)).
 Candidate names come from the same class of source, ExamTools' public registration intake. The
 encoding rule, the subject line-break stripping (#261) and `{{Logo}}`'s raw-HTML-plus-attachment
 handling are all in one place because of that.
@@ -68,7 +68,7 @@ handling are all in one place because of that.
 a posted form, so "the screen only offered this session's candidates" is a default, not a constraint.
 Unscoped, this sends an attacker-authored subject and body from the team's own SMTP to any candidate
 row on the deployment — indistinguishable from genuine mail because it *is* genuine: same From, same
-Reply-To, same server. That is [#238](https://github.com/MikeWills/VeSessionManager/issues/238) in a
+Reply-To, same server. That is [#238](https://github.com/MikeWills/VeOps/issues/238) in a
 new place. Ids outside the session are dropped and counted rather than failing the send, since a
 legitimate sender reaches this by leaving the screen open while a candidate is withdrawn.
 
@@ -188,7 +188,7 @@ SessionManager (not just the two admin roles) can reach this screen.
 
 ## Next
 
-Issue [#191](https://github.com/MikeWills/VeSessionManager/issues/191) — the same shape aimed at VEs
+Issue [#191](https://github.com/MikeWills/VeOps/issues/191) — the same shape aimed at VEs
 rather than candidates, waiting on this so it can ship with the picker from day one (Mike, 2026-08-16).
 Its stated blocker is stale: `VolunteerExaminer.Email`, `Phone` and `ContactPreference` all exist now.
 Decided already: one team is chosen on the message screen, and the recipients are that team's active

@@ -75,7 +75,7 @@ Square's own payment-link id, captured at creation time so it's available for a 
 
 ## `YouthPaymentConfirmationService`
 
-`src/VeSessionManager.Core/Payments/YouthPaymentConfirmationService.cs`. Two entry points:
+`src/VeOps.Core/Payments/YouthPaymentConfirmationService.cs`. Two entry points:
 
 - `CheckEligibilityAsync(token)` — read-only, no Square calls, used by the page's GET to decide
   whether to render the form or an explanatory message.
@@ -119,7 +119,7 @@ read `Amount`.
 
 ## Public page
 
-`src/VeSessionManager.Web/Pages/Public/YouthConfirm.cshtml(.cs)`, route `/youth-confirm/{token:guid}`.
+`src/VeOps.Web/Pages/Public/YouthConfirm.cshtml(.cs)`, route `/youth-confirm/{token:guid}`.
 No `[Authorize]`, `_PublicLayout`, following the same pattern as `Pages/Index.cshtml`/`Pages/Privacy.cshtml`.
 GET renders the form (or an explanatory message per `CheckEligibilityAsync`'s outcome) without any
 mutation. POST validates the single required checkbox server-side, calls `ConfirmAsync`, and on

@@ -1,0 +1,75 @@
+@page
+@model VeOps.Web.Pages.Admin.JobRunHistoryModel
+@{
+    ViewData["Title"] = "Job Run History";
+    ViewData["ActiveNav"] = "AdminJobHistory";
+    Layout = "_AppLayout";
+}
+
+<div class="page-head">
+    <div>
+        <p class="eyebrow">Most recent 200</p>
+        <h1>Job Run History</h1>
+    </div>
+</div>
+
+@* Straight to the handler, no JS: the beta box is behind Tailscale so its Worker log cannot be read
+   casually, and this is the quickest way to attach a run history to a bug report. *@
+<div class="filters" style="margin-bottom:16px;">
+    <a class="filter-pill" asp-page-handler="Export"><i class="bi bi-download" aria-hidden="true"></i> Export CSV</a>
+</div>
+
+<div class="table-scroll">
+<table class="cards" data-sortable="job-runs">
+    <thead>
+        <tr>
+            <th>Job</th>
+            <th>Team</th>
+            <th>Started</th>
+            <th>Completed</th>
+            <th>Status</th>
+            @* What the run actually did. Without it, "sent 5", "sent 0 because
+               nothing qualified" and "sent 0 because every attempt failed" are the
+               same green row. *@
+            <th>Result</th>
+            <th>Error</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model.Runs.Count == 0)
+        {
+            <tr><td colspan="7">No job runs recorded yet.</td></tr>
+        }
+        @foreach (var run in Model.Runs)
+        {
+            <tr>
+                <td class="session-title">@run.JobName</td>
+                <td>@(run.TeamName ?? "(global)")</td>
+                @* Sort on the raw timestamps — the display format sorts alphabetically as text. A
+                   still-running job has no CompletedUtc, so its sort value is empty and it lands at
+                   the bottom in both directions, same as the em dash it shows. *@
+                <td class="mono" data-sort-value="@run.StartedUtc.ToString("o")">@EasternTimeFormatter.Format(run.StartedUtc, "MMM d, yyyy h:mm:ss tt")</td>
+                <td class="mono" data-sort-value="@(run.CompletedUtc?.ToString("o"))">@(EasternTimeFormatter.Format(run.CompletedUtc, "MMM d, yyyy h:mm:ss tt") ?? "—")</td>
+                <td>
+                    @if (run.IsRunning)
+                    {
+                        @* Amber, not red: nothing has gone wrong yet. Matches the Running chip on
+                           Team Maintenance's import list. *@
+                        <span class="chip chip-amber">Running</span>
+                    }
+                    else if (run.Success)
+                    {
+                        <span class="chip chip-green">Success</span>
+                    }
+                    else
+                    {
+                        <span class="chip chip-brick">Failed</span>
+                    }
+                </td>
+                <td class="session-sub">@(run.ResultSummary ?? "")</td>
+                <td>@run.ErrorMessage</td>
+            </tr>
+        }
+    </tbody>
+</table>
+</div>

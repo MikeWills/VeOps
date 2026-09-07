@@ -1,6 +1,6 @@
 # Worker job tests
 
-*Issue [#325](https://github.com/MikeWills/VeSessionManager/issues/325), 2026-08-11.*
+*Issue [#325](https://github.com/MikeWills/VeOps/issues/325), 2026-08-11.*
 
 The Worker had **no test project at all** until the 2026-08-11 audit. Nine background jobs run
 unattended on the deploy box, and nothing had ever executed one.

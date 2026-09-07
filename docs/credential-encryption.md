@@ -26,7 +26,7 @@ credential — not touched by this change.
 
 ## How it works
 
-`EncryptedStringConverter` (`src/VeSessionManager.Core/Data/EncryptedStringConverter.cs`) is an EF
+`EncryptedStringConverter` (`src/VeOps.Core/Data/EncryptedStringConverter.cs`) is an EF
 Core `ValueConverter` backed by ASP.NET Core's Data Protection API (`IDataProtector`), applied to
 the five properties above in `AppDbContext.OnModelCreating`.
 
@@ -45,7 +45,7 @@ automatically encrypted going forward with zero extra code at the call site.
 
 ## Migrating existing data
 
-`TeamSecretsMigrationService` (`src/VeSessionManager.Core/Admin/TeamSecretsMigrationService.cs`)
+`TeamSecretsMigrationService` (`src/VeOps.Core/Admin/TeamSecretsMigrationService.cs`)
 does the one-time sweep: for every `Team`, for each of the 5 credential properties that's non-null,
 it forces EF to re-save that property (via `EF.Property(...).IsModified = true`, since re-setting a
 property to its own already-equal in-memory value wouldn't otherwise register as a change to save).
@@ -54,7 +54,7 @@ The re-save runs the value through the converter's encrypt path regardless of wh
 Invoke it via the Worker's CLI flag:
 
 ```bash
-dotnet run --project src/VeSessionManager.Worker -- --migrate-team-secrets
+dotnet run --project src/VeOps.Worker -- --migrate-team-secrets
 ```
 
 This runs once, logs how many teams it touched, and exits — it does **not** start the normal
@@ -80,9 +80,9 @@ It is **not** a recovery tool for a lost key ring — see below.
 
 ## The key ring itself
 
-Both `VeSessionManager.Web` and `VeSessionManager.Worker` register Data Protection with:
+Both `VeOps.Web` and `VeOps.Worker` register Data Protection with:
 
-- The same application name (`"VeSessionManager"`, hardcoded identically in both `Program.cs`
+- The same application name (`"VeOps"`, hardcoded identically in both `Program.cs`
   files)
 - The same persisted key-ring path (`DataProtection:KeyRingPath` config key — `../../.dataprotection-keys`
   in local dev, **`/var/lib/vesessionmanager-keys` in Production**, mirroring the existing
@@ -157,7 +157,7 @@ constraint with nothing enforcing it.
 
 ```bash
 sudo -u vesessionmanager env DOTNET_ENVIRONMENT=Production \
-  sh -c 'cd /opt/vesessionmanager/worker && exec dotnet ./VeSessionManager.Worker.dll --verify-keyring'
+  sh -c 'cd /opt/vesessionmanager/worker && exec dotnet ./VeOps.Worker.dll --verify-keyring'
 ```
 
 ⚠️ **The `cd` is load-bearing** — this is not the tidy version of a simpler command. The Worker is a
@@ -202,7 +202,7 @@ Bundling them together isn't a subtle risk reduction, it's a silent full reversa
 
 ## Never compare an encrypted column server-side
 
-*Issue [#279](https://github.com/MikeWills/VeSessionManager/issues/279), 2026-08-11.*
+*Issue [#279](https://github.com/MikeWills/VeOps/issues/279), 2026-08-11.*
 
 `IngestionStatusService` tested `t.ExamToolsPassword != null && t.ExamToolsPassword != ""` inside a
 LINQ projection. EF translates the `""` constant **through the converter too**, emitting a comparison

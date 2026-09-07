@@ -21,7 +21,7 @@ endpoint).
 
 **Why the DB lives outside the app path:** unlike NcsScheduler (whose SQLite file sits inside
 `/opt/ncsscheduler/`, the same tree its deploy `rsync --delete`s, protected only by an `--exclude`
-flag on every run), VeSessionManager's `appsettings.Production.json` already points the connection
+flag on every run), VeOps's `appsettings.Production.json` already points the connection
 string at `/var/lib/vesessionmanager/vesessionmanager.db` — physically outside
 `/opt/vesessionmanager/{worker,web}/` entirely. An `rsync --delete` against the app folders can
 never touch it, exclude flags or not. `/var/lib/` is also the conventionally-correct FHS location
@@ -30,7 +30,7 @@ for a service's variable data, vs. `/opt/` for its binaries.
 **Data Protection key ring (2026-07-30, see `docs/credential-encryption.md`):** `Team`'s per-team
 credential columns (ExamTools/Zoom/Square/SMTP secrets) are encrypted at rest via ASP.NET Core's
 Data Protection API. Both `vesessionmanager-worker` and `vesessionmanager-web` must point at the
-exact same key-ring path *and* register the same application name (`"VeSessionManager"`, hardcoded
+exact same key-ring path *and* register the same application name (`"VeOps"`, hardcoded
 identically in both `Program.cs` files) — if these ever drift, one process's writes silently become
 unreadable by the other. **This key ring needs the same backup discipline as the DB file** — if
 it's ever lost while the DB survives, every encrypted credential becomes permanently unrecoverable
@@ -151,7 +151,7 @@ secrets there.
 
 ## Both hosts migrate at startup, and they serialize themselves (#443)
 
-`VeSessionManager.Web` and `VeSessionManager.Worker` each call `Database.Migrate()` when they start.
+`VeOps.Web` and `VeOps.Worker` each call `Database.Migrate()` when they start.
 They take an exclusive lock file beside the database first (`<db>.migration-lock`), so whichever gets
 there first migrates and the other waits, then finds nothing to do.
 
@@ -173,8 +173,8 @@ see that with neither service running, the file is safe to delete.
 ## Build and Publish (manual, if ever needed outside CI)
 
 ```bash
-dotnet publish src/VeSessionManager.Worker/VeSessionManager.Worker.csproj -c Release -o publish/worker
-dotnet publish src/VeSessionManager.Web/VeSessionManager.Web.csproj -c Release -o publish/web
+dotnet publish src/VeOps.Worker/VeOps.Worker.csproj -c Release -o publish/worker
+dotnet publish src/VeOps.Web/VeOps.Web.csproj -c Release -o publish/web
 ```
 
 Then copy each folder to its own directory on the server (e.g. via `scp`/`rsync`).
@@ -464,7 +464,7 @@ the "is anyone able to sign in?" check is written against `PasswordHash != null`
 the role or a row count.)
 
 ```bash
-dotnet /opt/vesessionmanager/web/VeSessionManager.Web.dll --create-admin --email you@example.org --name "Your Name" [--callsign WX0MIK]
+dotnet /opt/vesessionmanager/web/VeOps.Web.dll --create-admin --email you@example.org --name "Your Name" [--callsign WX0MIK]
 ```
 
 Applies migrations first, so it works on a box where the services have never started. Prints a
@@ -496,7 +496,7 @@ order is:
 
 ```bash
 # after the files are in place, before starting vesessionmanager-web
-dotnet /opt/vesessionmanager/web/VeSessionManager.Web.dll --create-admin --email you@example.org --name "Your Name"
+dotnet /opt/vesessionmanager/web/VeOps.Web.dll --create-admin --email you@example.org --name "Your Name"
 sudo systemctl start vesessionmanager-web
 ```
 
@@ -513,12 +513,12 @@ Example `/etc/systemd/system/vesessionmanager-worker.service`:
 
 ```ini
 [Unit]
-Description=VeSessionManager Worker
+Description=VeOps Worker
 After=network.target
 
 [Service]
 WorkingDirectory=/opt/vesessionmanager/worker
-ExecStart=/usr/bin/dotnet /opt/vesessionmanager/worker/VeSessionManager.Worker.dll
+ExecStart=/usr/bin/dotnet /opt/vesessionmanager/worker/VeOps.Worker.dll
 Restart=always
 RestartSec=10
 User=vesessionmanager
@@ -535,12 +535,12 @@ Example `/etc/systemd/system/vesessionmanager-web.service`:
 
 ```ini
 [Unit]
-Description=VeSessionManager Web
+Description=VeOps Web
 After=network.target
 
 [Service]
 WorkingDirectory=/opt/vesessionmanager/web
-ExecStart=/usr/bin/dotnet /opt/vesessionmanager/web/VeSessionManager.Web.dll
+ExecStart=/usr/bin/dotnet /opt/vesessionmanager/web/VeOps.Web.dll
 Restart=always
 RestartSec=10
 User=vesessionmanager

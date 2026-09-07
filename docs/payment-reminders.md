@@ -21,7 +21,7 @@
 > removed" section, and CLAUDE.md's "No fee, no test" Known Constraint. This also answers the "Still
 > open" question below about what day 10 means — nothing, any more.
 
-What `PaymentReminderService` (`VeSessionManager.Core/Payments/`) does and depends on. No new
+What `PaymentReminderService` (`VeOps.Core/Payments/`) does and depends on. No new
 external API — this phase is pure date/status logic over data every earlier phase already
 produces, plus two more `EmailTemplate` rows and one more `EmailSettings` field.
 

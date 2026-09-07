@@ -84,7 +84,7 @@ sudo journalctl -u vesessionmanager-worker --no-pager | grep -i "took .*ms to wr
   before anything fails.
 
 Neither needs action on its own. **A rising rate does** — it is trigger #4 in
-[#403](https://github.com/MikeWills/VeSessionManager/issues/403)'s list of things that would mean
+[#403](https://github.com/MikeWills/VeOps/issues/403)'s list of things that would mean
 this app has outgrown SQLite. See [`../worker-resilience.md`](../worker-resilience.md) for what the
 two lines mean and what to do before reaching for a different database engine.
 
@@ -102,10 +102,10 @@ Two halves of the same trap:
 Always:
 
 ```bash
-sudo -u vesessionmanager sh -c 'cd /opt/vesessionmanager/worker && exec dotnet ./VeSessionManager.Worker.dll'
+sudo -u vesessionmanager sh -c 'cd /opt/vesessionmanager/worker && exec dotnet ./VeOps.Worker.dll'
 ```
 
-Locally, use `dotnet run --project src/VeSessionManager.Worker`, never the raw `.dll`.
+Locally, use `dotnet run --project src/VeOps.Worker`, never the raw `.dll`.
 
 ## On-demand switches
 

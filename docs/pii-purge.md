@@ -1,6 +1,6 @@
 # PII Purge Job (Phase 10)
 
-What `PiiPurgeService` (`VeSessionManager.Core/PiiPurge/`) does and depends on. Final phase in
+What `PiiPurgeService` (`VeOps.Core/PiiPurge/`) does and depends on. Final phase in
 `docs/spec.md` — no new external API or schema (`Candidate.PiiPurgedUtc` and
 `SystemSettings.PiiRetentionWindowDays` already existed from Phase 0/Phase 9c respectively;
 confirmed via a throwaway `dotnet ef migrations add` that produced an empty migration, same habit

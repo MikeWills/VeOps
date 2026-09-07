@@ -1,11 +1,12 @@
 # VE Ops
 
-[![CI](https://img.shields.io/github/actions/workflow/status/MikeWills/VeSessionManager/ci.yml?branch=main&label=build)](https://github.com/MikeWills/VeSessionManager/actions/workflows/ci.yml)
-[![License](https://img.shields.io/github/license/MikeWills/VeSessionManager)](LICENSE)
+[![CI](https://img.shields.io/github/actions/workflow/status/MikeWills/VeOps/ci.yml?branch=main&label=build)](https://github.com/MikeWills/VeOps/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/MikeWills/VeOps)](LICENSE)
 
 Automation for the mundane half of running an amateur radio exam session.
 
-*(The repo and codebase are still named VeSessionManager — VE Ops is the product's display name.)*
+*(Server paths, systemd units and the service account still use the older `vesessionmanager`
+slug — see [`docs/veops-rename.md`](docs/veops-rename.md).)*
 
 If you are a **Volunteer Examiner Session Manager**, you already know the routine around a session:
 create the Zoom meeting, post the Discord event, chase payments, send the confirmation email, send
@@ -45,14 +46,14 @@ SQLite is the database. There is nothing else to install.
 ## Quick start
 
 ```bash
-git clone https://github.com/MikeWills/VeSessionManager.git
-cd VeSessionManager
+git clone https://github.com/MikeWills/VeOps.git
+cd VeOps
 
 dotnet build
 dotnet test
 
-dotnet run --project src/VeSessionManager.Worker    # background jobs
-dotnet run --project src/VeSessionManager.Web       # admin backend, http://localhost:5158
+dotnet run --project src/VeOps.Worker    # background jobs
+dotnet run --project src/VeOps.Web       # admin backend, http://localhost:5158
 ```
 
 The database is created and migrated automatically on first start — no `dotnet ef database update`
@@ -70,7 +71,7 @@ administrator exists, logging `Critical` and exiting rather than serving a login
 can succeed.
 
 ```bash
-dotnet VeSessionManager.Web.dll --create-admin --email you@example.org --name "Your Name" [--callsign WX0MIK]
+dotnet VeOps.Web.dll --create-admin --email you@example.org --name "Your Name" [--callsign WX0MIK]
 ```
 
 It applies migrations first (so it works before either service has ever run), prints a generated
@@ -81,7 +82,7 @@ To choose the password yourself, pass it in the environment so it stays out of s
 `ps`:
 
 ```bash
-VSM_ADMIN_PASSWORD='choose-something-long' dotnet VeSessionManager.Web.dll --create-admin --email you@example.org --name "Your Name"
+VSM_ADMIN_PASSWORD='choose-something-long' dotnet VeOps.Web.dll --create-admin --email you@example.org --name "Your Name"
 ```
 
 ### 2. Start order on a new server
@@ -143,7 +144,7 @@ and [`docs/deployment.md`](docs/deployment.md#automated-deploy-github-actions) c
 
 All planned phases are built and running against real sessions. Outstanding work — features, ops
 tasks, and review findings alike — lives in
-[GitHub issues](https://github.com/MikeWills/VeSessionManager/issues), which is the single list of
+[GitHub issues](https://github.com/MikeWills/VeOps/issues), which is the single list of
 record.
 
 ## Contributing

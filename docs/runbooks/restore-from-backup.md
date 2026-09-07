@@ -47,7 +47,7 @@ tree came back populated.
 4. **Prove the pair matches, without starting the jobs:**
 
    ```bash
-   sudo -u vesessionmanager sh -c 'cd /opt/vesessionmanager/worker && exec dotnet ./VeSessionManager.Worker.dll --verify-keyring'
+   sudo -u vesessionmanager sh -c 'cd /opt/vesessionmanager/worker && exec dotnet ./VeOps.Worker.dll --verify-keyring'
    ```
 
    This runs the key-ring guard read-only and exits. It exists precisely so a test restore does not

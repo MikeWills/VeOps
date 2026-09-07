@@ -1,7 +1,7 @@
 # Emailing VEs (2026-08-16)
 
 Writing to a team's volunteer examiners from the directory, the opt-out behind it, and the opt-in
-beside it. Issue [#191](https://github.com/MikeWills/VeSessionManager/issues/191).
+beside it. Issue [#191](https://github.com/MikeWills/VeOps/issues/191).
 
 ## What was actually missing
 
@@ -29,11 +29,11 @@ Everything else mirrors the candidate screen built for #144: a template picker (
 templates written for VEs, or a blank draft), a plain HTML textarea, a checkbox list with filter and
 select-all, one SMTP handshake for the batch, and per-recipient failure isolation. Rendering goes
 through `EmailTemplateRenderer.RenderTextAsync` rather than a private substitution, which is the
-lesson of [#260](https://github.com/MikeWills/VeSessionManager/issues/260) — this feature's own
+lesson of [#260](https://github.com/MikeWills/VeOps/issues/260) — this feature's own
 sibling hand-rolled one and shipped it without HTML-encoding.
 
 The recipient list is **re-scoped inside the service**, not just checked on the page. That is
-[#238](https://github.com/MikeWills/VeSessionManager/issues/238) again, in the place it originally
+[#238](https://github.com/MikeWills/VeOps/issues/238) again, in the place it originally
 happened.
 
 ## Filtering the recipient list

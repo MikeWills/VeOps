@@ -1,7 +1,7 @@
 # VEC Submission Tracker (Phase 8)
 
 What `VecSubmissionService`/`VecSubmissionReportService`
-(`VeSessionManager.Core/VecSubmissions/`) do and why.
+(`VeOps.Core/VecSubmissions/`) do and why.
 
 **Renamed from "ARRL Submission Tracker" (2026-07-21), per explicit user request.** The spec
 originally named this phase and its fields after ARRL specifically, but submission goes to

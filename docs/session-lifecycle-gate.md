@@ -103,5 +103,5 @@ Run it from the server, same shape as the other one-off switches:
 
 ```bash
 sudo -u vesessionmanager env DOTNET_ENVIRONMENT=Production \
-  sh -c 'cd /opt/vesessionmanager/worker && exec dotnet ./VeSessionManager.Worker.dll --report-historical-imports'
+  sh -c 'cd /opt/vesessionmanager/worker && exec dotnet ./VeOps.Worker.dll --report-historical-imports'
 ```

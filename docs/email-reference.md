@@ -15,7 +15,7 @@ now stale on multi-team specifics) and `docs/payment-reminders.md` (Phase 6, sti
 own two templates) — both are still worth reading for their phase-specific implementation notes,
 but this doc is the one place with the full picture across all seven templates. If this doc and the
 code ever disagree, trust the code — specifically
-`src/VeSessionManager.Core/Email/EmailTemplatePlaceholders.cs`, a registry hand-collected from the
+`src/VeOps.Core/Email/EmailTemplatePlaceholders.cs`, a registry hand-collected from the
 real send-time code and guarded by `EmailTemplatePlaceholdersTests.cs` so it can't silently drift.
 That registry is also what the message editor (`Pages/Admin/MessageRuleEdit.cshtml`,
 `SystemAdmin`/`TeamAdmin` only) draws its clickable tag chips from — though what it offers is the

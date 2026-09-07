@@ -8,7 +8,7 @@ locked to their own team regardless of what's in that query string.
 Every page follows the exact Phase 9b pattern: `[Authorize(Roles=...)]` + an independent
 `AuthorizeAsync()`-style re-check per POST handler (defense in depth against a tampered `?teamId=`,
 same reasoning as Phase 9b's session-id re-check), business logic in a Core service under
-`VeSessionManager.Core/Admin/` (`TeamSettingsService`/`VecManagementService`/
+`VeOps.Core/Admin/` (`TeamSettingsService`/`VecManagementService`/
 `FeeConfigurationService`/`UserManagementService`/`SystemSettingsService`,
 each with its own result enum + `AddAudit` helper + test file), pages as thin wiring.
 

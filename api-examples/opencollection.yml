@@ -1,7 +1,7 @@
 opencollection: 1.0.0
 
 info:
-  name: VeSessionManager
+  name: VeOps
 bundled: false
 extensions:
   bruno:

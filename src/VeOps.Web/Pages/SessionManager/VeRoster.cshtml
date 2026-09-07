@@ -1,0 +1,127 @@
+﻿@page
+@model VeOps.Web.Pages.SessionManager.VeRosterModel
+@{
+    ViewData["Title"] = "VE Session Counts";
+    ViewData["ActiveNav"] = "VeRoster";
+    Layout = "_AppLayout";
+}
+
+<div class="page-head">
+    <div>
+        <p class="eyebrow">Volunteer examiners</p>
+        <h1>VE Session Counts</h1>
+    </div>
+</div>
+
+<form method="get" id="veRosterFilters" class="filters" style="margin-bottom:20px; align-items:flex-start;">
+    @* Same team-picker component as the session list. Replaces a <select onchange=submit> that had
+       to carry a disabled "Select a team…" placeholder because a null TeamId used to mean "no
+       context, show nothing" — it now means "all teams merged", so the placeholder is gone. *@
+    @if (Model.AvailableTeams.Count > 1)
+    {
+        <partial name="_TeamPicker" model="new VeOps.Web.TeamPicker(Model.TeamId, Model.AvailableTeams, Model.TeamSummaryLabel)" />
+    }
+
+    @* Plain input rather than a dropdown: a search box that needs two clicks to reach is a search
+       box nobody uses. Submits with Enter like any single-field form. *@
+    <label class="ve-search">
+        <span class="visually-hidden">Search by call sign or name</span>
+        <i class="bi bi-search" aria-hidden="true"></i>
+        <input type="search" name="search" value="@Model.Search" placeholder="Call sign or name" />
+    </label>
+
+    <div class="filter-dropdown">
+        <button type="button" class="kebab @(Model.DateRangeSummaryLabel != "Any time" ? "active" : "")">Date range: @Model.DateRangeSummaryLabel <i class="bi bi-caret-down-fill" aria-hidden="true"></i></button>
+        <div class="menu" style="width:240px;">
+            <label class="item" style="display:block;">
+                <span style="display:block; margin-bottom:4px;">Preset</span>
+                <select name="dateRange" class="menu-input">
+                    <option value="">Any time</option>
+                    @foreach (var preset in VeOps.Web.Pages.SessionManager.IndexModel.DateRangePresets)
+                    {
+                        <option value="@preset.Key" selected="@(preset.Key == Model.DateRange)">@preset.Value.Label</option>
+                    }
+                </select>
+            </label>
+            <hr />
+            <div class="item" style="cursor:default;">
+                <span style="display:block; margin-bottom:4px;">Custom range (overrides preset)</span>
+                <input type="date" name="dateFrom" value="@Model.DateFrom?.ToString("yyyy-MM-dd")" class="menu-input" />
+                <input type="date" name="dateTo" value="@Model.DateTo?.ToString("yyyy-MM-dd")" class="menu-input" />
+            </div>
+            <hr />
+            <button type="submit" class="item">Apply</button>
+        </div>
+    </div>
+</form>
+
+@if (!Model.HasTeamContext)
+{
+    <p>This account isn't assigned to any team yet, so there is nothing to show.</p>
+}
+else
+{
+    <div class="table-scroll">
+    <table class="cards" data-sortable="ve-roster">
+        <thead>
+            <tr>
+                <th>Call sign</th>
+                <th>Name</th>
+                @if (Model.AvailableTeams.Count > 1)
+                {
+                    <th>Team</th>
+                }
+                <th>Sessions worked</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Counts.Count == 0)
+            {
+                <tr><td colspan="@(Model.AvailableTeams.Count > 1 ? 4 : 3)">
+                    @(string.IsNullOrWhiteSpace(Model.Search)
+                        ? "No VE session records in this range."
+                        : $"No VEs match \"{Model.Search}\" in this range.")
+                </td></tr>
+            }
+            @foreach (var count in Model.Counts)
+            {
+                <tr>
+                    <td class="mono">@(count.CallSign ?? "—")</td>
+                    <td>@count.Name</td>
+                    @if (Model.AvailableTeams.Count > 1)
+                    {
+                        <td>@count.TeamName</td>
+                    }
+                    <td class="count">@count.SessionCount</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    </div>
+
+    @* Paged 2026-08-15 — one row per VE per team, 176 people on this deployment. Same shape as
+       VE Directory's pager so the two report pages behave identically. *@
+    <div class="pagination">
+        @if (Model.TotalCount > 0)
+        {
+            <span class="pagination-summary">
+                Showing @(((Model.PageNumber - 1) * Model.PageSize) + 1)&ndash;@(Math.Min(Model.PageNumber * Model.PageSize, Model.TotalCount)) of @Model.TotalCount
+            </span>
+            <div class="pagination-controls filters">
+                @if (Model.PageNumber > 1)
+                {
+                    <a class="filter-pill" asp-page="./VeRoster" asp-all-route-data="Model.PageRoute(Model.PageNumber - 1)"><i class="bi bi-arrow-left" aria-hidden="true"></i> Prev</a>
+                }
+                <span class="pagination-page">Page @Model.PageNumber of @Model.TotalPages</span>
+                @if (Model.PageNumber < Model.TotalPages)
+                {
+                    <a class="filter-pill" asp-page="./VeRoster" asp-all-route-data="Model.PageRoute(Model.PageNumber + 1)">Next <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+                }
+            </div>
+        }
+        else
+        {
+            <span></span>
+        }
+    </div>
+}

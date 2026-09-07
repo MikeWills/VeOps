@@ -13,7 +13,7 @@
 > is now historical only — no code reads those files.
 
 What `FccUlsClient`/`FccUlsRecordParser`/`FccUlsWatcherService`
-(`VeSessionManager.Core/FccUls/`) rely on. No account setup, no credentials — this is a public FCC
+(`VeOps.Core/FccUls/`) rely on. No account setup, no credentials — this is a public FCC
 dataset — but the pipe-delimited field layout needed real downloaded data to pin down accurately,
 which this doc records so nobody has to redo that verification.
 
@@ -277,7 +277,7 @@ weekly catch-up pass, with the invariant "no granted candidate has a grant date 
 session" holding across all 48 granted rows afterward. It also still correctly refused two candidates
 FCC hadn't processed — one whose class was still the old one, and one with no license record at all.
 
-Run on demand with `dotnet run --project src/VeSessionManager.Worker -- --run-fcc-weekly`
+Run on demand with `dotnet run --project src/VeOps.Worker -- --run-fcc-weekly`
 (`--run-fcc-daily` and `--run-fcc-all-dailies` also exist). All exit without starting the normal
 jobs, and all are idempotent. **Reach for `--run-fcc-all-dailies` first** — see below for why.
 

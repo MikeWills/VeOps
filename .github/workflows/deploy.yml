@@ -1,4 +1,4 @@
-# Deploys VeSessionManager (Worker + Web) to the production Ubuntu server over Tailscale.
+# Deploys VeOps (Worker + Web) to the production Ubuntu server over Tailscale.
 #
 # Trigger: pushing a version tag (v*.*.*) -- never on every commit to main.
 #
@@ -65,10 +65,10 @@ jobs:
         run: dotnet restore
 
       - name: Publish Worker
-        run: dotnet publish src/VeSessionManager.Worker/VeSessionManager.Worker.csproj -c Release -o publish/worker -p:InformationalVersion=${{ github.ref_name }}
+        run: dotnet publish src/VeOps.Worker/VeOps.Worker.csproj -c Release -o publish/worker -p:InformationalVersion=${{ github.ref_name }}
 
       - name: Publish Web
-        run: dotnet publish src/VeSessionManager.Web/VeSessionManager.Web.csproj -c Release -o publish/web -p:InformationalVersion=${{ github.ref_name }}
+        run: dotnet publish src/VeOps.Web/VeOps.Web.csproj -c Release -o publish/web -p:InformationalVersion=${{ github.ref_name }}
 
       - name: Connect to Tailscale
         uses: tailscale/github-action@v3
@@ -264,7 +264,7 @@ jobs:
         # starting.
         run: |
           PUBLIC_HOST=$(grep -oP '"AllowedHosts"\s*:\s*"\K[^"]+' \
-            src/VeSessionManager.Web/appsettings.Production.json | cut -d';' -f1)
+            src/VeOps.Web/appsettings.Production.json | cut -d';' -f1)
           if [ -z "$PUBLIC_HOST" ]; then
             echo "Could not read AllowedHosts from appsettings.Production.json — refusing to guess."
             exit 1

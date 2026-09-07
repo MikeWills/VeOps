@@ -1,6 +1,6 @@
 # Multi-Team Foundation
 
-What `Team` (`VeSessionManager.Core/Entities/Team.cs`) is, why it's shaped the way it is, and the
+What `Team` (`VeOps.Core/Entities/Team.cs`) is, why it's shaped the way it is, and the
 pattern any future per-team integration (Zoom/Discord/Square/Email) should follow.
 
 ## The hierarchy: VEC ⇒ Team ⇒ VE

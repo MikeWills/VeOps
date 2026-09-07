@@ -15,7 +15,7 @@
 > its still-accurate Phase 4 implementation notes (Mailgun setup, editing templates via SQLite).
 
 What `CandidateNotificationService`, `EmailTemplateRenderer`, and `SmtpEmailSender`
-(`VeSessionManager.Core/{Notifications,Email}/`) rely on, and — since this is the one integration
+(`VeOps.Core/{Notifications,Email}/`) rely on, and — since this is the one integration
 in the app that's meant to be **hand-authored by a human**, not generic content — how to actually
 edit what gets sent, today, before Phase 9's admin UI exists to do it visually.
 

@@ -12,7 +12,7 @@ runs. Rolling back means **deploying an earlier tag**, not swapping a symlink.
 ## Decide first: did the bad release change the schema?
 
 ```bash
-git diff --stat <last-good-tag>..<bad-tag> -- src/VeSessionManager.Core/Migrations/
+git diff --stat <last-good-tag>..<bad-tag> -- src/VeOps.Core/Migrations/
 ```
 
 - **No migration** → code-only rollback. Step A alone is enough.

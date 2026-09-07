@@ -35,7 +35,7 @@ outage. Its start-row save was unprotected for the same reason.
 
 ### The fix
 
-**`JobTick.GuardedAsync`** (`src/VeSessionManager.Worker/JobTick.cs`) wraps one iteration of each
+**`JobTick.GuardedAsync`** (`src/VeOps.Worker/JobTick.cs`) wraps one iteration of each
 job's timer loop. A failed tick is logged and abandoned; the loop continues. That is safe precisely
 because every job here is scan-based and idempotent — the next tick re-derives whatever this one
 missed, which is the same property that makes a missed tick harmless. `OperationCanceledException`
@@ -128,7 +128,7 @@ provider-dependent behaviour.
 
 # Naming contention, so the "is SQLite still right?" question has a graph (#434, 2026-08-20)
 
-Follow-up to [#403](https://github.com/MikeWills/VeSessionManager/issues/403), which asked whether
+Follow-up to [#403](https://github.com/MikeWills/VeOps/issues/403), which asked whether
 this app has outgrown SQLite and concluded **no — and size will never be the reason**. The database
 is single-digit megabytes against a multi-terabyte ceiling. The real constraint is that Web and
 Worker are two processes sharing one file, so only one may write at a time.
