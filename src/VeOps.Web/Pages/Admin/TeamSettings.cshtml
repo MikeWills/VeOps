@@ -403,6 +403,11 @@ else
             </div>
 
             <button type="submit" class="btn-primary btn-sm" style="margin-top:12px;">Save Youth-Rate Confirmation</button>
+            @* Opens the real page, rendered from the same partial the candidate&rsquo;s copy uses, with
+               nothing wired to submit &mdash; the saved wording, not the unsaved editor contents. *@
+            <a class="btn-secondary btn-sm" style="margin-top:12px; margin-left:8px;"
+               asp-page="/Admin/YouthConfirmPreview" asp-route-teamId="@Model.TeamId"
+               target="_blank" rel="noopener">Preview page</a>
         </form>
     </div>
 }
