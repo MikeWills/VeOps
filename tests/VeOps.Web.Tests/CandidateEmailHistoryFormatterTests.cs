@@ -19,14 +19,14 @@ public class CandidateEmailHistoryFormatterTests
         new(label, Base.AddMinutes(minutes), trigger);
 
     /// <summary>
-    /// <b>The reported bug.</b> A rule on <c>CandidateTested</c> has no legacy column and never will —
+    /// <b>The reported bug.</b> A rule on <c>CandidatePassed</c> has no legacy column and never will —
     /// so its mail was sent and the candidate's page showed nothing.
     /// </summary>
     [Fact]
     public void ASendOnATriggerWithNoLegacyColumn_Appears()
     {
         var history = CandidateEmailHistoryFormatter.Build(
-            Candidate(), [Send("Congratulations on testing", 0, MessageTrigger.CandidateTested)]);
+            Candidate(), [Send("Congratulations on testing", 0, MessageTrigger.CandidatePassed)]);
 
         Assert.Equal("Congratulations on testing", Assert.Single(history).Label);
     }

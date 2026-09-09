@@ -1184,3 +1184,44 @@ these two triggers, and it is the generalized form of the #116 defect: `{{ZoomJo
 as valid on the per-session digests while nothing populated it, so it reached recipients as a
 literal `{{ZoomJoinUrl}}`. A token offered as a clickable chip in the rule editor is a promise; this
 holds these two triggers to it.
+
+## "When a candidate has tested" became "When a candidate passes" (2026-09-09)
+
+Mike, looking at the rule list: *"I see this is everyone who completed a test, not just passed... I
+think I'd rather have this be just passed candidates."* His own rule on it was already named
+**"Completed Testing, Passed"** with the subject *"Congratulations, You Passed Your Amateur Radio
+Exam!"* — which is the tell. The obvious message to hang on this trigger was one that must never
+reach somebody who failed, and nothing stopped it.
+
+`MessageTrigger.CandidateTested` is now `MessageTrigger.CandidatePassed`, and
+`CandidateTestedScanner` is `CandidatePassedScanner`. **The numeric enum value stays `4`**:
+`MessageRule.Trigger` and every `MessageRuleRun` in the history store the int, so the rename is
+source-level, while renumbering would silently repoint every existing rule.
+
+### The predicate is `NewLicenseClass`, and the alternatives are all wrong
+
+`ExamResultSyncService` sets `Candidate.NewLicenseClass` only when the sitting earned a class, so a
+failure never has one. The three things it could have been instead:
+
+- **`ApplicationStatus != Failed`** — lets an ungraded row through the moment somebody marks the
+  session completed, which is the bug being fixed.
+- **`ApplicationStatus == Granted`** — that is the FCC weeks later, not the exam result. It already
+  has its own trigger (`LicenseGranted`).
+- **`TestedWithEvidence`** — true for a human-marked row with no grade at all.
+
+### The side effect worth knowing: it now waits for the grade
+
+"Mark session completed" flips `Tested` for the whole roster before anyone is graded, so the old
+shape could congratulate a room on the night with the outcome unknown. A completion-only row no
+longer matches — and then *does* match on a later scan once the graded result lands, because nothing
+settles a subject until a message is actually sent. Both halves are pinned by tests
+(`DoesNotFireForACompletionOnlyTestedRow`, `FiresOnTheLaterScanWhenTheGradeArrivesAfterwards`).
+
+### What this gives up
+
+**Nothing addresses a candidate who did not pass any more.** That was available before — a team
+could write a neutral "thanks for testing" on this trigger — and it is gone rather than moved. If it
+is ever wanted back, the shape is a sibling trigger ("when a candidate does not pass") rather than a
+per-rule Passed/Failed/Either option: the recipient list, the tone and the tokens all differ, and a
+rule that can silently flip between congratulating and consoling is a worse thing to own than two
+rules with honest names.

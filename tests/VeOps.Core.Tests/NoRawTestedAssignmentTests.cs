@@ -8,7 +8,7 @@ namespace VeOps.Core.Tests;
 ///
 /// <para><b>Why a source scan rather than trusting review.</b> The bool and its new
 /// <c>TestedUtc</c> timestamp have to move together: a site that sets one and forgets the other
-/// leaves a candidate the <c>CandidateTested</c> trigger can never see. Nothing throws, nothing logs,
+/// leaves a candidate the <c>CandidatePassed</c> trigger can never see. Nothing throws, nothing logs,
 /// no test of that site fails — the candidate simply never gets the email, and the only way to
 /// notice is for somebody to ask why. That is the same "produces no error" property that earned
 /// <see cref="NoNulBytesInSourceTests"/> and <c>InlineEventHandlerTests</c> their own scans.</para>
@@ -88,7 +88,7 @@ public partial class NoRawTestedAssignmentTests
 
         Assert.True(offenders.Count == 0,
             "Candidate.Tested must be set through Candidate.MarkTested(now), which also stamps TestedUtc — "
-            + "a raw assignment leaves the CandidateTested trigger unable to ever see that candidate:\n"
+            + "a raw assignment leaves the CandidatePassed trigger unable to ever see that candidate:\n"
             + string.Join("\n", offenders));
     }
 }

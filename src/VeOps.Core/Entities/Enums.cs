@@ -258,11 +258,20 @@ public enum MessageTrigger
     PaymentUnpaid = 3,
 
     /// <summary>
-    /// A candidate has sat their exam — <c>Candidate.Tested</c>, from either the Session Manager
-    /// marking a session completed or the automatic exam-result sync (#401 PR3). New: nothing sent
-    /// here before, and no rule is seeded for it.
+    /// A candidate <b>passed</b> — the graded result from ExamTools earned them a license class
+    /// (#401 PR3; narrowed from "has tested" on 2026-09-09).
+    ///
+    /// <para>It used to be every candidate who sat the exam, which made the obvious use for it — a
+    /// "congratulations, you passed" email — send that message to the people who failed. Mike, seeing
+    /// it on the rule list: "I'd rather have this be just passed candidates." The predicate is
+    /// <c>Candidate.NewLicenseClass</c>, set only when a sitting actually earned a class, so somebody
+    /// who did not pass never matches.</para>
+    ///
+    /// <para>The numeric value is unchanged on purpose: <c>MessageRule.Trigger</c> and every
+    /// <c>MessageRuleRun</c> in the history store the int, so renaming the member is a source-level
+    /// change, while renumbering it would silently repoint every existing rule.</para>
     /// </summary>
-    CandidateTested = 4,
+    CandidatePassed = 4,
 
     /// <summary>
     /// The FCC has granted a license from this session — the natural home for a welcome email, and

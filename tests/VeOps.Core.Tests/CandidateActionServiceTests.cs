@@ -125,7 +125,7 @@ public class CandidateActionServiceTests
     /// (2026-08-15). They did not until then, and the mismatch was not cosmetic — see the next test.
     /// </summary>
     [Fact]
-    public async Task MarkFailed_AlsoMarksTheCandidateTested()
+    public async Task MarkFailed_AlsoMarksTheCandidatePassed()
     {
         await using var dbContext = CreateContext();
         var (team, user, vec) = await SeedTeamAsync(dbContext);
