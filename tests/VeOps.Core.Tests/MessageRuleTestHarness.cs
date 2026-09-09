@@ -75,7 +75,7 @@ public static class MessageRuleTestHarness
             new BeforeSessionStartScanner(dbContext, appOptions),
             new FccFeeOutstandingScanner(dbContext),
             new PaymentUnpaidBeforeSessionScanner(dbContext, appOptions),
-            new CandidateTestedScanner(dbContext),
+            new CandidatePassedScanner(dbContext),
             new LicenseGrantedScanner(dbContext, NullLogger<LicenseGrantedScanner>.Instance),
             new FelonyDisclosureDeclaredScanner(dbContext, NullLogger<FelonyDisclosureDeclaredScanner>.Instance)
         ];

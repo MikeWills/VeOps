@@ -13,7 +13,7 @@ public record RuleSend(string Label, DateTime SentUtc, MessageTrigger Trigger);
 ///
 /// <para><b>Why the columns could not stay.</b> They are a fixed set of app-defined names, which is
 /// the opposite of what #401 is for. Three separate symptoms of the same cause: a rule on
-/// <c>CandidateTested</c> or <c>LicenseGranted</c> has no column at all, so its mail was invisible;
+/// <c>CandidatePassed</c> or <c>LicenseGranted</c> has no column at all, so its mail was invisible;
 /// two rules on one trigger share one column, so "remind at 7 days" and "remind at 1 day" collapsed
 /// into a single line with whichever timestamp landed last; and the FCC fee reminder stamps
 /// <c>Candidate.FccFeeReminderSentUtc</c>, which the history never read, so it has never appeared at
@@ -42,7 +42,7 @@ public static class CandidateRuleSends
                         // history, but this list answers "what has this person received" and
                         // listing either as received would be a lie of exactly the kind #396 was.
                         && r.Outcome == MessageRuleOutcome.Sent
-                        // Addressed to the candidate, over email. CandidateTested and LicenseGranted
+                        // Addressed to the candidate, over email. CandidatePassed and LicenseGranted
                         // may both address the team's own inbox instead — a message *about* this
                         // candidate that they never saw — and a Discord rule reaches a room, not a
                         // person. A run whose rule has since been deleted is kept: MessageRuleId is

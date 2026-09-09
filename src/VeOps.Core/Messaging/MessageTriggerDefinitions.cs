@@ -135,7 +135,7 @@ public static class MessageTriggerDefinitions
         // --- Added in PR3. None of these is seeded: they are things this app could not do before,
         // not reproductions of prior behaviour, so a team opts in by creating a rule. ---
 
-        new(MessageTrigger.CandidateTested,
+        new(MessageTrigger.CandidatePassed,
             MessageTriggerMechanism.State,
             MessageSubjectType.Candidate,
             DefaultParameterHours: null,

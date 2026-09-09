@@ -22,7 +22,7 @@ public static class MessageTriggerLabels
         MessageTrigger.FccFeeOutstanding => "While the FCC is waiting for its fee",
         MessageTrigger.PaymentUnpaid => "While an exam fee is unpaid",
         MessageTrigger.PaymentUnpaidBeforeSession => "Before a session, if the exam fee is still unpaid",
-        MessageTrigger.CandidateTested => "When a candidate has tested",
+        MessageTrigger.CandidatePassed => "When a candidate passes",
         MessageTrigger.LicenseGranted => "When the FCC grants a license",
         MessageTrigger.FelonyDisclosureDeclared => "When a felony disclosure is declared",
         MessageTrigger.ManualToCandidate => "When you email candidates by hand",
@@ -46,9 +46,9 @@ public static class MessageTriggerLabels
         MessageTrigger.PaymentUnpaidBeforeSession =>
             "Fires once per unpaid exam fee, the set number of hours ahead of the session it belongs to — a candidate who has not paid cannot test. "
             + "Separate from \"While an exam fee is unpaid\": that one's clock runs from the FCC application, which is often not there yet before the session.",
-        MessageTrigger.CandidateTested =>
-            "Fires once a candidate's graded result arrives from ExamTools — the feed is what says somebody tested, not the session being marked completed. "
-            + "Note this says nothing about whether they passed.",
+        MessageTrigger.CandidatePassed =>
+            "Fires once a candidate's graded result arrives from ExamTools and it earned them a license class. Somebody who did not pass never fires this. "
+            + "It waits for the result itself, not for the session being marked completed, so it stays quiet on the night and sends when grading lands.",
         MessageTrigger.LicenseGranted =>
             "Fires once the FCC has granted a license from this session. The only point at which {{CallSign}} resolves to anything — everywhere earlier it renders blank. "
             + "A candidate who was already licensed walking in does not fire this: their grant date predates the session.",

@@ -81,7 +81,7 @@ public class Candidate
     /// When <see cref="Tested"/> first became true, or null for a candidate who has not tested — and
     /// for every candidate who tested before this field existed (#401 PR3).
     ///
-    /// <para><b>Added because a bool cannot be a trigger point.</b> <c>MessageTrigger.CandidateTested</c>
+    /// <para><b>Added because a bool cannot be a trigger point.</b> <c>MessageTrigger.CandidatePassed</c>
     /// needs the moment the state changed, both to bound itself by the rule's own creation and to
     /// avoid reaching a year of backfilled history. The nearest existing candidates were
     /// <c>ResultMarkedUtc</c> — which only a Session Manager's explicit result sets, not the automatic
@@ -101,7 +101,7 @@ public class Candidate
     ///
     /// <para>A helper rather than two assignments at four call sites because the pair has to stay
     /// together: a site that sets the bool and forgets the timestamp leaves a candidate the
-    /// <c>CandidateTested</c> trigger can never see, and nothing fails — they simply never get the
+    /// <c>CandidatePassed</c> trigger can never see, and nothing fails — they simply never get the
     /// email. <c>NoRawTestedAssignmentTests</c> fails the build if a raw assignment reappears.</para>
     ///
     /// <para><b>Idempotent on purpose.</b> The timestamp records the <i>first</i> time, so a second

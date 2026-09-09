@@ -203,7 +203,7 @@ public static class EmailDefaultsSeeder
         // the VEC would not process it." Its condition — an FCC application entered for a candidate
         // who never paid to test — cannot legitimately arise, so nothing was ever going to be sent.
         // PaymentUnpaidBeforeSession replaces the real need this was reaching for, and is not seeded
-        // — like every trigger added since (CandidateTested, LicenseGranted, ...), a team opts in.
+        // — like every trigger added since (CandidatePassed, LicenseGranted, ...), a team opts in.
 
         // Sent by a per-candidate button, NOT automatically (#221). It used to fire from
         // SessionActionService.MarkCompletedAsync for anyone whose Tested flag that call flipped —

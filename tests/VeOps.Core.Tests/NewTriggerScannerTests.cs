@@ -10,7 +10,7 @@ using Xunit;
 namespace VeOps.Core.Tests;
 
 /// <summary>
-/// The three trigger points added in PR3 (#401): <c>CandidateTested</c>, <c>LicenseGranted</c> and
+/// The three trigger points added in PR3 (#401): <c>CandidatePassed</c>, <c>LicenseGranted</c> and
 /// <c>FelonyDisclosureDeclared</c>.
 ///
 /// <para>Unlike PR1's, these reproduce nothing — they are things the app could not do before — so
@@ -118,36 +118,38 @@ public class NewTriggerScannerTests
         DateRegisteredUtc = Now.AddDays(-3)
     };
 
-    // ---- CandidateTested ----
+    // ---- CandidatePassed ----
 
     [Fact]
-    public async Task CandidateTested_FiresForSomeoneWhoHasTested()
+    public async Task CandidatePassed_FiresForSomeoneWhoPassed()
     {
         await using var dbContext = CreateContext();
         var team = await SeedTeamAsync(dbContext);
-        await SeedRuleAsync(dbContext, team, MessageTrigger.CandidateTested);
+        await SeedRuleAsync(dbContext, team, MessageTrigger.CandidatePassed);
         var session = await SeedSessionAsync(dbContext, team, Now.AddDays(-1));
         var candidate = NewCandidate(session);
         candidate.MarkTested(Now.AddHours(-2));
+        // Passing is what this trigger is about, and NewLicenseClass is the only thing that says so.
+        candidate.NewLicenseClass = LicenseClass.Technician;
         dbContext.Candidates.Add(candidate);
         await dbContext.SaveChangesAsync();
 
         var sender = new FakeEmailSender();
-        Assert.Equal(1, (await RunAsync(dbContext, sender, team, MessageTrigger.CandidateTested)).Sent);
+        Assert.Equal(1, (await RunAsync(dbContext, sender, team, MessageTrigger.CandidatePassed)).Sent);
         Assert.Single(sender.SentMessages);
     }
 
     [Fact]
-    public async Task CandidateTested_DoesNotFireForSomeoneWhoHasNot()
+    public async Task CandidatePassed_DoesNotFireForSomeoneWhoHasNot()
     {
         await using var dbContext = CreateContext();
         var team = await SeedTeamAsync(dbContext);
-        await SeedRuleAsync(dbContext, team, MessageTrigger.CandidateTested);
+        await SeedRuleAsync(dbContext, team, MessageTrigger.CandidatePassed);
         var session = await SeedSessionAsync(dbContext, team);
         dbContext.Candidates.Add(NewCandidate(session));
         await dbContext.SaveChangesAsync();
 
-        Assert.Equal(0, (await RunAsync(dbContext, new FakeEmailSender(), team, MessageTrigger.CandidateTested)).Sent);
+        Assert.Equal(0, (await RunAsync(dbContext, new FakeEmailSender(), team, MessageTrigger.CandidatePassed)).Sent);
     }
 
     /// <summary>
@@ -156,52 +158,55 @@ public class NewTriggerScannerTests
     /// first tick, in place of an age window.
     /// </summary>
     [Fact]
-    public async Task CandidateTested_DoesNotFireForARowFromBeforeTheTimestampExisted()
+    public async Task CandidatePassed_DoesNotFireForARowFromBeforeTheTimestampExisted()
     {
         await using var dbContext = CreateContext();
         var team = await SeedTeamAsync(dbContext);
-        await SeedRuleAsync(dbContext, team, MessageTrigger.CandidateTested);
+        await SeedRuleAsync(dbContext, team, MessageTrigger.CandidatePassed);
         var session = await SeedSessionAsync(dbContext, team, Now.AddMonths(-8));
         var candidate = NewCandidate(session);
         // The shape a pre-migration row has: tested, with no record of when.
         candidate.Tested = true;
         candidate.TestedUtc = null;
+        candidate.NewLicenseClass = LicenseClass.Technician;
         dbContext.Candidates.Add(candidate);
         await dbContext.SaveChangesAsync();
 
-        Assert.Equal(0, (await RunAsync(dbContext, new FakeEmailSender(), team, MessageTrigger.CandidateTested)).Sent);
+        Assert.Equal(0, (await RunAsync(dbContext, new FakeEmailSender(), team, MessageTrigger.CandidatePassed)).Sent);
     }
 
     [Fact]
-    public async Task CandidateTested_DoesNotFireForSomeoneTestedBeforeTheRuleExisted()
+    public async Task CandidatePassed_DoesNotFireForSomeoneTestedBeforeTheRuleExisted()
     {
         await using var dbContext = CreateContext();
         var team = await SeedTeamAsync(dbContext);
-        await SeedRuleAsync(dbContext, team, MessageTrigger.CandidateTested, createdUtc: Now.AddHours(-1));
+        await SeedRuleAsync(dbContext, team, MessageTrigger.CandidatePassed, createdUtc: Now.AddHours(-1));
         var session = await SeedSessionAsync(dbContext, team, Now.AddDays(-2));
         var candidate = NewCandidate(session);
         candidate.MarkTested(Now.AddDays(-2));
+        candidate.NewLicenseClass = LicenseClass.Technician;
         dbContext.Candidates.Add(candidate);
         await dbContext.SaveChangesAsync();
 
-        Assert.Equal(0, (await RunAsync(dbContext, new FakeEmailSender(), team, MessageTrigger.CandidateTested)).Sent);
+        Assert.Equal(0, (await RunAsync(dbContext, new FakeEmailSender(), team, MessageTrigger.CandidatePassed)).Sent);
     }
 
     /// <summary>A withdrawn candidate never sat anything, whatever a bulk "mark session completed" left on the row.</summary>
     [Fact]
-    public async Task CandidateTested_DoesNotFireForAWithdrawnCandidate()
+    public async Task CandidatePassed_DoesNotFireForAWithdrawnCandidate()
     {
         await using var dbContext = CreateContext();
         var team = await SeedTeamAsync(dbContext);
-        await SeedRuleAsync(dbContext, team, MessageTrigger.CandidateTested);
+        await SeedRuleAsync(dbContext, team, MessageTrigger.CandidatePassed);
         var session = await SeedSessionAsync(dbContext, team, Now.AddDays(-1));
         var candidate = NewCandidate(session);
         candidate.MarkTested(Now.AddHours(-2));
         candidate.ApplicationStatus = CandidateApplicationStatus.NotTested;
+        candidate.NewLicenseClass = LicenseClass.Technician;
         dbContext.Candidates.Add(candidate);
         await dbContext.SaveChangesAsync();
 
-        Assert.Equal(0, (await RunAsync(dbContext, new FakeEmailSender(), team, MessageTrigger.CandidateTested)).Sent);
+        Assert.Equal(0, (await RunAsync(dbContext, new FakeEmailSender(), team, MessageTrigger.CandidatePassed)).Sent);
     }
 
     /// <summary>The timestamp records the first time, so re-seeing an already-tested candidate does not move the moment out from under a rule.</summary>
@@ -215,6 +220,74 @@ public class NewTriggerScannerTests
 
         Assert.Equal(Now, candidate.TestedUtc);
         Assert.True(candidate.Tested);
+    }
+
+
+    /// <summary>
+    /// The narrowing this trigger exists for (2026-09-09). A candidate who sat the exam and did not
+    /// pass has no NewLicenseClass, and must never receive the message hung on this trigger — which
+    /// in practice is "congratulations, you passed".
+    /// </summary>
+    [Fact]
+    public async Task CandidatePassed_DoesNotFireForSomeoneWhoTestedAndDidNotPass()
+    {
+        await using var dbContext = CreateContext();
+        var team = await SeedTeamAsync(dbContext);
+        await SeedRuleAsync(dbContext, team, MessageTrigger.CandidatePassed);
+        var session = await SeedSessionAsync(dbContext, team, Now.AddDays(-1));
+        var candidate = NewCandidate(session);
+        candidate.MarkTested(Now.AddHours(-2));
+        candidate.ApplicationStatus = CandidateApplicationStatus.Failed;
+        dbContext.Candidates.Add(candidate);
+        await dbContext.SaveChangesAsync();
+
+        Assert.Equal(0, (await RunAsync(dbContext, new FakeEmailSender(), team, MessageTrigger.CandidatePassed)).Sent);
+    }
+
+    /// <summary>
+    /// "Mark session completed" flips Tested for the whole roster before anyone is graded. That row
+    /// must not fire — the outcome is not known yet — and this is the case the old shape got wrong,
+    /// congratulating a room on the night.
+    /// </summary>
+    [Fact]
+    public async Task CandidatePassed_DoesNotFireForACompletionOnlyTestedRow()
+    {
+        await using var dbContext = CreateContext();
+        var team = await SeedTeamAsync(dbContext);
+        await SeedRuleAsync(dbContext, team, MessageTrigger.CandidatePassed);
+        var session = await SeedSessionAsync(dbContext, team, Now.AddDays(-1));
+        var candidate = NewCandidate(session);
+        candidate.MarkTested(Now.AddHours(-2));
+        dbContext.Candidates.Add(candidate);
+        await dbContext.SaveChangesAsync();
+
+        Assert.Equal(0, (await RunAsync(dbContext, new FakeEmailSender(), team, MessageTrigger.CandidatePassed)).Sent);
+    }
+
+    /// <summary>
+    /// And the other half of that: waiting is not losing. Nothing settles the subject until a message
+    /// is actually sent, so the grade arriving a day later fires on that day's scan.
+    /// </summary>
+    [Fact]
+    public async Task CandidatePassed_FiresOnTheLaterScanWhenTheGradeArrivesAfterwards()
+    {
+        await using var dbContext = CreateContext();
+        var team = await SeedTeamAsync(dbContext);
+        await SeedRuleAsync(dbContext, team, MessageTrigger.CandidatePassed);
+        var session = await SeedSessionAsync(dbContext, team, Now.AddDays(-1));
+        var candidate = NewCandidate(session);
+        candidate.MarkTested(Now.AddHours(-2));
+        dbContext.Candidates.Add(candidate);
+        await dbContext.SaveChangesAsync();
+
+        Assert.Equal(0, (await RunAsync(dbContext, new FakeEmailSender(), team, MessageTrigger.CandidatePassed)).Sent);
+
+        candidate.NewLicenseClass = LicenseClass.General;
+        await dbContext.SaveChangesAsync();
+
+        var sender = new FakeEmailSender();
+        Assert.Equal(1, (await RunAsync(dbContext, sender, team, MessageTrigger.CandidatePassed)).Sent);
+        Assert.Single(sender.SentMessages);
     }
 
     // ---- LicenseGranted ----
@@ -373,7 +446,7 @@ public class NewTriggerScannerTests
     /// prior behaviour, so an existing team's outgoing mail is unchanged until somebody says otherwise.
     /// </summary>
     [Theory]
-    [InlineData(MessageTrigger.CandidateTested)]
+    [InlineData(MessageTrigger.CandidatePassed)]
     [InlineData(MessageTrigger.LicenseGranted)]
     [InlineData(MessageTrigger.FelonyDisclosureDeclared)]
     public async Task WithNoRule_NothingIsSent(MessageTrigger trigger)
@@ -407,7 +480,7 @@ public class NewTriggerScannerTests
         await dbContext.SaveChangesAsync();
 
         var triggers = await dbContext.MessageRules.Select(r => r.Trigger).ToListAsync();
-        Assert.DoesNotContain(MessageTrigger.CandidateTested, triggers);
+        Assert.DoesNotContain(MessageTrigger.CandidatePassed, triggers);
         Assert.DoesNotContain(MessageTrigger.LicenseGranted, triggers);
         Assert.DoesNotContain(MessageTrigger.FelonyDisclosureDeclared, triggers);
     }
