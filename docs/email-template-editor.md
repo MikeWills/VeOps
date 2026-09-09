@@ -125,3 +125,43 @@ so the app's own `frame-ancestors 'none'` is not involved.
 
 Removing the inline editors left `AuthorizeTemplateAsync` and both `PlaceholdersFor` overloads with
 no callers; they were deleted rather than left for a future audit to flag.
+
+## Block spacing: Quill zeroes it, mail clients do not (#488, extended 2026-09-08)
+
+`quill.snow.css` contains one rule — `.ql-editor p, .ql-editor ol, .ql-editor pre, .ql-editor
+blockquote, .ql-editor h1..h6 { margin: 0; padding: 0 }` — that flattens every block in the editor.
+Nothing resets it on the way out: `EmailTemplateRenderer` ships the composed HTML as-is, so the
+recipient's mail client applies its own default margins to all of those. The editor therefore
+previews something tighter than what arrives, and the gap is invisible precisely where it matters —
+between the blocks a writer meant to separate.
+
+#488 restored the gap between two paragraphs. It was reported again from a live screenshot on
+2026-09-08, and the remaining half was the rest of that same rule: a paragraph written *after a
+bulleted list* still sat flush against the last bullet, so "Step 2: Join Zoom on test day" did not
+read as a new paragraph at all. Measured in a browser against the real `app.css` + `quill.snow.css`:
+0px after a list, against 14px between two paragraphs; 14px both ways after the fix.
+
+The rules live in `app.css` beside the paragraph one, and three details are load-bearing:
+
+- **Both `ol` and `ul` are styled.** Quill 2 renders *both* list types as `<ol>` (a bullet is
+  `li[data-list="bullet"]`), while `getSemanticHTML()` — what actually gets saved and sent — emits
+  `<ul>` for them. Styling one selector leaves the editor and the sent mail disagreeing again.
+- **Bottom margin only**, matching the paragraph rule: adjacent vertical margins collapse in real
+  rendering, so one 1em gap per block is the honest equivalent rather than double-counting.
+- **`.ql-editor > *:last-child { margin-bottom: 0 }`** replaced the old `p:last-child` rule, so
+  whichever block ends the document does not hold a trailing gap open. It needs the child combinator
+  and the two wrapper classes to outrank the per-element rules above it.
+
+Headings get the browser's own defaults (0.67/0.83/1em for h1/h2/h3) rather than a flat 1em, for the
+same "match what the mail client will do" reason.
+
+If a future toolbar gains `blockquote`, `pre` or `h4`-`h6`, they are in that same Quill reset and
+will need the same treatment — the symptom is silent, since the markup is correct and only the
+editor's rendering of it is wrong.
+
+**Verifying a change here needs no login**: inline `quill.snow.css` and `app.css` into a
+self-contained page with Quill's own DOM shape, serve it over a throwaway local HTTP server (`file://`
+is refused by the browser tooling), and measure `getBoundingClientRect()` gaps. One trap, which cost
+a wrong set of numbers first time round: `.ql-editor` is `white-space: pre-wrap`, so *newlines and
+indentation between block elements in the harness markup become real line boxes* and inflate every
+measurement by ~40px. Quill's own DOM has no whitespace between blocks; the harness must not either.
