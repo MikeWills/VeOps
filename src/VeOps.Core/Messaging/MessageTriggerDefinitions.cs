@@ -96,7 +96,11 @@ public static class MessageTriggerDefinitions
             MessageSubjectType.Candidate,
             DefaultParameterHours: 24,
             LegalRecipients: [MessageRecipient.Candidate, MessageRecipient.TeamAdminAddress, MessageRecipient.SessionLead, MessageRecipient.TeamAdmins, MessageRecipient.SystemAdmins, MessageRecipient.SessionManagers, MessageRecipient.DiscordChannel],
-            Placeholders: ["CandidateName", "CandidateFirstName", "SessionDate", "ZoomJoinUrl", "OutstandingPaymentLinkUrl", "PaymentStatus"],
+            // YouthPaymentLinkUrl added 2026-09-08: only the registration confirmation offered the
+            // youth rate, so a candidate who missed it in that first email had no route back to it
+            // from any reminder. Blank when the VEC runs no youth program, or once the fee is
+            // settled — see YouthConfirmLink and BeforeSessionStartScanner.
+            Placeholders: ["CandidateName", "CandidateFirstName", "SessionDate", "ZoomJoinUrl", "OutstandingPaymentLinkUrl", "YouthPaymentLinkUrl", "PaymentStatus"],
             CarriesSessionContext: true),
 
         new(MessageTrigger.FccFeeOutstanding,
@@ -123,7 +127,10 @@ public static class MessageTriggerDefinitions
             MessageSubjectType.Payment,
             DefaultParameterHours: 24,
             LegalRecipients: [MessageRecipient.Candidate, MessageRecipient.TeamAdminAddress, MessageRecipient.SessionLead, MessageRecipient.TeamAdmins, MessageRecipient.SystemAdmins, MessageRecipient.SessionManagers],
-            Placeholders: ["CandidateName", "SessionDate", "PaymentAmount", "PaymentLinkUrl"]),
+            // Same 2026-09-08 addition as BeforeSessionStart above. This is the message that exists
+            // precisely to say "your fee is unpaid and the session is close", so the cheaper rate a
+            // youth candidate is entitled to belongs in it.
+            Placeholders: ["CandidateName", "SessionDate", "PaymentAmount", "PaymentLinkUrl", "YouthPaymentLinkUrl"]),
 
         // --- Added in PR3. None of these is seeded: they are things this app could not do before,
         // not reproductions of prior behaviour, so a team opts in by creating a rule. ---

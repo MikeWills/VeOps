@@ -540,6 +540,18 @@ footer.roster { margin-top: 28px; background: var(--surface); border: 1px solid 
 .ve-flag-problem { color: var(--brick); }
 .ve-flag-unknown { color: var(--ink-soft); }
 
+/* ⚠️ `hidden` means hidden, and without this it does not (2026-09-08, reported live).
+   `[hidden] { display: none }` is a *user-agent* rule at specificity (0,1,0) — exactly the same as
+   `.field` below — and an author stylesheet wins a tie against the UA sheet. So every
+   `<div class="field" hidden>` on this site was still painted: the message rule form showed its
+   Discord channel id while "an email" was selected, and showed a Days box for a trigger that has no
+   delay, greyed out and refusing input because the script had correctly `disabled` it at the same
+   moment it "hid" it. Three separate behaviours looked broken; one CSS rule was.
+   `!important` rather than more classes: several rules here (`.field.field-check`, `.modal .field`)
+   already sit at (0,2,0), so a specificity fix would depend on source order, which is precisely the
+   fragility that produced this. Nothing may opt out of `hidden`. */
+.vesm [hidden] { display: none !important; }
+
 /* Form field.
    16px is not a style choice — iOS Safari auto-zooms the viewport on focusing any control whose
    font-size is below 16px, and the page never zooms back out. Every control the user can focus is
