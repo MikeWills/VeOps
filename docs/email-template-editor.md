@@ -165,3 +165,39 @@ is refused by the browser tooling), and measure `getBoundingClientRect()` gaps. 
 a wrong set of numbers first time round: `.ql-editor` is `white-space: pre-wrap`, so *newlines and
 indentation between block elements in the harness markup become real line boxes* and inflate every
 measurement by ~40px. Quill's own DOM has no whitespace between blocks; the harness must not either.
+
+## The body was `required`, and that is why rules would not save (2026-09-08)
+
+Reported live: "Create rule" did nothing, with no error shown. The cause was one console line nobody
+had open —
+
+```
+An invalid form control with name='Body' is not focusable.
+```
+
+The body `<textarea>` is `display:none` behind the Quill editor and carried the HTML `required`
+attribute. A browser will not submit a form containing an invalid control, and it will not report one
+it cannot focus, so it refused the submit and said nothing. Two details made it certain rather than
+occasional:
+
+- the editor copied its content into the textarea on the form's **`submit` event**, and constraint
+  validation runs *before* that event — so the textarea was empty at exactly the moment it was
+  judged, however much had been typed into the editor;
+- with the textarea hidden, there was nowhere for the browser to anchor its "please fill out this
+  field" bubble, which is precisely the case it handles by giving up silently.
+
+Three changes, and each is load-bearing:
+
+1. **`required` became `data-editor-required`.** A control the browser cannot focus must never be a
+   control the browser is asked to validate. The check itself did not go away — it moved into
+   `message-editor.js`, which cancels the submit, unhides a `.field-error` beside the editor
+   ("Give the message something to say.") and focuses the editor.
+2. **The textarea syncs on Quill's `text-change`, not only on submit.** The posted value is now
+   always current, which also means the HTML tab and anything else reading the field see the truth.
+3. **`.field-error` got a base style.** It previously existed only as `.auth-card .field-error`, so
+   an inline error on any admin page inherited body text and did not read as an error at all.
+
+The lesson generalizes past this form: **`required` on anything hidden — behind a tab, an editor, or
+a `[hidden]` container — converts a validation message into a silent refusal.** Verified in a browser
+against the real markup and scripts: with an empty body the submit is cancelled by our handler and
+`form.checkValidity()` is `true`, meaning the browser now has no opinion to enforce quietly.

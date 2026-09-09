@@ -163,8 +163,13 @@
                 <div class="editor-visual" data-editor-for="body">
                     <div class="editor-surface"></div>
                 </div>
-                <textarea id="body" asp-for="Body" data-token-target="body" rows="12" required></textarea>
+                @* ⚠️ NOT `required` (2026-09-08). This textarea is display:none behind the visual
+                   editor, and a browser refuses to submit a form holding an invalid control it cannot
+                   focus — silently, with only a console line nobody has open. `data-editor-required`
+                   moves the same check into message-editor.js, which reports it where it can be seen. *@
+                <textarea id="body" asp-for="Body" data-token-target="body" rows="12" data-editor-required></textarea>
             </div>
+            <span class="field-error" data-editor-empty-message hidden>Give the message something to say.</span>
 
             @* Click to insert, rather than a list to retype. A hand-typed {{CandidateFirstName}} that
                is a letter out renders blank, and nothing anywhere says it went wrong — the send just
