@@ -116,18 +116,12 @@ public class CandidateRegisteredScanner(
             session.DurationMinutes,
             session.ZoomJoinUrl);
 
-    /// <summary>Blank when the session's Vec doesn't support the youth program, or the InitialExam
-    /// Payment has no token (fee collection disabled) — a Team's template copy for a
-    /// non-youth-program session just renders a blank line for this token, since no
-    /// conditional-block templating exists here to hide it automatically.</summary>
-    private string BuildYouthPaymentLinkUrl(Candidate candidate)
-    {
-        if (!candidate.Session.Vec.SupportsYouthProgram)
-        {
-            return "";
-        }
-
-        var token = candidate.Payments.FirstOrDefault(p => p.Reason == PaymentReason.InitialExam)?.YouthConfirmationToken;
-        return token is { } t ? $"{appOptions.Value.PublicBaseUrl}/youth-confirm/{t}" : "";
-    }
+    /// <summary>The InitialExam payment's youth-rate link, or blank — the URL itself is built by the
+    /// shared <see cref="VeOps.Core.Payments.YouthConfirmLink"/>, which the before-the-session
+    /// reminders use too (2026-09-08). Only the choice of payment is this caller's own.</summary>
+    private string BuildYouthPaymentLinkUrl(Candidate candidate) =>
+        VeOps.Core.Payments.YouthConfirmLink.For(
+            appOptions.Value.PublicBaseUrl,
+            candidate.Session.Vec.SupportsYouthProgram,
+            candidate.Payments.FirstOrDefault(p => p.Reason == PaymentReason.InitialExam)?.YouthConfirmationToken);
 }

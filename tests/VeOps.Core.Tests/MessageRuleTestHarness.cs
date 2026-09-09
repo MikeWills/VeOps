@@ -72,9 +72,9 @@ public static class MessageRuleTestHarness
         IMessageTriggerScanner[] scanners =
         [
             new CandidateRegisteredScanner(dbContext, appOptions, NullLogger<CandidateRegisteredScanner>.Instance),
-            new BeforeSessionStartScanner(dbContext),
+            new BeforeSessionStartScanner(dbContext, appOptions),
             new FccFeeOutstandingScanner(dbContext),
-            new PaymentUnpaidBeforeSessionScanner(dbContext),
+            new PaymentUnpaidBeforeSessionScanner(dbContext, appOptions),
             new CandidateTestedScanner(dbContext),
             new LicenseGrantedScanner(dbContext, NullLogger<LicenseGrantedScanner>.Instance),
             new FelonyDisclosureDeclaredScanner(dbContext, NullLogger<FelonyDisclosureDeclaredScanner>.Instance)

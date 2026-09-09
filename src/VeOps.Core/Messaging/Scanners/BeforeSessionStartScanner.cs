@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using VeOps.Core.Data;
 using VeOps.Core.Entities;
+using VeOps.Core.Integrations;
 using VeOps.Core.Notifications;
 using VeOps.Core.Payments;
 
@@ -21,7 +23,7 @@ namespace VeOps.Core.Messaging.Scanners;
 /// hours out. Comparing two instants removes the whole class — there is no calendar date, so there is
 /// no timezone to get wrong — and it is why the rule's parameter is hours.</para>
 /// </summary>
-public class BeforeSessionStartScanner(AppDbContext dbContext) : IMessageTriggerScanner
+public class BeforeSessionStartScanner(AppDbContext dbContext, IOptions<AppOptions> appOptions) : IMessageTriggerScanner
 {
     public MessageTrigger Trigger => MessageTrigger.BeforeSessionStart;
 
@@ -65,6 +67,17 @@ public class BeforeSessionStartScanner(AppDbContext dbContext) : IMessageTrigger
         // itself only needs Title/ScheduledStartUtc/DurationMinutes/ZoomJoinUrl, all already on
         // candidate.Session, but a rule set to MessageFanOut.PerSession wants this too.
         var sessionIds = candidates.Select(c => c.SessionId).Distinct().ToList();
+
+        // Which of those sessions run under a VEC with a youth program, asked as a query rather than
+        // read off candidate.Session.Vec (2026-09-08). A navigation would need a ThenInclude that
+        // nothing would fail without: EF's change tracker fixes the navigation up from whatever the
+        // test seeded in the same context, so a forgotten Include passes every test here and throws
+        // in the Worker. This cannot be got wrong that way.
+        var youthProgramSessionIds = (await dbContext.Sessions
+            .Where(s => sessionIds.Contains(s.Id) && s.Vec.SupportsYouthProgram)
+            .Select(s => s.Id)
+            .ToListAsync(cancellationToken)).ToHashSet();
+
         var registeredCounts = await dbContext.Candidates
             .Where(c => sessionIds.Contains(c.SessionId))
             .GroupBy(c => c.SessionId)
@@ -94,6 +107,18 @@ public class BeforeSessionStartScanner(AppDbContext dbContext) : IMessageTrigger
                         .OrderByDescending(p => p.CreatedUtc)
                         .Select(p => p.PaymentLinkUrl)
                         .FirstOrDefault() ?? "",
+                    // Blank once the fee is settled, deliberately: the youth page answers a payment
+                    // that is no longer Unpaid with "already resolved", so offering the link to
+                    // somebody who has paid sends them to a dead end. Same reasoning as
+                    // OutstandingPaymentLinkUrl above, which is blank for exactly the same people.
+                    ["YouthPaymentLinkUrl"] = YouthConfirmLink.For(
+                        appOptions.Value.PublicBaseUrl,
+                        youthProgramSessionIds.Contains(candidate.SessionId),
+                        candidate.Payments
+                            .Where(p => p.Status == PaymentStatus.Unpaid && p.YouthConfirmationToken != null)
+                            .OrderByDescending(p => p.CreatedUtc)
+                            .Select(p => p.YouthConfirmationToken)
+                            .FirstOrDefault()),
                     ["PaymentStatus"] = PaymentStatusText.For(primaryPayment?.Status)
                 },
                 sentUtc => candidate.DayBeforeReminderSentUtc = sentUtc)

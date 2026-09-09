@@ -112,7 +112,7 @@
         </div>
 
         <div class="field" style="max-width:420px;" data-channel-only="Discord" data-channel-group="new"
-             hidden="@(Model.Channel != MessageChannel.Discord)" hidden>
+             hidden="@(Model.Channel != MessageChannel.Discord)">
             @* See MessageRuleEdit.cshtml's own copy of this control for the fallback reasoning (#503). *@
             @if (Model.DiscordChannels.Count > 0)
             {
@@ -139,7 +139,7 @@
         </div>
 
         <div class="field" style="max-width:420px;" data-channel-only="Discord" data-channel-group="new"
-             hidden="@(Model.Channel != MessageChannel.Discord)" hidden>
+             hidden="@(Model.Channel != MessageChannel.Discord)">
             <label asp-for="FanOut">How many posts</label>
             <select asp-for="FanOut" class="filter-select">
                 <option value="@((int)MessageFanOut.SingleDigest)">One post covering everybody</option>

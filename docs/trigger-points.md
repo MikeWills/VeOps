@@ -1140,3 +1140,47 @@ Each page's own `LoadDiscordChannelsAsync` is called only from `OnGetAsync`.
   session paperwork is filed by the one-shot `SubmitToVec`/ARRL flow (`docs/arrl-vec-submission.md`),
   not by email, and no `MessageRecipient` value represents "the VEC." If that's ever wanted, it needs
   its own design, not an extension of this.
+
+## The youth rate reaches the reminders (2026-09-08)
+
+`{{YouthPaymentLinkUrl}}` was offered on exactly one trigger — `CandidateRegistered`, the
+registration confirmation. Every later message about money pointed only at the standard fee, so a
+youth candidate who skimmed that first email had no route back to the reduced rate from any reminder
+they were later sent. Reported live, off the Message Rules editor's own tag list.
+
+Added to both before-the-session triggers:
+
+- **`BeforeSessionStart`** — "the session starts in N hours." Resolves the most recent **unpaid**
+  payment carrying a youth token, so it is blank for anyone who has already paid. That matters: the
+  confirmation page answers a settled payment with "already resolved", and a link that lands on a
+  dead page is worse than no link. It is the same population `{{OutstandingPaymentLinkUrl}}` is
+  already blank for, deliberately.
+- **`PaymentUnpaidBeforeSession`** — "the fee is still unpaid and the session is close." The subject
+  *is* the unpaid payment, so no outstanding-ness check is needed; the scan's own filter answered it.
+
+Blank, not absent, in three cases: a VEC that runs no youth program, a payment with no youth token
+(a retest fee, or one created while fee collection was off), and — on `BeforeSessionStart` only — a
+fee already settled.
+
+### One helper, and why it takes a bool rather than a `Candidate`
+
+The URL was built in two places already (`CandidateNotificationService`, `CandidateRegisteredScanner`);
+these two triggers would have made four copies of the same three-line rule. It now lives in
+`Core/Payments/YouthConfirmLink.cs`, and all four call it.
+
+It takes `bool vecSupportsYouthProgram` rather than walking `candidate.Session.Vec` itself, and the
+two new scanners answer that with **a query** (`Sessions.Where(s => ids.Contains(s.Id) &&
+s.Vec.SupportsYouthProgram)`) rather than a navigation property. This is not stylistic. A helper that
+dereferenced the navigation would throw a `NullReferenceException` in any caller whose query forgot
+the `ThenInclude(s => s.Vec)` — **and would pass every test anyway**, because EF's change tracker
+fixes the navigation up from whatever the test seeded in the same `DbContext`. The InMemory provider
+cannot catch a missing `Include`; a query can't have one to miss.
+
+### The drift test that comes with it
+
+`YouthPaymentLinkOnRemindersTests.EveryAdvertisedToken_ResolvesWhenTheTriggerFires` renders a body
+containing *every* token the trigger advertises and asserts no `{{` survives. It is written against
+these two triggers, and it is the generalized form of the #116 defect: `{{ZoomJoinUrl}}` was listed
+as valid on the per-session digests while nothing populated it, so it reached recipients as a
+literal `{{ZoomJoinUrl}}`. A token offered as a clickable chip in the rule editor is a promise; this
+holds these two triggers to it.

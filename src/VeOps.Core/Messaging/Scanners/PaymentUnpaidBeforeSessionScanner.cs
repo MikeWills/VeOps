@@ -1,7 +1,10 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using VeOps.Core.Data;
 using VeOps.Core.Entities;
+using VeOps.Core.Integrations;
 using VeOps.Core.Notifications;
+using VeOps.Core.Payments;
 
 namespace VeOps.Core.Messaging.Scanners;
 
@@ -30,7 +33,7 @@ namespace VeOps.Core.Messaging.Scanners;
 /// This only ever looks at sessions that have <i>not started yet</i>, so a backfilled session —
 /// always in the past — can never match in the first place.</para>
 /// </summary>
-public class PaymentUnpaidBeforeSessionScanner(AppDbContext dbContext) : IMessageTriggerScanner
+public class PaymentUnpaidBeforeSessionScanner(AppDbContext dbContext, IOptions<AppOptions> appOptions) : IMessageTriggerScanner
 {
     public MessageTrigger Trigger => MessageTrigger.PaymentUnpaidBeforeSession;
 
@@ -64,6 +67,16 @@ public class PaymentUnpaidBeforeSessionScanner(AppDbContext dbContext) : IMessag
                         && (onlySessionId == null || p.Candidate.SessionId == onlySessionId))
             .ToListAsync(cancellationToken);
 
+        // Which of these sessions run under a VEC with a youth program — a query, not
+        // payment.Candidate.Session.Vec (2026-09-08). See BeforeSessionStartScanner's own copy of
+        // this for why a navigation would be the wrong shape: a missing ThenInclude passes every
+        // test through change-tracker fixup and throws in the Worker.
+        var sessionIds = payments.Select(p => p.Candidate.SessionId).Distinct().ToList();
+        var youthProgramSessionIds = (await dbContext.Sessions
+            .Where(s => sessionIds.Contains(s.Id) && s.Vec.SupportsYouthProgram)
+            .Select(s => s.Id)
+            .ToListAsync(cancellationToken)).ToHashSet();
+
         return [.. payments.Select(payment => new MessageSubject(
             payment.Id,
             MessageSubjectType.Payment,
@@ -75,7 +88,15 @@ public class PaymentUnpaidBeforeSessionScanner(AppDbContext dbContext) : IMessag
                 // Never "C"/InvariantCulture, which renders the generic currency sign rather than a
                 // dollar, and never a bare :F2, which follows the ambient culture. See Core/Usd.cs.
                 ["PaymentAmount"] = Usd.Format(payment.Amount),
-                ["PaymentLinkUrl"] = payment.PaymentLinkUrl ?? ""
+                ["PaymentLinkUrl"] = payment.PaymentLinkUrl ?? "",
+                // The subject here IS the unpaid payment, so no "is it still outstanding?" test is
+                // needed — the scan's own filter already answered it. Blank when this payment
+                // carries no youth token (a retest fee, or one created while fee collection was
+                // off) or the VEC runs no youth program.
+                ["YouthPaymentLinkUrl"] = YouthConfirmLink.For(
+                    appOptions.Value.PublicBaseUrl,
+                    youthProgramSessionIds.Contains(payment.Candidate.SessionId),
+                    payment.YouthConfirmationToken)
             })
             { SessionLeadCallSign = payment.Candidate.Session.TeamLeadCallSign })];
     }
