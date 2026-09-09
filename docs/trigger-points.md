@@ -1225,3 +1225,33 @@ is ever wanted back, the shape is a sibling trigger ("when a candidate does not 
 per-rule Passed/Failed/Either option: the recipient list, the tone and the tokens all differ, and a
 rule that can silently flip between congratulating and consoling is a worse thing to own than two
 rules with honest names.
+
+## A manual message could not be edited at all (2026-09-09)
+
+Reported live, on **Youth program instructions**: an empty "Who receives it" dropdown, and saving
+answered *"That trigger cannot send to that recipient."*
+
+The four manual triggers carry `LegalRecipients: []` **on purpose** — a hand-composed message is
+addressed at send time by picking people on the compose screen, so there is no recipient to choose on
+the rule. `ValidateAsync` nonetheless asked whether the posted recipient was in that list, and
+**nothing is ever contained in an empty list**. So every save of every manual message was refused,
+including one that changed only the subject or the wording. Felony disclosure instructions, youth
+program instructions and both by-hand messages were uneditable in the admin UI from the day they
+shipped, and the error named a recipient the form had never offered.
+
+Three changes, and the third is the one that keeps it from coming back:
+
+1. **The check is skipped when the trigger asks nobody** (`LegalRecipients.Count > 0 && ...`), at both
+   validation sites. It still bites where it means something: a scanned trigger with a real list still
+   refuses a recipient not on it, which has its own test.
+2. **The stored `Recipient` is left alone** for those triggers rather than overwritten. An unasked
+   question posts as whichever enum value happens to be `0` — an answer nobody gave.
+3. **The forms stop asking.** Edit hides the whole send-method group behind
+   `Definition.LegalRecipients.Count > 0`; New does the same from a new `data-has-recipients`
+   attribute on the per-trigger blurb, which `message-rule-new.js` reads like every other per-trigger
+   fact. Both show one line instead: *"You choose who this goes to when you send it, on the session's
+   own screen."*
+
+Worth noticing about the shape of the bug: the empty list was correct, the validation was correct in
+isolation, and the two were wrong together. A "belongs to this set" check against a set that is
+deliberately empty is always false, and reads as strictness rather than as the contradiction it is.

@@ -48,55 +48,70 @@
             </div>
         }
 
-        <div class="field" style="max-width:420px;">
-            <span class="label-text">Send it as</span>
-            @* ⚠️ checked is set explicitly. asp-for on a radio compares the MODEL value against
-               the value attribute as strings, and an enum stringifies to its NAME — so "Email"
-               never matches "0" and neither radio was ever marked. The form then showed no send
-               method at all for a message that plainly had one (Mike, 2026-08-21). *@
-            <label style="font-weight:400;">
-                <input type="radio" asp-for="Channel" value="@((int)VeOps.Core.Entities.MessageChannel.Email)"
-                       checked="@(Model.Channel == VeOps.Core.Entities.MessageChannel.Email)"
-                       data-channel-radio="edit" />
-                An email
-            </label>
-            <label style="font-weight:400;">
-                <input type="radio" asp-for="Channel" value="@((int)VeOps.Core.Entities.MessageChannel.Discord)"
-                       checked="@(Model.Channel == VeOps.Core.Entities.MessageChannel.Discord)"
-                       data-channel-radio="edit" />
-                A Discord post
-            </label>
-        </div>
+    @* None of this applies to a message you send by hand: the compose screen picks the people at
+       send time, which is exactly why this trigger has no legal recipients to offer. Rendering the
+       questions anyway gave an empty "Who receives it" dropdown, and posting that empty answer was
+       refused with "That trigger cannot send to that recipient" — so a manual message could not be
+       edited at all, not even its wording (2026-09-09). *@
+    @if (Model.Definition.LegalRecipients.Count > 0)
+    {
+            <div class="field" style="max-width:420px;">
+                <span class="label-text">Send it as</span>
+                @* ⚠️ checked is set explicitly. asp-for on a radio compares the MODEL value against
+                   the value attribute as strings, and an enum stringifies to its NAME — so "Email"
+                   never matches "0" and neither radio was ever marked. The form then showed no send
+                   method at all for a message that plainly had one (Mike, 2026-08-21). *@
+                <label style="font-weight:400;">
+                    <input type="radio" asp-for="Channel" value="@((int)VeOps.Core.Entities.MessageChannel.Email)"
+                           checked="@(Model.Channel == VeOps.Core.Entities.MessageChannel.Email)"
+                           data-channel-radio="edit" />
+                    An email
+                </label>
+                <label style="font-weight:400;">
+                    <input type="radio" asp-for="Channel" value="@((int)VeOps.Core.Entities.MessageChannel.Discord)"
+                           checked="@(Model.Channel == VeOps.Core.Entities.MessageChannel.Discord)"
+                           data-channel-radio="edit" />
+                    A Discord post
+                </label>
+            </div>
 
-        <div class="field" style="max-width:320px;" data-channel-only="Email" data-channel-group="edit"
-             hidden="@(Model.Channel == VeOps.Core.Entities.MessageChannel.Discord)">
-            <label asp-for="Recipient">Who receives it</label>
-            <select asp-for="Recipient" class="filter-select">
-                @foreach (var recipient in Model.Definition.LegalRecipients)
-                {
-                    <option value="@((int)recipient)">@MessageTriggerLabels.Label(recipient)</option>
-                }
-            </select>
-        </div>
+            <div class="field" style="max-width:320px;" data-channel-only="Email" data-channel-group="edit"
+                 hidden="@(Model.Channel == VeOps.Core.Entities.MessageChannel.Discord)">
+                <label asp-for="Recipient">Who receives it</label>
+                <select asp-for="Recipient" class="filter-select">
+                    @foreach (var recipient in Model.Definition.LegalRecipients)
+                    {
+                        <option value="@((int)recipient)">@MessageTriggerLabels.Label(recipient)</option>
+                    }
+                </select>
+            </div>
 
-        @* Mirrors the Discord "how many posts" field below (#491) — grouping by session is what
-           gives a batched email a single sensible To (the session's lead VE, a team-admin role),
-           which a whole-team digest can't offer. Not offered when the recipient is Candidate; the
-           handler refuses that combination if it's posted anyway. *@
-        <div class="field" style="max-width:420px;" data-channel-only="Email" data-channel-group="edit"
-             hidden="@(Model.Channel == VeOps.Core.Entities.MessageChannel.Discord)">
-            <label asp-for="FanOut">How many emails</label>
-            <select asp-for="FanOut" class="filter-select">
-                <option value="@((int)VeOps.Core.Entities.MessageFanOut.PerRecipient)">One each</option>
-                <option value="@((int)VeOps.Core.Entities.MessageFanOut.PerSession)">One per session, covering everybody on it</option>
-            </select>
-            <span class="session-sub">
-                A per-session email renders once with <code>{{Count}}</code>, <code>{{Subjects}}</code>,
-                and — for a trigger that's about one session —
-                <code>{{SessionTitle}}</code>, <code>{{SessionDate}}</code>, <code>{{RegisteredCount}}</code>.
-                Per-candidate tokens have no answer there and come out blank.
-            </span>
-        </div>
+            @* Mirrors the Discord "how many posts" field below (#491) — grouping by session is what
+               gives a batched email a single sensible To (the session's lead VE, a team-admin role),
+               which a whole-team digest can't offer. Not offered when the recipient is Candidate; the
+               handler refuses that combination if it's posted anyway. *@
+            <div class="field" style="max-width:420px;" data-channel-only="Email" data-channel-group="edit"
+                 hidden="@(Model.Channel == VeOps.Core.Entities.MessageChannel.Discord)">
+                <label asp-for="FanOut">How many emails</label>
+                <select asp-for="FanOut" class="filter-select">
+                    <option value="@((int)VeOps.Core.Entities.MessageFanOut.PerRecipient)">One each</option>
+                    <option value="@((int)VeOps.Core.Entities.MessageFanOut.PerSession)">One per session, covering everybody on it</option>
+                </select>
+                <span class="session-sub">
+                    A per-session email renders once with <code>{{Count}}</code>, <code>{{Subjects}}</code>,
+                    and — for a trigger that's about one session —
+                    <code>{{SessionTitle}}</code>, <code>{{SessionDate}}</code>, <code>{{RegisteredCount}}</code>.
+                    Per-candidate tokens have no answer there and come out blank.
+                </span>
+            </div>
+    }
+    else
+    {
+        <p class="session-sub" style="max-width:640px;">
+            You choose who this goes to when you send it, on the session's own screen — so there is
+            nothing to set here. Sent by email.
+        </p>
+    }
 
         <div class="field" style="max-width:420px;" data-channel-only="Discord" data-channel-group="edit"
              hidden="@(Model.Channel != VeOps.Core.Entities.MessageChannel.Discord)">

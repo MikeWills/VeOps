@@ -122,7 +122,13 @@ public class MessageRuleAdminService(AppDbContext dbContext, TimeProvider timePr
         rule.Subject = subject.Trim();
         rule.Body = body;
         rule.ParameterHours = parameterHours;
-        rule.Recipient = recipient;
+        // Not for a manual message: its trigger has no legal recipients because the compose screen
+        // picks people at send time, so the form does not ask — and an unasked question posts as
+        // whichever enum value happens to be 0, which is an answer nobody gave.
+        if (MessageTriggerDefinitions.For(rule.Trigger).LegalRecipients.Count > 0)
+        {
+            rule.Recipient = recipient;
+        }
         rule.Channel = channel;
         rule.DiscordChannelId = channel == MessageChannel.Discord ? discordChannelId : null;
         rule.FanOut = fanOut;
@@ -237,12 +243,20 @@ public class MessageRuleAdminService(AppDbContext dbContext, TimeProvider timePr
         // offer it and this leaves the stored value alone.
         if (rule.Channel == MessageChannel.Email)
         {
-            if (!definition.LegalRecipients.Contains(recipient))
+            // An empty LegalRecipients means "this trigger does not ask" — a manual message is
+            // addressed at send time by picking people on the compose screen — and nothing is ever
+            // contained in an empty list, so asking anyway refused EVERY save of every manual
+            // message, including one that only changed the wording. The four seeded manual messages
+            // were uneditable in the admin UI from the day they shipped (2026-09-09).
+            if (definition.LegalRecipients.Count > 0 && !definition.LegalRecipients.Contains(recipient))
             {
                 return MessageRuleActionResult.RecipientNotLegal;
             }
 
-            rule.Recipient = recipient;
+            if (definition.LegalRecipients.Count > 0)
+            {
+                rule.Recipient = recipient;
+            }
         }
 
         rule.ParameterHours = parameterHours;
@@ -396,7 +410,12 @@ public class MessageRuleAdminService(AppDbContext dbContext, TimeProvider timePr
                 return MessageRuleActionResult.DigestNeedsAChannel;
             }
 
-            if (!definition.LegalRecipients.Contains(recipient))
+            // An empty LegalRecipients means "this trigger does not ask" — a manual message is
+            // addressed at send time by picking people on the compose screen — and nothing is ever
+            // contained in an empty list, so asking anyway refused EVERY save of every manual
+            // message, including one that only changed the wording. The four seeded manual messages
+            // were uneditable in the admin UI from the day they shipped (2026-09-09).
+            if (definition.LegalRecipients.Count > 0 && !definition.LegalRecipients.Contains(recipient))
             {
                 return MessageRuleActionResult.RecipientNotLegal;
             }
