@@ -93,10 +93,37 @@
       tab.addEventListener("click", function () { showTab(tab.getAttribute("data-mode")); });
     });
 
+    // Keep the textarea current as the person types, not only at submit time (2026-09-08).
+    // It used to sync on the form's submit event alone, and that is one event too late: the browser
+    // runs constraint validation BEFORE firing submit, so a `required` textarea sitting empty behind
+    // the visual tab was invalid at exactly the moment it was judged — and being `display:none` it
+    // could not be focused to show the bubble, so Chrome refused the submit, logged
+    // "An invalid form control with name='Body' is not focusable" to a console nobody had open, and
+    // showed the person nothing at all. Reported live as "no error indicating why it's not saving".
+    quill.on("text-change", function () {
+      if (!wrapper.classList.contains("show-html")) syncToTextarea();
+      // And clear the empty-body message as soon as there is something to say, rather than leaving a
+      // red line standing over a body that is no longer empty.
+      var message = wrapper.parentNode.querySelector("[data-editor-empty-message]");
+      if (message && !message.hidden && quill.getText().trim().length > 0) message.hidden = true;
+    });
+
     // Submitting from the visual tab would otherwise post whatever the textarea held when the page
     // loaded, silently discarding every edit.
-    wrapper.closest("form").addEventListener("submit", function () {
+    var form = wrapper.closest("form");
+    form.addEventListener("submit", function (event) {
       if (!wrapper.classList.contains("show-html")) syncToTextarea();
+
+      // The emptiness check the removed `required` attribute used to make, made somewhere it can
+      // actually be reported. `data-editor-required` rather than `required`: the browser must never
+      // be asked to validate a control it cannot focus, whatever else changes here.
+      if (textarea.getAttribute("data-editor-required") === null) return;
+      if (quill.getText().trim().length > 0) return;
+
+      event.preventDefault();
+      var message = wrapper.parentNode.querySelector("[data-editor-empty-message]");
+      if (message) message.hidden = false;
+      quill.focus();
     });
 
     // Click a placeholder chip to insert it. Typing {{CandidateFirstName}} by hand is the single

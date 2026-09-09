@@ -700,6 +700,11 @@ footer.roster { margin-top: 28px; background: var(--surface); border: 1px solid 
 .auth-card .auth-divider { display: flex; align-items: center; gap: 10px; margin: 20px 0; color: var(--ink-soft); font-size: 11px; font-family: "IBM Plex Mono", monospace; text-transform: uppercase; letter-spacing: .08em; }
 .auth-card .auth-divider::before, .auth-card .auth-divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
 .auth-card .btn-secondary { width: 100%; margin-bottom: 8px; }
+/* The base, for the admin forms that report a field problem inline (2026-09-08 — the message
+   editor's "give the message something to say"). The auth-card variant below only ever styled the
+   public sign-in pages, so an inline error anywhere else inherited body text and did not read as an
+   error at all. */
+.field-error { color: var(--brick); font-size: 12px; }
 .auth-card .field-error { color: var(--brick); font-size: 12px; margin-top: -10px; margin-bottom: 14px; }
 .auth-card .auth-error { background: var(--brick-dim); color: var(--chip-brick-text); border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 18px; }
 .auth-card .auth-status { background: var(--green-dim); color: var(--chip-green-text); border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 18px; }
