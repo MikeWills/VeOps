@@ -647,7 +647,22 @@ footer.roster { margin-top: 28px; background: var(--surface); border: 1px solid 
    — meaning the editor was previewing something narrower than what actually goes out. This restores
    a visible gap here so what you see while composing matches what arrives. */
 .message-editor .ql-editor p { margin: 0 0 1em; }
-.message-editor .ql-editor p:last-child { margin-bottom: 0; }
+/* The same reset, and the same argument, for every other block this toolbar can produce (2026-09-08).
+   #488 restored the gap between two paragraphs, but Quill zeroes lists and headings in the very same
+   rule — so a paragraph written after a bulleted list still sat flush against the last bullet and did
+   not read as a new paragraph at all, which is what the live report was actually about. A mail client
+   applies its own default margins to <ul>/<ol>/<h1..h3> exactly as it does to <p>, so without this the
+   editor keeps previewing something tighter than what arrives. Bottom-only, matching the paragraph
+   rule above: adjacent margins collapse in real rendering, so one 1em gap per block is the honest
+   equivalent. Quill 2 renders BOTH list types as <ol> (bullets are li[data-list=bullet]) while
+   getSemanticHTML emits <ul> for them — hence both selectors; styling only one leaves the editor and
+   the sent mail disagreeing again. */
+.message-editor .ql-editor ol, .message-editor .ql-editor ul { margin: 0 0 1em; }
+.message-editor .ql-editor h1 { margin: 0 0 0.67em; }
+.message-editor .ql-editor h2 { margin: 0 0 0.83em; }
+.message-editor .ql-editor h3 { margin: 0 0 1em; }
+/* Nothing may hold a trailing gap open at the very end of the editor, whichever block ends it. */
+.message-editor .ql-editor > *:last-child { margin-bottom: 0; }
 
 /* Clickable placeholder chips. They're <button>s for keyboard reach, so the button reset in the
    Buttons section has to be undone at a specificity that beats `.vesm button` (0,1,1) — the same
