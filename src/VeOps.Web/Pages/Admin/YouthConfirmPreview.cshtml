@@ -1,0 +1,21 @@
+@page
+@model VeOps.Web.Pages.Admin.YouthConfirmPreviewModel
+@using Microsoft.AspNetCore.Mvc.ViewFeatures
+@{
+    ViewData["Title"] = "Youth Rate Confirmation (preview)";
+    // The public layout, not the admin one: the point is to see what the candidate sees.
+    Layout = "_PublicLayout";
+}
+
+<div class="auth-wrap">
+    <div class="vesm-alert" style="max-width:100%;">
+        <strong>Preview.</strong> This is the page a candidate reaches from their registration email.
+        Nothing here saves or charges anything.
+        <a asp-page="/Admin/TeamSettings" asp-route-teamId="@Model.TeamId">Back to Team Settings</a>
+    </div>
+    <div class="auth-card">
+        <h1>Youth Rate Confirmation</h1>
+        <partial name="/Pages/Public/_YouthConfirmForm.cshtml" model="Model.Input"
+                 view-data="@(new ViewDataDictionary(ViewData) { ["IntroHtml"] = Model.IntroHtml, ["IsPreview"] = true })" />
+    </div>
+</div>
