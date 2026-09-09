@@ -1,0 +1,76 @@
+@model VeOps.Web.Pages.Public.YouthConfirmModel.InputModel
+@{
+    // The one definition of what the youth-rate confirmation page looks like, rendered both by the
+    // public page itself and by the admin preview (Pages/Admin/YouthConfirmPreview) — a team editing
+    // its intro paragraph in Team Settings has no candidate token to click, so before this the only
+    // way to see the result was to send oneself a real registration email. Kept as a partial rather
+    // than copied: a preview that drifts from the page it previews is worse than no preview.
+    //
+    // The prefix is what makes asp-for work here: the real page binds to Input.*, so the fields must
+    // post those names and the validation spans must read those ModelState keys, even though this
+    // partial's own model is the InputModel itself.
+    ViewData.TemplateInfo.HtmlFieldPrefix = "Input";
+
+    var introHtml = (string?)ViewData["IntroHtml"] ?? VeOps.Core.Payments.YouthConfirmDefaults.IntroHtml;
+
+    // Preview mode changes exactly two attributes, and nothing else — no disabled controls (a greyed
+    // field is precisely not what the candidate sees) and no inline onsubmit (the CSP blocks it).
+    // With a non-submit button nothing posts; method="get" only covers Enter-in-a-field, which then
+    // just reloads the preview.
+    var isPreview = ViewData["IsPreview"] as bool? ?? false;
+}
+
+@* Team-editable (Team Settings > Email Settings), 2026-08-26 — see EmailSettings.
+   YouthConfirmIntroHtml's own remarks for why raw team-authored HTML is trusted here at
+   the same level as a message rule body. No ARRL claim-form URL in the shipped default,
+   deliberately (#192): that form is an external ARRL document this app neither hosts nor
+   tracks, and a link that rots on a page candidates are sent to is worse than no link —
+   the post-exam ArrlYouthProgramInstructions email already carries it, once it matters. *@
+<div class="policy-note">@Html.Raw(introHtml)</div>
+
+<form method="@(isPreview ? "get" : "post")">
+    <div asp-validation-summary="ModelOnly" class="field-error"></div>
+    <div class="field">
+        <label>
+            <input asp-for="ConfirmYouth" style="width:auto; display:inline-block;" />
+            I confirm I am a youth (under 18).
+        </label>
+        <span asp-validation-for="ConfirmYouth" class="field-error"></span>
+    </div>
+
+    @* Was a reminder-only paragraph until 2026-08-26 — now an actual recorded
+       declaration, since COPPA testing cannot legally proceed without the parental
+       consent form on file, and this page is the one honor-system checkpoint candidates
+       pass through before paying. "" as the unselected option, not omitted, so a select
+       with no JS still posts something distinguishable from a real answer. *@
+    <div class="field">
+        <label for="declaredUnder13">Is the candidate under the age of 13?</label>
+        <select id="declaredUnder13" asp-for="DeclaredUnder13"
+                data-select-panel="coppaPanel" data-select-panel-value="true">
+            <option value="">Select one</option>
+            <option value="false">No</option>
+            <option value="true">Yes</option>
+        </select>
+        <span asp-validation-for="DeclaredUnder13" class="field-error"></span>
+    </div>
+
+    <div id="coppaPanel" style="@(Model.DeclaredUnder13 == true ? "" : "display:none;")">
+        <p class="policy-note">
+            If you are not 13 years of age or older you may not register for any exam
+            session through HamStudy.org or ExamTools.org until your parent or guardian
+            has filled out our
+            <a href="https://blog.hamstudy.org/wp-content/uploads/2020/05/ExamTools_COPPA_form.pdf"
+               target="_blank" rel="noopener noreferrer">COPPA Parental Consent Form</a>
+            and emailed it to <a href="mailto:coppa@examtools.org">coppa@examtools.org</a>.
+        </p>
+        <div class="field">
+            <label>
+                <input asp-for="CoppaFormSent" style="width:auto; display:inline-block;" />
+                I have sent this form to ExamTools.
+            </label>
+            <span asp-validation-for="CoppaFormSent" class="field-error"></span>
+        </div>
+    </div>
+
+    <button type="@(isPreview ? "button" : "submit")" class="btn-primary">Continue to $5 payment</button>
+</form>

@@ -131,6 +131,35 @@ markup) — same "real starting example, not final copy" caveat as the seeded em
 elsewhere in this app. The scholarship reimbursement form itself is an existing external
 link/document, not built or hosted here.
 
+## Admin preview (2026-09-08)
+
+`src/VeOps.Web/Pages/Admin/YouthConfirmPreview.cshtml(.cs)`, reached from a **Preview page** link
+beside the intro-paragraph editor in Team Settings. A team writes that paragraph itself, as rich
+text, and until this existed the only way to see the result was to hold a real candidate's
+confirmation token — i.e. to send oneself a registration email — so in practice nobody looked at the
+page they were editing.
+
+The markup is shared, not copied: the candidate's page and the preview both render
+`Pages/Public/_YouthConfirmForm.cshtml`, which is the entire body of the `Success` branch (intro,
+the youth checkbox, the under-13 dropdown, the COPPA panel, the button). A preview that can drift
+from the page it previews is worse than no preview. The partial sets
+`ViewData.TemplateInfo.HtmlFieldPrefix = "Input"`, which is what lets its `asp-for`/`asp-validation-for`
+tag helpers keep emitting the real page's `Input.*` field names, validation attributes and ModelState
+keys even though the partial's own model is the `InputModel` itself.
+
+`IsPreview` changes exactly two attributes — the form's `method` and the button's `type` — and
+nothing else. Deliberately not disabled controls (a greyed-out field is precisely not what the
+candidate sees) and deliberately no inline `onsubmit` (the CSP blocks it). With a non-submit button
+nothing posts, and `method="get"` only covers Enter-in-a-field, which reloads the preview. The
+dropdown still opens the COPPA panel, so both states can be seen.
+
+It shows the **saved** wording, not the unsaved editor contents, and resolves the team's
+`YouthConfirmIntroHtml`/`YouthConfirmDefaults.IntroHtml` fallback the same way
+`CheckEligibilityAsync` does. Authorization is `RoleGroups.Admins` and the team is resolved with
+`TryResolveManageableTeamIdForWrite` — the refusing resolver, even on a read-only GET, because the
+forgiving one substitutes the acting user's first team and a preview showing a *different* team's
+wording than the one being edited would be actively misleading.
+
 ## Email template plumbing
 
 `EmailTemplatePlaceholders.ByKey["RegistrationConfirmation"]` gained `YouthPaymentLinkUrl`.
