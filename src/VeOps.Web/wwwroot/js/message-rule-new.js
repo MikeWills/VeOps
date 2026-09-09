@@ -20,12 +20,16 @@
   var delayInput = delayField ? delayField.querySelector("input") : null;
   var delayCeiling = document.getElementById("delayCeiling");
   var recipient = document.getElementById("recipientPicker");
+  var channelField = document.getElementById("channelField");
+  var manualSendNote = document.getElementById("manualSendNote");
+  var channelFields = document.querySelectorAll('[data-channel-group="new"]');
 
   // Rendered once per trigger by Razor, so this stays a lookup rather than a table to maintain.
   var prompts = {};
   var ceilings = {};
   var defaults = {};
   var takesParameter = {};
+  var hasRecipients = {};
   Array.prototype.forEach.call(trigger.options, function (option) {
     var value = option.value;
     var blurb = document.querySelector('[data-trigger-blurb="' + value + '"]');
@@ -34,6 +38,7 @@
       ceilings[value] = blurb.getAttribute("data-ceiling") || "";
       defaults[value] = blurb.getAttribute("data-default-days") || "";
       takesParameter[value] = blurb.getAttribute("data-takes-parameter") === "true";
+      hasRecipients[value] = blurb.getAttribute("data-has-recipients") !== "false";
     }
   });
 
@@ -73,7 +78,23 @@
       if (delayCeiling) delayCeiling.textContent = ceilings[value] || "";
     }
 
-    if (recipient) {
+    // A manual message is addressed on the compose screen at send time, so its trigger offers no
+    // recipients at all — and a dropdown with nothing in it is not a question, it is a dead end. The
+    // Edit form had exactly this, and posting its empty answer was refused with "That trigger cannot
+    // send to that recipient", which made every manual message uneditable (2026-09-09).
+    var addressable = hasRecipients[value];
+    if (channelField) channelField.hidden = !addressable;
+    if (manualSendNote) manualSendNote.hidden = addressable;
+    // Switching back to an addressable trigger has to restore these, not just stop hiding them —
+    // so the same rule app.js applies on a radio change is applied here, read off whichever radio
+    // is currently checked rather than restated.
+    var checkedChannel = document.querySelector('[data-channel-radio="new"]:checked');
+    var selected = checkedChannel && checkedChannel.value === "1" ? "Discord" : "Email";
+    Array.prototype.forEach.call(channelFields, function (field) {
+      field.hidden = !addressable || field.getAttribute("data-channel-only") !== selected;
+    });
+
+    if (recipient && addressable) {
       // Hide the recipients this trigger cannot address, and move the selection off one that just
       // became illegal — leaving it selected would submit a value the server refuses.
       var selectedStillLegal = false;

@@ -42,6 +42,8 @@
                       data-prompt="@VeOps.Web.Pages.Admin.MessageRuleNewModel.ParameterPrompt(definition.Trigger)"
                       data-ceiling="@VeOps.Web.Pages.Admin.MessageRuleNewModel.CeilingNote(definition.Trigger)"
                       data-default-days="@VeOps.Web.Pages.Admin.MessageRuleNewModel.DefaultDaysText(definition.Trigger)"
+                      @* A manual message is addressed on the compose screen at send time, so this                         trigger has nobody to offer and the whole "how is it sent" group is wrong                         for it — an empty dropdown, and a channel choice that means nothing. *@
+                      data-has-recipients="@(definition.LegalRecipients.Count > 0 ? "true" : "false")"
                       hidden="@(definition.Trigger != Model.Trigger)">
                     @VeOps.Web.Pages.Admin.MessageRuleNewModel.Blurb(definition.Trigger)
                 </span>
@@ -78,7 +80,7 @@
             <span class="session-sub" id="delayCeiling"></span>
         </div>
 
-        <div class="field" style="max-width:420px;">
+        <div class="field" style="max-width:420px;" id="channelField">
             <span class="label-text">Send it as</span>
             @* ⚠️ checked is set explicitly — see MessageRuleEdit for why asp-for alone leaves
                both radios unmarked on an enum. Here it also means the form arrives with a send
@@ -94,6 +96,11 @@
                 A Discord post
             </label>
         </div>
+
+        <p class="session-sub" style="max-width:640px;" id="manualSendNote" hidden>
+            You choose who this goes to when you send it, on the session's own screen — so there is
+            nothing to set here. Sent by email.
+        </p>
 
         <div class="field" style="max-width:320px;" data-channel-only="Email" data-channel-group="new"
              hidden="@(Model.Channel == MessageChannel.Discord)">
