@@ -46,3 +46,12 @@ Amateur radio and FCC terms first, then words this app invented.
 | **Refresh candidates** | Pull ExamTools right now. Also creates payment links and sends confirmations for anyone new — not a passive reload. |
 | **Job** | Background work that runs on a schedule. Everything automatic in this app is a job comparing stored state against a feed, not a reaction to a button. |
 | **Tag** | A label on a VE. Grants no access to anything. Where Discord sync is on, mapped tags follow Discord roles. |
+
+## Where these words get used
+
+- [Roles and permissions](Roles-and-Permissions.md) — who can do each of the things above
+- [Session Manager](Guide-Session-Manager.md) — most of this vocabulary in the order you meet it
+- [What a candidate sees](Guide-Candidate.md) — the same session from the other side
+
+Something here unclear, or a word missing? [File an issue](https://github.com/MikeWills/VeOps/issues)
+— a term that needed looking up and wasn't here is worth knowing about.

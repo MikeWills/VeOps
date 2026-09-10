@@ -68,3 +68,10 @@ pointing at it.
 
 It is the same mechanism as the sibling Course Ops repository, on purpose — two projects that
 publish a wiki this way should not have two mechanisms to learn.
+
+## Where to go next
+
+- [Start here](README.md) — the landing page, if you arrived at this one from search
+- [Tasks](Tasks.md) — which how-to pages exist and which are still to be written
+- [File an issue](https://github.com/MikeWills/VeOps/issues) — the low-ceremony way to report
+  something wrong on any page here
