@@ -110,7 +110,7 @@ public class ArrlSubmissionPreviewService(
 
         preview = preview with { MissingRequiredFields = FindMissingFields(preview) };
 
-        return await AttachArchiveAsync(preview, session, team, cancellationToken);
+        return AttachArchive(preview, session, team);
     }
 
     /// <summary>
@@ -198,13 +198,12 @@ public class ArrlSubmissionPreviewService(
     }
 
     /// <summary>
-    /// Fetches the archive again at submission time, for the bytes this time rather than a
-    /// description of them.
+    /// Downloads the archive at submission time. <b>The only place this app downloads one</b> — the
+    /// preview names it from local state instead (see <c>AttachArchive</c>), so ExamTools records one
+    /// download per filing rather than one per page view plus one at the button.
     ///
-    /// <para><b>Re-fetched rather than carried over from the preview.</b> A page render and a confirm
-    /// are two requests, and holding several hundred kilobytes across them to save one call would
-    /// trade a real cost for a false economy — and would file whatever the archive looked like when
-    /// the page was opened rather than when the button was pressed.</para>
+    /// <para>Nothing is carried over or cached between the two requests, so what is filed is the
+    /// archive as it stands when the button is pressed, and a page left open costs nothing.</para>
     /// </summary>
     public async Task<ArrlSubmissionFile?> FetchArchiveFileAsync(int sessionId, CancellationToken cancellationToken)
     {
@@ -233,8 +232,27 @@ public class ArrlSubmissionPreviewService(
         return new ArrlSubmissionFile(fileName, download.Content);
     }
 
-    private async Task<ArrlSubmissionPreview> AttachArchiveAsync(
-        ArrlSubmissionPreview preview, Session session, Team team, CancellationToken cancellationToken)
+    /// <summary>
+    /// Names the archive and says whether it can be filed — <b>without downloading anything</b>.
+    ///
+    /// <para>This used to pull the whole archive on every render and keep only the filename and the
+    /// byte count, so ExamTools' audit log recorded a download per page view on top of the one at
+    /// filing. Three showed up against a single session (reported 2026-09-09), because the count
+    /// tracked page views rather than filings.</para>
+    ///
+    /// <para>Mike: <i>"You can check to see if the session is closed without downloading the file."</i>
+    /// Both facts the preview needs are already here. Readiness is
+    /// <see cref="Session.ExamToolsClosedUtc"/>, stamped by ingestion — <b>deliberately that and not
+    /// <see cref="Session.IsCompleted"/></b>, which is also true when a Session Manager clicked "Mark
+    /// session completed"; a person marking it does not make ExamTools produce an archive. The name is
+    /// rebuilt by <see cref="VecArchiveFileName"/>, the same helper that already covered a missing
+    /// Content-Disposition.</para>
+    ///
+    /// <para>What is given up: the exact byte count, and ExamTools' own wording for a session that is
+    /// not ready. Neither is worth a download per page view — and the wording is still surfaced at
+    /// filing time, where <see cref="FetchArchiveFileAsync"/> genuinely asks.</para>
+    /// </summary>
+    private static ArrlSubmissionPreview AttachArchive(ArrlSubmissionPreview preview, Session session, Team team)
     {
         if (!team.IsExamToolsConfigured)
         {
@@ -244,25 +262,19 @@ public class ArrlSubmissionPreviewService(
             };
         }
 
-        var credentials = ExamToolsCredentials.For(team, examToolsOptions.Value.BaseUrl);
-        var download = await examToolsClient.DownloadVecArchiveAsync(
-            credentials, session.ExamToolsSessionId, session.Vec.MatchCode, cancellationToken);
-
-        if (download.Outcome != VecArchiveDownloadOutcome.Succeeded)
+        if (session.ExamToolsClosedUtc is null)
         {
-            return preview with { ArchiveOutcome = download.Outcome, ArchiveMessage = download.Message };
+            return preview with
+            {
+                ArchiveOutcome = VecArchiveDownloadOutcome.SessionNotComplete,
+                ArchiveMessage = "ExamTools has not closed this session yet."
+            };
         }
-
-        // Content-Disposition normally supplies this. When it does not, rebuild the descriptive name
-        // rather than falling back to the URL's, which is identical for every session of every team.
-        var fileName = download.FileName
-                       ?? VecArchiveFileName.Build(team.ExamToolsTeamCode!, session.ScheduledStartUtc, session.Vec.MatchCode);
 
         return preview with
         {
-            ArchiveOutcome = download.Outcome,
-            ArchiveFileName = fileName,
-            ArchiveByteCount = download.Content?.Length ?? 0
+            ArchiveOutcome = VecArchiveDownloadOutcome.Succeeded,
+            ArchiveFileName = VecArchiveFileName.Build(team.ExamToolsTeamCode!, session.ScheduledStartUtc, session.Vec.MatchCode)
         };
     }
 

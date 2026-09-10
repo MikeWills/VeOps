@@ -209,6 +209,37 @@ Note `ToggleVecSubmission` is a misnomer: it calls `MarkSubmittedAsync`, which r
 submitted, and the button only renders when the session is unsubmitted. **It has always been
 one-way** — the name misleads, the behaviour does not.
 
+### One download per filing (fixed 2026-09-09)
+
+ExamTools' audit log showed `ExamSession_HRCC_20260910_0200_arrl.zip` pulled **three times** for one
+session. Nothing was retrying: the preview downloaded the entire ~377KB archive on **every render**,
+kept only the filename and the byte count, and threw the bytes away — so the count tracked *page
+views*, plus one for the submit itself. Two page views and a filing is three.
+
+The original reasoning defended re-fetching at submission time, and that half stands: what is filed
+should be the archive as it stands when the button is pressed, not when the page was opened. It never
+justified downloading a whole file per page view to describe it.
+
+Mike: *"You can check to see if the session is closed without downloading the file."* Both facts the
+preview needs were already local:
+
+| Preview needs | Was | Is |
+|---|---|---|
+| Is there an archive to send? | ExamTools' response to a full download | `Session.ExamToolsClosedUtc` |
+| What is it called? | `Content-Disposition` | `VecArchiveFileName.Build` — already the fallback |
+| How big is it? | the download | not shown until it is filed |
+
+⚠️ **Readiness is `ExamToolsClosedUtc`, deliberately not `IsCompleted`.** `IsCompleted` is also true
+when a Session Manager pressed "Mark session completed", and a person marking a session does not make
+ExamTools produce an archive. `MarkedCompletedByHandButNotClosedByExamTools_StillBlocksSubmission`
+pins that distinction, because the two read as synonyms and are not.
+
+What was given up: the byte count on the preview, and ExamTools' own wording for a session that is
+not ready. The wording is still surfaced where the app genuinely asks — at submission, where a failed
+fetch reports it and sends nothing.
+
+`FetchArchiveFileAsync` is now the only place this app downloads an archive.
+
 ### Getting back to a filing (fixed 2026-09-09)
 
 The same page. Once a filing exists, `SubmitToVec` renders the submitted values and a **"What was

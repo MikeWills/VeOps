@@ -226,12 +226,14 @@ else
         <div class="section-head" style="margin-top:20px;"><h2>Files</h2></div>
         @if (preview.ArchiveOutcome == VecArchiveDownloadOutcome.Succeeded)
         {
-            <p><span class="mono">@preview.ArchiveFileName</span> &mdash; @(preview.ArchiveByteCount / 1024)KB, fetched from ExamTools. It is downloaded again when you press the button, so it is never stale.</p>
+            @* No size: the preview no longer downloads the archive to describe it, so the byte
+               count is not known until it is actually filed. *@
+            <p><span class="mono">@preview.ArchiveFileName</span> &mdash; downloaded from ExamTools when you press the button.</p>
         }
         else if (preview.ArchiveOutcome == VecArchiveDownloadOutcome.SessionNotComplete)
         {
-            <p><strong>ExamTools has no archive for this session yet.</strong></p>
-            <p class="session-sub">It said: &ldquo;@preview.ArchiveMessage&rdquo; &mdash; close the session in ExamTools and this page will find it.</p>
+            <p><strong>ExamTools has not closed this session yet, so there is no archive to send.</strong></p>
+            <p class="session-sub">Close the session in ExamTools and this page will find it. Marking it completed here is not the same thing &mdash; the archive is ExamTools' to produce.</p>
         }
         else
         {
