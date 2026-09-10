@@ -9,6 +9,13 @@ the VEC.
 does not explain how the code works — that lives in [`/docs`](https://github.com/MikeWills/VeOps/tree/main/docs)
 in the repository, next to the code it describes.
 
+## New to running sessions?
+
+**[Your first session](Your-first-session.md)** walks one session end to end — what the app does on
+its own, and the handful of moments it needs you.
+
+Something already broken? **[Something is wrong](Something-is-wrong.md)** is symptom-first.
+
 ## Start with your role
 
 | You are | Start here |
@@ -26,6 +33,7 @@ whichever roles are allowed to follow them.
 
 ## Everything else
 
+- [Something is wrong](Something-is-wrong.md) — symptoms, and who can fix each one
 - [Roles and permissions](Roles-and-Permissions.md) — who can see and do what, screen by screen
 - [Tasks](Tasks.md) — the full index of how-to pages
 - [Glossary](Glossary.md) — VEC, CSCE, FRN, CORES, and the words this app made up
