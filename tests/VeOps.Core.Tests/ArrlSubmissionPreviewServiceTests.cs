@@ -392,41 +392,88 @@ public class ArrlSubmissionPreviewServiceTests
 
     // ---- The archive ------------------------------------------------------------------------
 
+    /// <summary>
+    /// <b>The preview does not download anything.</b> It used to pull the whole ~377KB archive on
+    /// every render just to show a name and a byte count, so ExamTools' audit log recorded a download
+    /// per page view plus one per submit — three for one filing, reported 2026-09-09.
+    ///
+    /// <para>Mike: "You can check to see if the session is closed without downloading the file." The
+    /// app already knows: <c>ExamToolsClosedUtc</c> is stamped by ingestion. So readiness is answered
+    /// locally and the name is rebuilt locally, leaving exactly one download, at the moment of
+    /// filing.</para>
+    /// </summary>
     [Fact]
-    public async Task TheArchiveIsFetchedForThisSessionAndVec()
+    public async Task ThePreviewNamesTheArchiveWithoutDownloadingIt()
     {
         var world = await SeedAsync();
 
         var preview = await world.BuildAsync();
 
-        Assert.Equal("6950a2cbf593f706d2e92247", world.Client.RequestedSessionId);
-        // Case-insensitive on purpose: this asserts the service hands over the session's own VEC code,
-        // not that it pre-lowercases it. Lower-casing is the client's documented job and is pinned by
-        // VecArchiveDownloadTests — asserting it here too would fail the day MatchCode's stored casing
-        // changes, for a behaviour that is still correct.
-        Assert.Equal("arrl", world.Client.RequestedVecCode, ignoreCase: true);
+        Assert.Equal(0, world.Client.Calls);
+        Assert.Equal(VecArchiveDownloadOutcome.Succeeded, preview.ArchiveOutcome);
         Assert.Equal("ExamSession_MARC_20260422_0130_arrl.zip", preview.ArchiveFileName);
-        Assert.Equal(4, preview.ArchiveByteCount);
+        Assert.True(preview.CanSubmit);
     }
 
-    /// <summary>The commonest expected failure, and self-correcting — so ExamTools' own wording is carried through.</summary>
+    /// <summary>
+    /// The commonest expected failure, and self-correcting. Answered from
+    /// <c>ExamToolsClosedUtc</c> — deliberately that, and not <c>IsCompleted</c>, which is also true
+    /// when a Session Manager clicked "Mark session completed". A person marking it does not make
+    /// ExamTools produce an archive.
+    /// </summary>
     [Fact]
-    public async Task AnUnfinishedSession_ShowsExamToolsOwnWordingAndBlocksSubmission()
+    public async Task ASessionExamToolsHasNotClosed_BlocksSubmission_WithoutAsking()
     {
-        var world = await SeedAsync();
-        world.Client.Result = VecArchiveDownload.SessionNotComplete("Exam Session needs to be completed");
+        var world = await SeedAsync(configureSession: session => session.ExamToolsClosedUtc = null);
 
         var preview = await world.BuildAsync();
 
+        Assert.Equal(0, world.Client.Calls);
         Assert.Equal(VecArchiveDownloadOutcome.SessionNotComplete, preview.ArchiveOutcome);
-        Assert.Equal("Exam Session needs to be completed", preview.ArchiveMessage);
         Assert.False(preview.CanSubmit);
     }
 
     /// <summary>
-    /// The descriptive filename normally arrives in Content-Disposition. When it does not, the app
-    /// rebuilds it rather than falling back to the URL's generic name — which is identical for every
-    /// session of every team.
+    /// A Session Manager marking the session completed is not ExamTools closing it, so it must not
+    /// unlock filing on its own — the archive would not exist.
+    /// </summary>
+    [Fact]
+    public async Task MarkedCompletedByHandButNotClosedByExamTools_StillBlocksSubmission()
+    {
+        var world = await SeedAsync(configureSession: session =>
+        {
+            session.ExamToolsClosedUtc = null;
+            session.TestingCompletedUtc = Now;
+        });
+
+        var preview = await world.BuildAsync();
+
+        Assert.Equal(VecArchiveDownloadOutcome.SessionNotComplete, preview.ArchiveOutcome);
+        Assert.False(preview.CanSubmit);
+    }
+
+    /// <summary>
+    /// The one download, at the moment of filing. Its filename still comes from
+    /// Content-Disposition when ExamTools sends one — the preview's locally-built name is for
+    /// display, and what is stored beside the filing is what actually went.
+    /// </summary>
+    [Fact]
+    public async Task FilingDownloadsTheArchiveExactlyOnce()
+    {
+        var world = await SeedAsync();
+
+        var archive = await world.Service.FetchArchiveFileAsync(world.Session.Id, CancellationToken.None);
+
+        Assert.Equal(1, world.Client.Calls);
+        Assert.Equal("6950a2cbf593f706d2e92247", world.Client.RequestedSessionId);
+        Assert.Equal("arrl", world.Client.RequestedVecCode, ignoreCase: true);
+        Assert.Equal("ExamSession_MARC_20260422_0130_arrl.zip", archive!.FileName);
+    }
+
+    /// <summary>
+    /// Content-Disposition normally supplies the name at filing time. When it does not, the
+    /// descriptive one is rebuilt rather than falling back to the URL's, which is identical for
+    /// every session of every team.
     /// </summary>
     [Fact]
     public async Task WithNoFilenameFromExamTools_TheDescriptiveOneIsRebuilt()
@@ -434,9 +481,9 @@ public class ArrlSubmissionPreviewServiceTests
         var world = await SeedAsync();
         world.Client.Result = VecArchiveDownload.Succeeded([1, 2, 3, 4], fileName: null);
 
-        var preview = await world.BuildAsync();
+        var archive = await world.Service.FetchArchiveFileAsync(world.Session.Id, CancellationToken.None);
 
-        Assert.Equal("ExamSession_MARC_20260422_0130_arrl.zip", preview.ArchiveFileName);
+        Assert.Equal("ExamSession_MARC_20260422_0130_arrl.zip", archive!.FileName);
     }
 
     [Fact]
