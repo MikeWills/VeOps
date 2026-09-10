@@ -127,6 +127,24 @@ which is "here's what was built and why, mostly historical.")
 One-line-or-two pointer per feature, newest first — full design rationale lives in the linked
 `/docs/*.md` file, not here. See "Documentation Structure" below for the policy this follows.
 
+- **A user manual, in `docs/wiki`, published to the GitHub wiki on merge (2026-09-09).** See
+  `docs/wiki/About-this-wiki.md`. **The mechanism is ported from the sibling Course Ops repo**
+  (`AprsWebTracker`) rather than reinvented — `scripts/build_wiki.py` + `publish-wiki.yml`, kept
+  close to that copy on purpose. `docs/wiki/` is the master copy and the wiki checkout is emptied
+  and rewritten every run, so **an edit made in the GitHub wiki editor is destroyed by the next
+  merge** and a deleted page actually disappears. Authoring is one form that works in both places:
+  `README.md` is the landing page (published as `Home`, and what github.com renders for the
+  folder), sibling links carry `.md`, links into the rest of `/docs` use `../`, images live in
+  `images/` — the build strips, absolutises and repoints each in turn. Sidebar and footer are
+  generated, so they are not files to edit. The split against `/docs` is *audience*: how to **use**
+  the app by role here, how it **works** beside the code, the test being whether a page stops being
+  true when the code changes. Shape is role guides that route, task pages written once and shared
+  by every role allowed to follow them, and each fact stated once (permissions in
+  `Roles-and-Permissions`, vocabulary in `Glossary`) — deliberately not one manual per role, which
+  is five copies to keep in step. **No screenshots yet**: every admin screen is `[Authorize]`d so
+  capture needs Mike signed in first, and `docs/wiki/images/README.md` carries the hard rule that
+  they may only ever come from the fake WX0MIK team, this repo and its wiki being public.
+
 - **The codebase is `VeOps` now, the server still isn't (2026-09-06).** See
   `docs/veops-rename.md`. Namespaces, the three projects and their assemblies, the solution
   (`VeOps.slnx`), the design-handoff folder, every doc, and the GitHub repo all moved from
@@ -256,16 +274,6 @@ One-line-or-two pointer per feature, newest first — full design rationale live
   `Admin/SystemSettings`, SystemAdmin-only) shipped alongside it — site-wide, free-text, not tied to
   the FCC switches at all; an operator types the message and turns it on/off by hand for anything
   worth telling every signed-in user, an FCC outage being only the first reason to.
-
-- **A picked team now carries across every team-filtered page (2026-08-26).** Mike: a TeamAdmin/
-  SessionManager/TeamLead can sit on several teams too, not just SystemAdmin, so this isn't a niche
-  case. New `SharedTeamFilterCookie` (design rationale in its own doc comment and
-  `RememberFiltersPageFilter`'s) is a single cross-page value layered on top of the existing #459
-  per-page filter memory — every `[RemembersFilters]` page with a `TeamId` property reads/writes it,
-  and the sessions list (which predates that mechanism and keeps its own bespoke cookie) was wired in
-  separately for just the Team field. Stored as `"0"` rather than an empty string for "All teams" —
-  an empty cookie value didn't reliably round-trip in testing. Privacy page's cookie count moved from
-  four to five.
 
 
 **Kept here vs. `CHANGELOG.md`:** this section is a bounded, recent-only window (rule of thumb: cap
@@ -662,6 +670,7 @@ Keep `README.md` high-level; route deeper technical content to the right file so
 | `CHANGELOG.md` | The "attic" | Full history of one-line Change Log pointer entries, newest first — overflow for CLAUDE.md's own Change Log once it ages past the recent-only cap (see that section) |
 | `/docs` folder | The "blueprint room" | Deep technical detail: architecture decisions, API specs, DB schemas, troubleshooting playbooks — as individual `.md` files (e.g. `docs/deployment.md`) |
 | `/docs/runbooks` folder | The "toolbox by the door" | Operational procedures read *while doing or fixing* something — deploy, roll back, restore, and symptom-first diagnostics. Steps and warnings only; the reasoning stays in the design doc beside them, which each runbook links. Index at [`docs/runbooks/README.md`](docs/runbooks/README.md) |
+| `/docs/wiki` folder | The "user manual" | How to *use* the app, by role — published to the GitHub wiki automatically on merge to `main`. **This folder is the master copy; the wiki is a mirror** and an edit made in the wiki editor is destroyed by the next publish. If it stops being true when the code changes, it does not belong here — it belongs beside the code. Index at [`docs/wiki/README.md`](docs/wiki/README.md), conventions in [`docs/wiki/About-this-wiki.md`](docs/wiki/About-this-wiki.md) |
 
 - **README is written for a stranger who found the repo, not for Mike** (2026-08-13, when the repo was found to be public). It covers what the app is, what it needs, and how to stand one up on your own server; per-credential detail moved to `docs/configuration.md`, and the tag-triggered Actions workflow is called out as specific to one box rather than presented as *the* way to deploy. `ARCHITECTURE.md` and `SECURITY.md` now exist — the table above described them for months while neither did.
 - Use a GitHub Wiki or GitHub Pages only if documentation needs to be browsable outside the repo (e.g. for external stakeholders) — not needed for internal City projects by default

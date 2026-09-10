@@ -8,6 +8,16 @@ that window, or immediately if it's phase-numbered work already summarized in "C
 design rationale for any entry still lives in its linked `/docs/*.md` file, not here or in
 CLAUDE.md — this file, like CLAUDE.md's Change Log, is pointers only.
 
+- **A picked team now carries across every team-filtered page (2026-08-26).** Mike: a TeamAdmin/
+  SessionManager/TeamLead can sit on several teams too, not just SystemAdmin, so this isn't a niche
+  case. New `SharedTeamFilterCookie` (design rationale in its own doc comment and
+  `RememberFiltersPageFilter`'s) is a single cross-page value layered on top of the existing #459
+  per-page filter memory — every `[RemembersFilters]` page with a `TeamId` property reads/writes it,
+  and the sessions list (which predates that mechanism and keeps its own bespoke cookie) was wired in
+  separately for just the Team field. Stored as `"0"` rather than an empty string for "All teams" —
+  an empty cookie value didn't reliably round-trip in testing. Privacy page's cookie count moved from
+  four to five.
+
 - **The product's display name became "VE Ops" (2026-08-25).** Nav brand, page `<title>`, footer,
   login page, the 2FA issuer string, and the default email `FromDisplayName`/subject lines
   (password reset, VE self-service/email-change) all changed from "VE Session Manager"/
