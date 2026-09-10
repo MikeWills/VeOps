@@ -83,21 +83,23 @@ else
                         <td>@row.License.Team?.Name</td>
                     }
                     <td class="count" data-sort-value="@row.ExpiresSortValue">
-                        @row.ExpiresDisplay
-                        @if (days is { } d)
-                        {
-                            @* Escalation reuses the Applicant Status "days pending" pills rather than
-                               introducing new colours — already correct in both themes. Applied to a
-                               span inside the cell, never the td (see app.css). *@
-                            @if (d < 0)
+                        <span class="cell-inline">
+                            @row.ExpiresDisplay
+                            @if (days is { } d)
                             {
-                                <span class="days-critical" title="Expired @(-d) days ago">@d d</span>
+                                @* Escalation reuses the Applicant Status "days pending" pills rather than
+                                   introducing new colours — already correct in both themes. Applied to a
+                                   span inside the cell, never the td (see app.css). *@
+                                @if (d < 0)
+                                {
+                                    <span class="days-critical" title="Expired @(-d) days ago">@d d</span>
+                                }
+                                else if (d <= 90)
+                                {
+                                    <span class="days-warning" title="Inside FCC's 90-day renewal window">@d d</span>
+                                }
                             }
-                            else if (d <= 90)
-                            {
-                                <span class="days-warning" title="Inside FCC's 90-day renewal window">@d d</span>
-                            }
-                        }
+                        </span>
                     </td>
                     <td><span class="chip @row.Status.ChipClass()">@row.Status.Label()</span></td>
                     <td class="mono">@row.RenewalDisplay</td>

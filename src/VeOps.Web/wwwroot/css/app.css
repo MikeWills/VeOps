@@ -766,6 +766,17 @@ footer.roster { margin-top: 28px; background: var(--surface); border: 1px solid 
      bar. */
   table.cards td > * { grid-column: 2; min-width: 0; justify-self: start; }
 
+  /* ...but a value and a trailing affordance that belongs TO that value must not be stacked that
+     way: a call sign and its ULS link, an expiry date and its "days left" pill. Both are children
+     of one cell, and the rule above splits them — the bare text auto-places into column 2, then the
+     element is pinned to column 2 as well and lands on the next row, leaving the link stranded
+     under the value it annotates (reported on Applicant Status, 2026-09-09). Wrapping the pair in
+     .cell-inline makes it a single grid item whose contents flow inline instead.
+     Only for an affordance that reads as part of the value. A chip stating a separate fact — muted
+     integrations under a team name, a sub-line under a session title — is better on its own line,
+     which is what the stacking above is deliberately for. */
+  table.cards td > .cell-inline { display: inline-flex; align-items: baseline; flex-wrap: wrap; gap: 6px; }
+
   /* A cell with no matching header (the View / ⋮ action columns) drops the empty label gutter.
      inline-flex rather than flex so consecutive action cells sit side by side on one final row
      instead of each taking a row of its own. */
