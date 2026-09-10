@@ -559,12 +559,21 @@ To pick up updates: `/plugin marketplace update claude-tools`
   markup, served over a throwaway local HTTP server, loaded in a sized iframe); it needs no login and
   can assert on `scrollWidth` vs `clientWidth`. Recipe and the `</script>` escaping trap in
   `docs/responsive-ui.md`.
-- **Never use a bare Unicode symbol for a UI affordance — use Bootstrap Icons** (`<i class="bi bi-*"
-  aria-hidden="true">`, or the font's codepoint in a CSS `content:`). A symbol character renders only
-  if the device happens to have a font containing it, and **that differs per device**: IBM Plex Mono
-  ships `B2`/`BC` but not `B8`, so the withdrawn-roster marker looked correct on the dev
-  machine and rendered as a **tofu box on an iPhone** (2026-08-06). The sort arrows two rules away
-  used plain triangles and were fine, which is what made it look like a proven technique. Icons are
+- **Icons and glyphs are encouraged for UI affordances — reach for one rather than a word** (Mike,
+  2026-09-10: *"glyphs are okay to use and encouraged"*). A labelled button around a single verb
+  takes roughly four times the width of the icon, which is what made the session header's Total
+  retained cell tower over its neighbours until Edit became a pencil. The established control is
+  `.icon-action` + `<i class="bi bi-*" aria-hidden="true">` with **both** `title` and `aria-label`;
+  `_MessageTriggerSection.cshtml` is the reference markup.
+  **This entry used to read "Never use a bare Unicode symbol", and that overstated a real but narrow
+  finding into a ban** — it then kept steering work away from icons Mike had asked for more than
+  once, which is the argument for writing a constraint no wider than the thing that actually broke.
+  The narrow fact still holds and decides *which form* to use: a bare Unicode character renders only
+  if the device happens to have a font containing it, and **that differs per device** — IBM Plex Mono
+  ships `B2`/`BC` but not `B8`, so the withdrawn-roster marker looked right on the dev machine and
+  was a **tofu box on an iPhone** (2026-08-06), while the plain-triangle sort arrows two rules away
+  were fine, which is what made it look like a proven technique. So prefer the Bootstrap Icons form
+  for anything load-bearing; a bare character is a judgement call, not a violation. Icons are
   self-hosted at `wwwroot/lib/bootstrap-icons` because the CSP allows `font-src 'self'` only — a CDN
   reference is blocked. See `docs/icons.md`. **Two traps when editing:** an icon inside a C# string
   literal (`@(x ? "<i …>" : "·")`) breaks the Razor expression, and a bulk replace will also rewrite

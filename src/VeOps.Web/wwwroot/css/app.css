@@ -367,7 +367,13 @@ tr[data-clickable-row] .row-actions { cursor: default; }
 .meta-item { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .meta-item .v { overflow-wrap: anywhere; }
 .meta-item .k { font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-soft); }
-.meta-item .v { font-size: 13.5px; font-weight: 500; }
+/* A row of values must share one line, whatever each carries. Some of these values are text and
+   some are text plus a chip and a button, and a button is taller than a line of text — so without a
+   floor and a common centre, the money figure beside an Edit button sat lower than the money figure
+   next to it. 30px is .icon-action's own height (14px glyph + 7px padding each side + border),
+   so a text-only value reserves the same band and every value in the row lines up. Change one and
+   change the other. */
+.meta-item .v { font-size: 13.5px; font-weight: 500; min-height: 30px; display: flex; align-items: center; flex-wrap: wrap; }
 .meta-item .v a { color: var(--focus); }
 /* Row-wrapped on a phone so the actions sit under the session meta rather than in a narrow
    right-hand column; a right-aligned stack again from --bp-md. */
@@ -853,7 +859,17 @@ footer.roster { margin-top: 28px; background: var(--surface); border: 1px solid 
   .filter-dropdown > .menu { top: 40px; width: 200px; }
 
   .session-panel { padding: 22px 26px; gap: 24px; margin-bottom: 28px; }
-  .meta-grid { display: flex; gap: 32px; flex-wrap: wrap; }
+  /* Columns, not a wrapped row. This was `display: flex; flex-wrap: wrap`, which sized every item
+     to its own content — so nine items produced nine different left edges and nothing lined up,
+     least of all the second row against the first (reported 2026-09-10). The base layer is already
+     a grid; desktop only widens the tracks.
+     auto-fit rather than a fixed count: 230px is the widest value any of these carries
+     ("$15.00 exam · $7.00 retained", and a figure followed by a chip and a button), so at the
+     1160px shell it settles on four columns with nothing wrapped, and drops to three below ~1000px
+     instead of squeezing values onto a second line.
+     align-items: start keeps every label on the row's top edge, so a cell carrying a button does
+     not push its neighbours' text down. */
+  .meta-grid { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px 24px; align-items: start; }
   .panel-actions { flex-direction: column; flex-wrap: nowrap; align-items: flex-end; }
 
   .auth-wrap { padding-top: 48px; }
