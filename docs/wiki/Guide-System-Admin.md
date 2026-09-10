@@ -6,6 +6,9 @@ when it breaks.
 
 ## Only yours
 
+Four screens are yours alone. Three of them hold things that are shared across every team on the
+server, which is why no single team's admin can edit them.
+
 | Screen | What it is |
 |---|---|
 | **Teams** | Create a team. Everything else about a team is the Team Admin's. |
