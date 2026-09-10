@@ -531,6 +531,17 @@ To pick up updates: `/plugin marketplace update claude-tools`
   `.nav-toggle { display: none }`, 2026-08-05). Any new rule that fights those two base rules on
   `color` or `display` needs **two classes** — write `.vesm .nav-toggle`, not `.nav-toggle`. The
   symptom is silent: the rule is in the file, spelled correctly, and simply doesn't apply.
+- **In card mode (`max-width: 767.98px`), a `<td>` is a two-column grid, so a bare text value and a
+  sibling element in the same cell land on *different lines*.** `table.cards td > *` pins every
+  element child to column 2; the bare text node auto-places into column 2 first, so the element is
+  pushed to row 2 — the ULS "↗" stranded under the call sign it annotates (reported on mobile
+  Applicant Status, 2026-09-09; the FRN cell, VE Directory's duplicate-call-sign warning and Renewal
+  Monitor's "days left" pill all had it too). **That stacking is deliberate for a genuinely separate
+  fact** (a sub-line under a session title, a "Muted" chip under a team name) and must not be
+  "fixed". For an affordance that reads as part of the value, wrap the pair in
+  **`<span class="cell-inline">`** so it becomes one grid item whose contents flow inline. Desktop is
+  unaffected — the span is inert above the breakpoint. Invisible on a dev machine: Chrome enforces a
+  ~500px minimum window width, so this only ever appears on a real phone or in a sized iframe.
 - **The Web app cannot be loaded in an iframe, which rules out the obvious way to test responsive
   layout.** The 2026-08-03 hardening pass sends `X-Frame-Options: DENY` and CSP
   `frame-ancestors 'none'`, so framing `localhost:5158` at a phone width fails with a broken-image

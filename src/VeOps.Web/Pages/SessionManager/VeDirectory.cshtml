@@ -227,17 +227,19 @@ else
             {
                 <tr class="@(row.IsActive ? "" : "muted-row")">
                     <td class="mono">
-                        @(row.VolunteerExaminer.CallSign ?? "—")
-                        @if (row.HasDuplicateCallSign)
-                        {
-                            @* Left unmerged by the phase 1 migration because the names disagreed —
-                               possibly one person, possibly a reissued call sign. A human decides. *@
-                            <a asp-page="/SessionManager/VeMerge" asp-route-id="@row.VolunteerExaminer.Id"
-                               title="Another VE record shares this call sign — possibly the same person">
-                                <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
-                                <span class="visually-hidden">Review possible duplicate</span>
-                            </a>
-                        }
+                        <span class="cell-inline">
+                            @(row.VolunteerExaminer.CallSign ?? "—")
+                            @if (row.HasDuplicateCallSign)
+                            {
+                                @* Left unmerged by the phase 1 migration because the names disagreed —
+                                   possibly one person, possibly a reissued call sign. A human decides. *@
+                                <a asp-page="/SessionManager/VeMerge" asp-route-id="@row.VolunteerExaminer.Id"
+                                   title="Another VE record shares this call sign — possibly the same person">
+                                    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+                                    <span class="visually-hidden">Review possible duplicate</span>
+                                </a>
+                            }
+                        </span>
                     </td>
                     <td><a asp-page="/SessionManager/VeDetail" asp-all-route-data="@Model.DetailRoute(row.VolunteerExaminer.Id)">@row.VolunteerExaminer.Name</a></td>
                     <td>@row.TeamSummary</td>

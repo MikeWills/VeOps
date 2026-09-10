@@ -114,6 +114,47 @@ status chip stretches into a full-width bar, since a grid item fills its column 
 
 Text-only cells still auto-place correctly into column 2 and need no help.
 
+#### ...but a cell holding *both* text and an element splits across two lines (2026-09-09)
+
+The two rules above interact badly in one specific shape. A cell written as a bare value followed by
+a trailing affordance —
+
+```html
+<td class="mono">
+    @row.CallSign
+    <a href="@row.LicenseUrl"><i class="bi bi-arrow-up-right"></i></a>
+</td>
+```
+
+— has *two* grid items: the anonymous text run, and the anchor. The text auto-places into column 2
+first; `td > *` then pins the anchor to column 2 as well, and grid puts it on the **next row**. The
+result is the ULS link stranded on its own line underneath the call sign it annotates. Reported from
+a phone against Applicant Status; the same shape was in four cells — Applicant Status' FRN and call
+sign, VE Directory's duplicate-call-sign warning, and Renewal Monitor's "days left" pill.
+
+The fix is not a CSS override. Stacking the second child is *correct* for the case the rule was
+written for, and cannot be told apart from this one by the CSS, because the difference is semantic:
+
+| Shape | Belongs |
+|---|---|
+| A value and something that annotates **that value** — call sign + ULS link, expiry + days pill | one line |
+| A separate fact about the row — a sub-line under a session title, a "Muted" chip under a team name | its own line |
+
+So the markup says which it is. Wrapping the pair in **`<span class="cell-inline">`** makes it a
+single grid item whose contents flow inline:
+
+```css
+table.cards td > .cell-inline { display: inline-flex; align-items: baseline; flex-wrap: wrap; gap: 6px; }
+```
+
+Above the breakpoint the span is inert, so there is no desktop risk and nothing to undo in the
+desktop layer.
+
+**Why it survived this long:** Chrome enforces a ~500px minimum window width, so no amount of
+resizing on a dev machine reproduces it. It shows up on a real phone, or in the sized iframe of the
+harness below — which is how the fix was verified, with an unwrapped control cell in the same table
+to prove the harness could still see the bug (`textTop=154 affTop=184` before, overlapping after).
+
 ### Sorting
 
 `thead` is hidden in card mode, so **client-side sorting is unavailable on a phone** for the tables
