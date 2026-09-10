@@ -21,6 +21,57 @@ Not roles, but people the app serves:
 - **Candidates** never sign in. Everything they touch is a public page or an email. See
   [What a candidate sees](Guide-Candidate.md).
 
+## What changes between roles
+
+Read this as the **boundary** between each pair, rather than as four separate lists.
+
+| Moving from | What you gain |
+|---|---|
+| **Team Lead → Session Manager** | Every write action on sessions and candidates: emailing candidates, matching an unmatched payment, inviting VEs, filing to the VEC |
+| **Session Manager → Team Admin** | **Nothing session-shaped — these two are identical there.** You gain team settings and credentials, users, message rules, the VE roster, the reports, and deleting a session |
+| **Team Admin → System Admin** | Every team at once instead of your own, plus VECs, fee configurations, system settings, creating teams, and granting Team Admin |
+
+That middle row is the one worth knowing. A Team Admin and a Session Manager see and do **exactly
+the same things to sessions and candidates** — the difference is entirely about configuring the team
+and managing its people. If somebody only needs to run sessions, Session Manager is the whole job.
+
+## The matrix
+
+✅ full · ⚠️ limited, see the note · ❌ none
+
+| | Team Lead | Session Manager | Team Admin | System Admin |
+|---|:---:|:---:|:---:|:---:|
+| **Sessions and candidates** |
+| See sessions, candidates, Applicant Status | ✅ | ✅ | ✅ | ✅ |
+| Refresh candidates · Create retest payment | ✅ | ✅ | ✅ | ✅ |
+| Renewal Monitor | ✅ | ✅ | ✅ | ✅ |
+| Every other session write action | ❌ | ✅ | ✅ | ✅ |
+| Email candidates, in bulk or one at a time | ❌ | ✅ | ✅ | ✅ |
+| Match an unmatched payment | ❌ | ✅ | ✅ | ✅ |
+| Invite VEs to a session | ❌ | ✅ | ✅ | ✅ |
+| File a session with the VEC | ⚠️ view | ✅ | ✅ | ✅ |
+| Delete a session | ❌ | ❌ | ✅ | ✅ |
+| **VEs and reports** |
+| VE Directory, tags, import, Discord sync, merge, email | ❌ | ❌ | ✅ | ✅ |
+| Stats, VE Session Counts, Auditioning, Transactions | ❌ | ❌ | ✅ | ✅ |
+| **Configuring a team** |
+| Team settings and integration credentials | ❌ | ❌ | ✅ | ✅ |
+| Message rules | ❌ | ❌ | ✅ | ✅ |
+| FCC Status switches | ❌ | ❌ | ✅ | ✅ |
+| Audit Log, Job History, Job Schedule, Reconciliation | ❌ | ❌ | ✅ | ✅ |
+| **People** |
+| Create users, set their teams | ❌ | ❌ | ✅ | ✅ |
+| Grant Session Manager or Team Lead | ❌ | ❌ | ✅ | ✅ |
+| Grant Team Admin | ❌ | ❌ | ❌ | ✅ |
+| **The deployment** |
+| Create a team | ❌ | ❌ | ❌ | ✅ |
+| VECs, fee configurations, system settings | ❌ | ❌ | ❌ | ✅ |
+| **Scope** |
+| Which teams | own | own | own | all |
+
+Every ✅ above the last row is **still scoped to the teams you belong to**. A Team Admin's ✅ means
+"for my team", not "for every team" — only the System Admin row means all of them.
+
 ## What a role belongs to
 
 A Team Admin, Session Manager or Team Lead belongs to **one or more teams**, and sees only those
@@ -29,6 +80,11 @@ System Admin is attached to no team and sees all of them, with a team picker to 
 
 A Team Lead also has an **assigned manager** recorded on their account. That is informational only:
 it records who the lead reports to and grants no access whatsoever.
+
+**Nobody can grant a role above their own.** A Team Admin can grant Session Manager and Team Lead
+within their own team; only a System Admin grants Team Admin. Role and team membership are set
+separately, so granting somebody a role does not put them on a team — and a user on no team sees
+nothing at all.
 
 ## Team Lead's two exceptions
 
