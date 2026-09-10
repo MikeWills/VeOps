@@ -209,6 +209,32 @@ Note `ToggleVecSubmission` is a misnomer: it calls `MarkSubmittedAsync`, which r
 submitted, and the button only renders when the session is unsubmitted. **It has always been
 one-way** — the name misleads, the behaviour does not.
 
+### Getting back to a filing (fixed 2026-09-09)
+
+The same page. Once a filing exists, `SubmitToVec` renders the submitted values and a **"What was
+kept"** list instead of the preview form, and the session page links to it as **"View filing"**.
+
+That link is new, and its absence was a real defect worth recording, because the shape is easy to
+reproduce elsewhere. The only link to `SubmitToVec` in the entire app lived inside
+`@if (!Model.Session.VecSubmitted && Model.CanEdit)` — the condition that renders the *Submit* button
+— so it disappeared at the exact moment the archive started being worth reading, and the only route
+left was editing the URL by hand. Reported by Mike with a screenshot of a filed session: "I see
+nothing."
+
+Two halves to the fix, and the second is the one that generalizes:
+
+- It renders when a **filing row exists**, not when `VecSubmissionStatus == Submitted`. Every other
+  VEC is marked submitted by the manual toggle, which files nothing — linking on that flag would
+  land the reader on a page with nothing to show.
+- It is **not gated on `CanEdit`**. `SubmitToVec` authorizes on `CanView` and its own comment says a
+  TeamLead may read it, so gating the link on the edit permission hid the page from a reader it was
+  built to serve. *A control that leads to a read-only page belongs behind the read permission, not
+  the write one.*
+
+`SessionDetailVecFilingLinkTests` pins all of it against the **rendered page** rather than the Razor
+source: what broke was a conditional, and source that merely mentions the link proves nothing about
+whether somebody in the submitted state can see it.
+
 ## Keeping what was filed
 
 Mike: *"We just want an archive of what was sent in case there's ever a question. I have had to use

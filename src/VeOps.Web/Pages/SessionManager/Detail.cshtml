@@ -95,6 +95,14 @@
                             </form>
                         }
                     }
+                    else if (Model.Session.HasArrlFiling)
+                    {
+                        @* The way back to what was filed. Not inside the branch above: that one hides
+                           the moment a session is submitted, which is precisely when the archive
+                           starts being worth reading, and it is gated on CanEdit while the filing
+                           page itself is readable by anyone who can view the session. *@
+                        <a asp-page="SubmitToVec" asp-route-id="@Model.Session.Id" class="btn-secondary btn-sm">View filing</a>
+                    }
                 </span>
             </div>
         </div>

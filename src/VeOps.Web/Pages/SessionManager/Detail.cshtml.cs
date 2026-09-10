@@ -414,6 +414,12 @@ public class DetailModel(
 
         var feeSummary = session.GetFeeSummary();
 
+        // Whether there is a filing to look back at, which is not the same question as whether the
+        // session is marked submitted: every other VEC uses the plain "I filed this by hand" toggle,
+        // which files nothing and leaves no archive to link to.
+        var hasArrlFiling = await dbContext.ArrlVecSubmissions
+            .AnyAsync(a => a.SessionId == session.Id, HttpContext.RequestAborted);
+
         Session = new SessionSummary(
             session.Id,
             SessionBreadcrumbFormatter.Format(session.ExtId, session.Title),
@@ -442,7 +448,8 @@ public class DetailModel(
             session.RescheduleFlaggedForReview,
             session.TestingCompletedUtc is not null,
             session.Status == SessionStatus.Cancelled,
-            string.Equals(session.Vec.MatchCode, ArrlSubmissionPreviewService.ArrlMatchCode, StringComparison.OrdinalIgnoreCase));
+            string.Equals(session.Vec.MatchCode, ArrlSubmissionPreviewService.ArrlMatchCode, StringComparison.OrdinalIgnoreCase),
+            hasArrlFiling);
 
         // Split rather than filtered: the withdrawn rows are still rendered, just behind a
         // disclosure, and the delete warning still has to count them.
@@ -572,7 +579,20 @@ public class DetailModel(
         /// the ARRL preview or stays the plain "I filed this by hand" toggle every other VEC uses
         /// (#197) — one submitter, no fallback.
         /// </summary>
-        bool IsArrlSession);
+        bool IsArrlSession,
+        /// <summary>
+        /// True when a filing exists for this session, so the page can offer the way back to it —
+        /// the archive, the attachment and ARRL's receipt.
+        ///
+        /// <para>Deliberately separate from <c>VecSubmitted</c>. A session under any other VEC is
+        /// marked submitted by the manual toggle, which files nothing, so linking on that flag would
+        /// send the reader to a page with nothing to show. And this is <b>not</b> gated on
+        /// <c>CanEdit</c>: <c>SubmitToVec</c> is readable by anyone who can view the session, a
+        /// TeamLead included, and the link used to sit behind the same condition as the button that
+        /// files — so it vanished at the moment the archive started being worth reading (2026-09-09).
+        /// </para>
+        /// </summary>
+        bool HasArrlFiling);
 
     public record CandidateRow(
         int Id,
