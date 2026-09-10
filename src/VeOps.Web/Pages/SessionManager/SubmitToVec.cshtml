@@ -88,9 +88,11 @@
         }
         @if (!string.IsNullOrWhiteSpace(submission.ResponseBody))
         {
-            @* Downloaded, never rendered: a page fetched from a third party and echoed into an
-               authenticated admin view is a stored-XSS vector whatever it contains. *@
-            <li><a asp-page-handler="Receipt" asp-route-id="@Model.Id">ARRL's confirmation page</a> &mdash; downloads; open it in a browser to read or print it</li>
+            @* Opens in a tab, rendered. Safe because the handler serves it under
+               `Content-Security-Policy: sandbox` — an opaque origin with scripts and forms blocked —
+               not because of anything about this link. A page fetched from a third party and drawn
+               in an authenticated origin is a stored-XSS vector whatever it contains. *@
+            <li><a asp-page-handler="Receipt" asp-route-id="@Model.Id" target="_blank" rel="noopener">ARRL's confirmation page</a> &mdash; opens in a new tab, where it can be read or printed</li>
         }
     </ul>
 }
