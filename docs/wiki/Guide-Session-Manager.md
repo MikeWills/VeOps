@@ -60,12 +60,9 @@ This is the part with real work in it.
 
 ## When something is wrong
 
-| Symptom | Where to look |
-|---|---|
-| A candidate says they paid and the app says unpaid | [Square payment not recorded](../runbooks/square-payment-not-recorded.md) |
-| A candidate did not get an email | [Candidate did not get email](../runbooks/candidate-did-not-get-email.md) |
-| Sessions stopped appearing, emails stopped going out | [Worker not processing](../runbooks/worker-not-processing.md) — then tell a Team Admin |
-| A VEC filing came back `Unknown` | [ARRL filing unconfirmed](../runbooks/arrl-filing-unconfirmed.md) |
+Symptoms and their fixes are on one page: **[Something is wrong](Something-is-wrong.md)**. It covers
+the payment that says unpaid, the email that never arrived, the filing that came back `Unknown`, and
+the day nothing happens at all.
 
 Anything that needs a credential changed, a message rule edited, or a job re-run is a **Team
 Admin's** job, not yours. See [Team Admin](Guide-Team-Admin.md).
