@@ -131,6 +131,7 @@ and [`docs/deployment.md`](docs/deployment.md#automated-deploy-github-actions) c
 
 | | |
 |---|---|
+| [**Wiki**](https://github.com/MikeWills/VeOps/wiki) | The user manual — how to run sessions, by role. Source of truth is [`docs/wiki/`](docs/wiki/); the wiki is a generated mirror |
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | How the pieces fit together, and why |
 | [`docs/configuration.md`](docs/configuration.md) | Every credential, and what happens without it |
 | [`docs/deployment.md`](docs/deployment.md) | Server setup, systemd, CI/CD |
