@@ -174,7 +174,29 @@ public class SubmitToVecModel(
             return NotFound();
         }
 
-        return File(System.Text.Encoding.UTF8.GetBytes(body), "text/plain", $"arrl-receipt-session-{Id}.html");
+        // Rendered in a tab, not downloaded (Mike, 2026-09-10). It was "text/plain" under a ".html"
+        // name — a response contradicting itself, and which half the browser believed decided what
+        // the reader saw: a desktop saved a file that opened as a page, a phone showed the markup as
+        // text.
+        //
+        // ⚠️ The sandbox is what makes rendering it safe, and it is not optional. This is ARRL's
+        // HTML, not ours, echoed back with the submitter's name, call sign, email and phone in it;
+        // drawn in an authenticated origin without this header, anything it contained would run with
+        // a signed-in Session Manager's cookies. Being a download used to keep it out of the browser
+        // entirely — now it is defanged instead. A bare `sandbox` (no allow-scripts, no
+        // allow-same-origin) puts the response in an opaque origin with scripts and forms blocked,
+        // so it can read no cookie of ours and reach nothing.
+        //
+        // It REPLACES the app-wide policy set in Program.cs rather than adding to it: two CSP
+        // headers intersect, and the app-wide one would strip the inline styles ARRL's page carries
+        // while adding nothing — the sandbox is already the stricter statement. The security
+        // middleware sets its headers before calling next(), which is what lets this overwrite.
+        Response.Headers["Content-Security-Policy"] = "sandbox";
+        Response.Headers["X-Content-Type-Options"] = "nosniff";
+
+        // No filename: File(...) sets Content-Disposition: attachment whenever one is given, which
+        // is exactly what sent this to the Downloads folder instead of the tab.
+        return File(System.Text.Encoding.UTF8.GetBytes(body), "text/html; charset=utf-8");
     }
 
     /// <summary>

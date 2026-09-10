@@ -285,8 +285,22 @@ receipts as exempt from retention. It is wrong. The confirmation page echoes the
 call sign, email and phone**, adds an **IP address** of its own, and reproduces the note — which in
 one real submission contained a card's last four digits tied to a named person.
 
-**Never render it back into a page.** It is offered as a download; this codebase has zero `Html.Raw`
-and should keep it.
+**Never render it into one of this app's own pages.** This codebase has zero `Html.Raw` and should
+keep it.
+
+It *is* rendered, though — in a tab of its own (2026-09-10). It was previously a download, and was
+served as `text/plain` under a `.html` filename: a desktop saved a file that opened as a page, so
+nobody noticed, while a phone honoured the served type and showed the reader raw markup. Reported by
+Mike, who then asked for it in a tab rather than in Downloads.
+
+⚠️ **`Content-Security-Policy: sandbox` is what makes that safe, and it is load-bearing.** A bare
+`sandbox` — no `allow-scripts`, no `allow-same-origin` — puts the response in an opaque origin with
+scripts and form submission blocked, so ARRL's markup can read no cookie of ours and reach nothing.
+Being a download used to keep it out of the browser altogether; now it is defanged instead. It
+**replaces** the app-wide policy rather than adding to it, since two CSP headers intersect and the
+app-wide one would strip the inline styles ARRL's page carries while adding nothing the sandbox does
+not already say. `ArrlReceiptDownloadTests.TheReceiptIsSandboxed` exists so that deleting the header
+fails the build rather than quietly turning a rendered receipt into an XSS sink.
 
 ### Files on disk, not database blobs
 
