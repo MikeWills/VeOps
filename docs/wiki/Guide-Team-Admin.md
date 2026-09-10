@@ -18,7 +18,7 @@ accounts and mail servers.
 | **Square** | No | No payment links; candidates cannot pay through the app. |
 | **Email (SMTP)** | No | No candidate email of any kind goes out. |
 
-Every optional integration fails *quietly*. If Square is not configured, payment links simply are
+Every optional integration fails *quietly*. If Square is not configured, payment links are
 not created and the app logs one line saying so — and the moment you add the credentials, the next
 pass creates every link that was skipped. There is no separate backfill step to remember.
 

@@ -39,7 +39,8 @@ not match itself up automatically, and somebody has to attach it by hand.
 
 Two things happen, and the second one is yours.
 
-1. **The team files your session with the VEC.** You do not do anything for this.
+1. **The team files your session with the VEC** — the organisation that accredits volunteer
+   examiners and sends exam results to the FCC. You do not do anything for this.
 2. **The FCC charges its own application fee**, separately, through
    [CORES](https://apps.fcc.gov/cores/userLogin.do). This is not the fee you already paid the team.
    ⚠️ **You have ten days.** If the FCC's fee is not paid in that window, your application expires
