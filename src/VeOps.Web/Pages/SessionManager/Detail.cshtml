@@ -68,7 +68,13 @@
                     }
                     @if (Model.CanEdit)
                     {
-                        <button type="button" class="btn-secondary btn-sm" style="margin-left:6px;" data-open-modal="retainedAmountOverrideModal">Edit</button>
+                        @* .icon-action, not a labelled button: a full btn-secondary around one word
+                           takes four times the width and is what made this cell tower over its
+                           neighbours. Same control as the Edit pencil on the message-rule rows. *@
+                        <button type="button" class="icon-action" style="margin-left:6px;" data-open-modal="retainedAmountOverrideModal"
+                                title="Override total retained" aria-label="Override total retained">
+                            <i class="bi bi-pencil" aria-hidden="true"></i>
+                        </button>
                     }
                 </span>
             </div>

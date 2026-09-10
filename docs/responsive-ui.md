@@ -163,6 +163,50 @@ that use it. The sort still applies if one was remembered from a desktop visit (
 than an oversight — surfacing a sort control per card was not worth the complexity for screens whose
 result sets are already filtered and paged.
 
+## The session header lined up (2026-09-10)
+
+Reported from the session page: *"The alignment is all over the place."* Nine metadata items, nine
+different left edges, and the second row landing wherever the first happened to wrap.
+
+The cause was in the **desktop** layer, not the mobile one. The base layer is a two-column grid, but
+`min-width: 768px` replaced it with `display: flex; flex-wrap: wrap`, which sizes every item to its
+own content — so no item shares a left edge with the item above it, by construction. It is the same
+class of bug as a table rendered with tabs.
+
+Three changes, each fixing a distinct kind of raggedness:
+
+| Symptom | Fix |
+|---|---|
+| Items at nine different left edges | `grid-template-columns: repeat(auto-fit, minmax(230px, 1fr))` |
+| A figure beside a button riding lower than the figure next to it | `.meta-item .v` gets `min-height: 30px` and centres its content |
+| One cell twice the width of its neighbours | "Edit" became an `.icon-action` pencil |
+
+**230px is not arbitrary** — it is the widest value any of these carries (`$15.00 exam · $7.00
+retained`, and a figure followed by a chip and a button). At the 1160px shell that settles on four
+columns with nothing wrapped; below ~1000px it drops to three rather than squeezing values onto a
+second line. `auto-fit` rather than a fixed count for exactly that reason.
+
+**30px is `.icon-action`'s own height** (14px glyph + 7px padding either side + border). Change one
+and the other has to move, which is why both say so.
+
+`.meta-grid` is shared with the ARRL filing page, so that became a tidy 4×2 at the same time —
+checked deliberately rather than discovered later.
+
+### Verifying it
+
+The harness below, at the real 1160px shell width rather than the browser's full width — the first
+pass measured at 1905px and made every option look better than it was. Assertions were on **distinct
+left edges** (nine before, four after) and on the spread of value centres within a row (0–1px after).
+
+⚠️ **One measurement trap, worth knowing before reusing it.** Wrapping was being detected with
+`el.getClientRects().length > 1`, which stopped working the moment `.v` became a flex container: a
+flex box has one client rect however its children wrap, so the check reported "no wrapping" while the
+phone screenshot plainly showed the pencil on its own line. A layout assertion can be invalidated by
+the very change it is meant to verify — look at the render as well.
+
+At 390px the header is unaffected by any of this (the card layer is a separate rule): two columns, no
+horizontal page scroll, nothing clipped, and the pencil is a 34×31px touch target.
+
 ## iOS zoom — why controls are 16px on mobile
 
 iOS Safari auto-zooms the viewport when a control with `font-size` below 16px receives focus, and it
