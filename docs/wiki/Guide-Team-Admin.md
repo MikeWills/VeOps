@@ -66,9 +66,9 @@ that team's own mail credentials.
 | **Audit Log** | Who changed what, and when |
 | **Team Maintenance** | Team-level housekeeping |
 
-If Job History has gone quiet, that is
-[worker-not-processing.md](../runbooks/worker-not-processing.md)
-and probably a System Admin's problem.
+**Job History going quiet is the signal worth watching** — it means the background work stopped, and
+everything else stops with it. That one is probably a System Admin's problem; see
+[Something is wrong](Something-is-wrong.md).
 
 ## The VE roster
 

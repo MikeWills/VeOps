@@ -35,11 +35,13 @@ This is server work, not app work. It lives in the repository, not here.
 | A release is broken | [roll-back-a-release.md](../runbooks/roll-back-a-release.md) |
 | Fresh box, or somebody self-hosting | [stand-up-a-new-server.md](../runbooks/stand-up-a-new-server.md) |
 | Box lost, database corrupt, restore test | [restore-from-backup.md](../runbooks/restore-from-backup.md) |
-| Every integration suddenly fails to authenticate | [key-ring-problems.md](../runbooks/key-ring-problems.md) |
-| The background jobs have gone quiet | [worker-not-processing.md](../runbooks/worker-not-processing.md) |
 | Backfilling old closed sessions | [run-a-historical-import.md](../runbooks/run-a-historical-import.md) |
 
-The full index, and the four warnings worth reading before you need any of them, is
+Those are procedures you set out to do. When something has instead gone wrong — integrations failing
+to authenticate, background jobs gone quiet — start from
+**[Something is wrong](Something-is-wrong.md)**, which is arranged by symptom.
+
+The full runbook index, and the four warnings worth reading before you need any of them, is
 [docs/runbooks](../runbooks/README.md).
 
 ## The three that will actually bite you
