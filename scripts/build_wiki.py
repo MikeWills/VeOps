@@ -53,12 +53,14 @@ LINK = re.compile(r"(!?)\[([^\]]*)\]\(([^)\s]+)\)")
 # silently dropped, so a new page appears without this list being updated.
 ORDER = [
     "Home",
+    "Your-first-session",
     "Guide-Candidate",
     "Guide-Volunteer-Examiner",
     "Guide-Team-Lead",
     "Guide-Session-Manager",
     "Guide-Team-Admin",
     "Guide-System-Admin",
+    "Something-is-wrong",
     "Tasks",
     "Roles-and-Permissions",
     "Glossary",
@@ -66,19 +68,21 @@ ORDER = [
 ]
 TITLES = {
     "Home": "Start here",
+    "Your-first-session": "Your first session",
     "Guide-Candidate": "Candidate",
     "Guide-Volunteer-Examiner": "Volunteer Examiner",
     "Guide-Team-Lead": "Team Lead",
     "Guide-Session-Manager": "Session Manager",
     "Guide-Team-Admin": "Team Admin",
     "Guide-System-Admin": "System Admin",
+    "Something-is-wrong": "Something is wrong",
     "Tasks": "Tasks",
     "Roles-and-Permissions": "Roles and permissions",
     "Glossary": "Glossary",
     "About-this-wiki": "About this wiki",
 }
 # Where the sidebar breaks into groups, keyed by the page the heading precedes.
-HEADINGS = {"Guide-Candidate": "Role guides", "Tasks": "Reference"}
+HEADINGS = {"Guide-Candidate": "Role guides", "Something-is-wrong": "Reference"}
 
 
 def page_name(filename: str) -> str:
