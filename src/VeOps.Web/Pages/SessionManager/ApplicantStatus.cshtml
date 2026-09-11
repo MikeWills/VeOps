@@ -83,6 +83,7 @@ else
                     <td class="mono" data-sort-value="@row.Frn">
                         <span class="cell-inline">
                             @row.Frn
+                            <partial name="_CopyButton" model='new VeOps.Web.CopyButton(row.Frn, "FRN")' />
                             @if (!string.IsNullOrWhiteSpace(row.LicenseUrl))
                             {
                                 <a href="@row.LicenseUrl" target="_blank" rel="noopener"

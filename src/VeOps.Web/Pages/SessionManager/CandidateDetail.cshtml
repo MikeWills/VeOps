@@ -29,7 +29,13 @@
                     }
                 </span>
             </div>
-            <div class="meta-item"><span class="k">FRN</span><span class="v mono">@c.FrnLine</span></div>
+            <div class="meta-item">
+                <span class="k">FRN</span>
+                <span class="v mono">
+                    @c.FrnLine
+                    <partial name="_CopyButton" model='new VeOps.Web.CopyButton(c.Frn, "FRN")' />
+                </span>
+            </div>
             @if (!c.IsWithdrawn)
             {
                 <div class="meta-item"><span class="k">Email</span><span class="v">@(c.Email ?? "—")</span></div>

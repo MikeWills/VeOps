@@ -65,33 +65,85 @@
       });
     }
 
-    // Copy-to-clipboard for a field the user is meant to paste somewhere else — the authenticator
-    // setup URI, which a password manager (Bitwarden, 1Password) takes whole.
+    // Copy-to-clipboard for a value the user is meant to paste somewhere else — the authenticator
+    // setup URI, which a password manager (Bitwarden, 1Password) takes whole, and an FRN, which gets
+    // pasted into the FCC's own search.
+    //
+    // Two sources, because those two cases differ. `data-copy-target` names an input by id and copies
+    // its value; `data-copy-value` carries the text itself, for a figure rendered as text with no
+    // input behind it.
     //
     // A data attribute rather than an inline onclick, because the CSP is `script-src 'self'` and that
     // silently drops inline handlers — a button that looks right and does nothing. Same convention as
     // data-autosubmit above.
-    //
-    // navigator.clipboard needs a secure context, so it is absent over plain http (a local dev run).
-    // The fallback selects the text instead, which still gets the user to Ctrl+C rather than leaving
-    // the button dead.
-    document.querySelectorAll("[data-copy-target]").forEach(function (button) {
+    document.querySelectorAll("[data-copy-target],[data-copy-value]").forEach(function (button) {
       button.addEventListener("click", function () {
-        var target = document.getElementById(button.getAttribute("data-copy-target"));
-        if (!target) return;
+        var literal = button.getAttribute("data-copy-value");
+        var target = literal === null
+          ? document.getElementById(button.getAttribute("data-copy-target"))
+          : null;
+        if (literal === null && !target) return;
 
+        var text = literal === null ? target.value : literal;
+        var icon = button.querySelector("i.bi");
+
+        // An icon button cannot say "Copied" by replacing its text — that would delete the icon. It
+        // swaps the glyph and its label instead, which is also what a screen reader reads back.
         var done = function () {
-          var original = button.getAttribute("data-copy-label") || button.textContent;
-          button.setAttribute("data-copy-label", original);
-          button.textContent = "Copied";
-          setTimeout(function () { button.textContent = original; }, 1500);
+          var originalLabel = button.getAttribute("data-copy-label")
+            || button.getAttribute("aria-label")
+            || button.textContent;
+          button.setAttribute("data-copy-label", originalLabel);
+
+          if (icon) {
+            button.setAttribute("data-copy-icon", button.getAttribute("data-copy-icon") || icon.className);
+            icon.className = "bi bi-check2";
+          } else {
+            button.textContent = "Copied";
+          }
+          button.setAttribute("aria-label", "Copied");
+          button.setAttribute("title", "Copied");
+
+          setTimeout(function () {
+            if (icon) {
+              icon.className = button.getAttribute("data-copy-icon");
+            } else {
+              button.textContent = originalLabel;
+            }
+            button.setAttribute("aria-label", originalLabel);
+            button.setAttribute("title", originalLabel);
+          }, 1500);
+        };
+
+        // Two ways this needs a fallback: navigator.clipboard is absent without a secure context
+        // (plain http, i.e. a local dev run), and writeText REJECTS even on https when the document
+        // is not focused or the user has denied clipboard access. The second is the one worth
+        // getting right — an earlier version handled it with `if (target) target.select()`, which
+        // did nothing at all for a literal value, leaving the button dead and silent.
+        var fallback = function () {
+          if (target) {
+            target.select();
+            target.setSelectionRange(0, target.value.length);
+            return;
+          }
+
+          // No input to select, so borrow one. execCommand is deprecated but still the only thing
+          // that works here, and a dead button is worse.
+          var scratch = document.createElement("textarea");
+          scratch.value = text;
+          scratch.setAttribute("readonly", "readonly");
+          scratch.style.position = "fixed";
+          scratch.style.opacity = "0";
+          document.body.appendChild(scratch);
+          scratch.select();
+          try { document.execCommand("copy"); done(); } catch (e) { /* nothing useful left to offer */ }
+          document.body.removeChild(scratch);
         };
 
         if (navigator.clipboard && window.isSecureContext) {
-          navigator.clipboard.writeText(target.value).then(done, function () { target.select(); });
+          navigator.clipboard.writeText(text).then(done, fallback);
         } else {
-          target.select();
-          target.setSelectionRange(0, target.value.length);
+          fallback();
         }
       });
     });

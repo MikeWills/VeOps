@@ -75,7 +75,7 @@ else
                     <td class="mono session-title">@row.License.CallSign</td>
                     @* select-all on click: an FRN is a 10-digit string with no word boundaries, so
                        double-clicking to select it is fiddly and a mis-copy is silent. *@
-                    <td class="mono frn-cell" title="@(row.License.Frn is null ? "No FRN on the FCC record" : "Click to select, for FCC's application search")">@(row.License.Frn ?? "—")</td>
+                    <td class="mono frn-cell" title="@(row.License.Frn is null ? "No FRN on the FCC record" : "For FCC's application search")"><span class="cell-inline">@(row.License.Frn ?? "—")<partial name="_CopyButton" model='new VeOps.Web.CopyButton(row.License.Frn, "FRN")' /></span></td>
                     <td>@(row.License.LicenseeName ?? "—")</td>
                     <td>@(row.License.OperatorClass == LicenseClass.None ? "—" : row.License.OperatorClass.ToString())</td>
                     @if (showTeamColumn)
@@ -158,7 +158,7 @@ else
             {
                 <tr>
                     <td class="mono session-title">@row.License.CallSign</td>
-                    <td class="mono frn-cell" title="@(row.License.Frn is null ? "No FRN on the FCC record" : "Click to select, for FCC's application search")">@(row.License.Frn ?? "—")</td>
+                    <td class="mono frn-cell" title="@(row.License.Frn is null ? "No FRN on the FCC record" : "For FCC's application search")"><span class="cell-inline">@(row.License.Frn ?? "—")<partial name="_CopyButton" model='new VeOps.Web.CopyButton(row.License.Frn, "FRN")' /></span></td>
                     <td>@(row.License.LicenseeName ?? "—")</td>
                     <td>@(row.License.OperatorClass == LicenseClass.None ? "—" : row.License.OperatorClass.ToString())</td>
                     @if (showTeamColumn)
