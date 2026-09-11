@@ -26,7 +26,9 @@
 }
 
 <div class="session-panel">
-    <div>
+    @* .session-panel is a flex row; this half has to claim the space or the metadata grid inside it
+       sizes to its own content and collapses to one column. See app.css. *@
+    <div class="session-panel-main">
         <h1>@Model.Session.Heading</h1>
         <div class="meta-grid">
             <div class="meta-item"><span class="k">VEC</span><span class="v">@Model.Session.VecName</span></div>

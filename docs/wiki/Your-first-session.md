@@ -19,6 +19,8 @@ Most of it happens without you. The parts that need you are marked **you do this
 Within about an hour of the session being created in ExamTools, it shows up on your **Sessions**
 list. You don't add it.
 
+![The Sessions list: one row per session, showing candidate count, whether testing is complete, and whether it has been filed with the VEC](images/sessions-list.png)
+
 The same pass creates the Zoom meeting and the Discord event, if your team uses them.
 
 ## 2. Candidates register, and get what they need
@@ -62,6 +64,8 @@ You're done when the session page shows:
 - **VEC submission: Submitted**, with a **View filing** link beside it
 - **Testing status: Completed**
 - No candidate left with an unexplained **Unpaid** chip
+
+![A finished session: VEC submission Submitted with a View filing link, testing status Completed, and every candidate paid and tested](images/session-detail.png)
 
 Open **View filing** and you'll see what was sent, including the archive and ARRL's own confirmation
 page. That's the record if anyone ever asks.

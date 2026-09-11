@@ -52,9 +52,15 @@ This is the part with real work in it.
    submit twice after an `Unknown` result.** The VEC cannot de-duplicate and cannot unsend; a
    missing receipt is not proof that nothing was filed. The recovery procedure is
    [`arrl-filing-unconfirmed.md`](../runbooks/arrl-filing-unconfirmed.md).
+
+   Once filed, the same page becomes the record of what was sent:
+
+   ![The filing record: submitted values, the archive that went, and a link to ARRL's confirmation page](images/view-filing.png)
 3. **Applicant Status.** Candidates now wait on the FCC. This screen is the list of everyone still
    waiting on a grant, across all your sessions. The app watches the FCC and moves them along on its
    own; the screen exists for when somebody asks.
+
+   ![Applicant Status: candidates pending an FCC grant with days waiting, and a Recently issued list showing new call signs](images/applicant-status.png)
 4. **Unmatched Payments.** A payment that arrived without matching a candidate lands here for you to
    attach by hand. Usually somebody paid from a different email address.
 
