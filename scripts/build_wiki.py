@@ -48,6 +48,11 @@ BLOB = "https://github.com/{repo}/blob/main/{path}"
 # Markdown links and images: ![alt](target) and [text](target).
 LINK = re.compile(r"(!?)\[([^\]]*)\]\(([^)\s]+)\)")
 
+# Inline code spans, capturing the delimiters so re.split yields code at odd indices. Fenced blocks
+# are covered too: a ``` fence is just a run of backticks, so its contents land inside a captured
+# span rather than being treated as prose.
+CODE_SPAN = re.compile(r"(`+[^`]*`+)", re.S)
+
 # The running order of the sidebar: roles in the order somebody meets them,
 # reference after. Anything not listed is appended alphabetically rather than
 # silently dropped, so a new page appears without this list being updated.
@@ -119,7 +124,13 @@ def rewrite(text: str, repo: str) -> str:
             return f"[{label}]({name}{'#' + anchor if anchor else ''})"
         return match.group(0)
 
-    return LINK.sub(one, text)
+    # Inline code is example text, not a link. `![alt](images/name.png)` in About-this-wiki is the
+    # instruction telling people how to write an image reference -- rewriting it to an absolute raw
+    # URL corrupts the instruction into something nobody could follow. Split on code spans and only
+    # rewrite outside them; the delimiters are kept so the text round-trips exactly.
+    return "".join(
+        part if i % 2 else LINK.sub(one, part)
+        for i, part in enumerate(CODE_SPAN.split(text)))
 
 
 def sidebar(pages: list[str]) -> str:

@@ -361,6 +361,16 @@ tr[data-clickable-row] .row-actions { cursor: default; }
 /* Session header panel */
 .session-panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px 16px; display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 22px; }
 .session-panel h1 { font-size: 21px; margin: 0 0 6px; letter-spacing: -.01em; }
+/* The left half of the panel must CLAIM the width, not be sized by its contents.
+   .session-panel is a flex row, and this child holds the heading plus .meta-grid. While .meta-grid
+   was a wrapped flex row its max-content width was enormous, so the item filled the panel by
+   accident. Turning it into an auto-fit grid (#541) dropped its max-content to about 396px, and the
+   whole header silently collapsed to a single column at full desktop width — shipped in v0.39.1 and
+   caught taking documentation screenshots, not by the test that was supposed to cover it.
+   The harness for #541 rendered .meta-grid in a plain container rather than inside .session-panel,
+   so it proved the grid and missed the containing block. min-width: 0 lets the grid shrink below
+   its content on narrow screens instead of forcing the panel wider. */
+.session-panel > .session-panel-main { flex: 1 1 420px; min-width: 0; }
 /* A flex row of key/value pairs on desktop; a two-up grid on a phone, so the labels line up in
    columns instead of reflowing into a ragged single file. */
 .meta-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 18px; margin-top: 14px; }
