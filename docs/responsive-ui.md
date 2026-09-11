@@ -249,6 +249,26 @@ The harness can be pointed at any page shape. The admin pass used a Users-table 
 `wrapper.scrollWidth > wrapper.clientWidth` only at 900px — which is precisely the tablet-band
 regression described under "Tables" above.
 
+### ⚠️ The harness must reproduce the CONTAINING BLOCK, not just the component
+
+This is the trap that actually caught someone, so it goes above the general caveat below.
+
+#541 turned the session header's `.meta-grid` from a wrapped flex row into an `auto-fit` grid. The
+harness rendered `.meta-grid` inside a plain `<div>`, proved four columns, and shipped. On the real
+page `.meta-grid` lives inside `.session-panel`, which is a **flex row** — and while the grid was a
+wrapped flex row its max-content width was enormous, so its parent filled the panel *by accident*.
+As a grid its max-content fell to ~396px and the entire header silently collapsed to one column at
+full desktop width. It ran in production from `v0.39.1` until somebody looked at the page.
+
+A component's layout is a function of its parent as much as itself. **Copy the real ancestor chain
+into the harness** — the panel, its `display`, its `gap`, its `flex-wrap` — or the harness proves
+only that the component works in isolation, which was never in doubt.
+
+The same applies to measurement, not just rendering. A wrapping check written as
+`el.getClientRects().length > 1` stopped working the moment `.v` became a flex container: a flex box
+has one client rect however its children wrap, so it reported "no wrapping" while a phone screenshot
+plainly showed otherwise. **A layout assertion can be invalidated by the very change it verifies.**
+
 ### What is *not* verified
 
 Every Session Manager and Admin page is `[Authorize]`d, and Claude does not enter the dev password
@@ -256,6 +276,13 @@ Every Session Manager and Admin page is `[Authorize]`d, and Claude does not ente
 each authenticated page's own content renders well with real data. The remaining check is a
 logged-in pass over Session Detail, Applicant Status, Candidate Detail and Team Settings at phone
 width.
+
+**Two live bugs were found doing exactly that pass on 2026-09-10** — the collapsed header above, and
+the ARRL filing page rendering with the signed-out layout because it never set
+`Layout = "_AppLayout"`. Neither was catchable by the harness (both were bugs in the page's context)
+nor by `PageSmokeTests` (a page with the wrong layout still returns 200 and contains its expected
+strings). A periodic logged-in look at the real pages is the only thing that covers this class, and
+it is worth doing even when no screenshots are needed.
 
 ## Anchor-buttons were never styled as buttons (2026-08-16)
 
