@@ -66,3 +66,27 @@ context.
 > instead: `@if (c.Tested) { <i …></i> } else { <text>·</text> }`. A bulk find-and-replace across
 > `.cshtml` will walk straight into this, and into Razor comments whose prose legitimately contains
 > arrows.
+
+## Three kinds of clickable thing, and how to ask for one
+
+Added 2026-09-10, after Mike asked how to tell me which one he wants. The distinguishing question is
+**what does it act on**, not how big it is.
+
+| Say this | Class | What it is | Looks like |
+|---|---|---|---|
+| "a button" | `.btn-primary` / `.btn-secondary` | A real control. Carries a word, has chrome, is meant to be found. | A button |
+| "an icon action" | `.icon-action` | A control in its own right, reduced to a glyph because it sits in a cluster of them. Chrome appears on hover. | Same family as the `⋮` kebab |
+| "a plain glyph" | `.icon-plain` | An affordance *attached to the value beside it*. No chrome ever. Reads as part of the thing it acts on. | The inline `↗` link |
+| — | plain `<a>` | Navigation. It goes somewhere. | A link |
+
+The test that separates the last two: **does it act on the thing next to it, or is it a control of
+its own?** Copying the FRN you are looking at is the former — that is why it lost its chrome
+(2026-09-10). Editing a message rule from a row of row-actions is the latter.
+
+`.icon-plain` and `.icon-action` both need **two classes** in CSS (`.vesm .icon-plain`), because
+`.vesm button` is class-plus-element and beats a single class on `color` and `display`. See the
+specificity constraint in CLAUDE.md.
+
+⚠️ **An icon-only control still needs both `title` and `aria-label`.** An icon with neither is a
+guess for a sighted user and invisible to a screen reader. `_CopyButton.cshtml` is the reference
+markup; it also renders nothing at all for a blank value, so no call site needs its own guard.
