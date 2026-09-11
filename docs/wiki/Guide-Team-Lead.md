@@ -16,6 +16,12 @@ deliberate — the read-only default is what makes it safe to hand out the role 
 Those two exist because they are a key part of actually running a session and the Session Manager
 might not be available to do them for you.
 
+![A finished session as a Team Lead sees it: the same figures and status, but the only controls are View filing and Refresh candidates](images/team-lead-session.png)
+
+What is *not* there is the point. A Session Manager looking at this same session also gets **Email
+candidates**, **Mark session completed** and **Submit to VEC**, and their sidebar carries **Unmatched
+Payments**. Yours does not, and that is the whole difference between the two roles on this screen.
+
 ⚠️ **Refresh candidates is not just a read.** It pulls ExamTools right now, and for anyone newly
 registered it also creates their payment link and sends their registration confirmation email. That
 is exactly what you want for a walk-in. It is not a "reload the page" button.
