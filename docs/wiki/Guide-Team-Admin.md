@@ -43,6 +43,12 @@ Admin.
 channel, how long before or after, and from which template. A rule can send email, post to Discord,
 or both.
 
+![The Messages screen: each moment a message can be sent is its own section, listing the messages attached to it with when they go and who receives them](images/message-rules.png)
+
+The page is organised by **moment**, not by message. Each heading is something that happens — a
+candidate registers, a session is about to start — and any number of messages can hang off it, or
+none, in which case nothing is sent then.
+
 Two behaviours that surprise people:
 
 - **A new or re-enabled rule does not send a backlog.** It starts from the moment you enabled it.
@@ -52,7 +58,13 @@ Two behaviours that surprise people:
 
 **FCC Status** is the manual switch for when the FCC itself is broken. When their processing stalls,
 flip the master switch (and the per-population sub-switches) to stop the app nagging candidates
-about something no one can fix. Then use the bulk-email screen off **Applicant Status** to tell them
+about something no one can fix.
+
+![FCC Status with the master switch on, revealing three sub-switches for new licence, upgrade and renewal candidates](images/fcc-status.png)
+
+The sub-switches only appear once the master is on. **Renewal** is there but does nothing today —
+this app has no renewal-candidate concept yet, and the control exists so it is already in place the
+day that changes. Then use the bulk-email screen off **Applicant Status** to tell them
 what is going on. That screen needs one specific team picked, because the message goes out over
 that team's own mail credentials.
 
