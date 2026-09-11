@@ -560,7 +560,12 @@ To pick up updates: `/plugin marketplace update claude-tools`
   takes roughly four times the width of the icon, which is what made the session header's Total
   retained cell tower over its neighbours until Edit became a pencil. The established control is
   `.icon-action` + `<i class="bi bi-*" aria-hidden="true">` with **both** `title` and `aria-label`;
-  `_MessageTriggerSection.cshtml` is the reference markup.
+  `_MessageTriggerSection.cshtml` is the reference markup. **Three kinds of clickable thing, and the
+  question that picks one is *what it acts on*:** `.btn-*` is a real control carrying a word;
+  `.icon-action` is a control in its own right reduced to a glyph (row-action clusters, hover
+  chrome); **`.icon-plain` is an affordance attached to the value beside it** — no chrome ever,
+  styled like the inline `↗` link, which is what a copy-this-FRN glyph is (2026-09-10). A plain
+  `<a>` navigates. Full table in `docs/icons.md`.
   **This entry used to read "Never use a bare Unicode symbol", and that overstated a real but narrow
   finding into a ban** — it then kept steering work away from icons Mike had asked for more than
   once, which is the argument for writing a constraint no wider than the thing that actually broke.

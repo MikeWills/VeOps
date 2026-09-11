@@ -3,16 +3,20 @@
     A quiet copy button, for a value the reader is going to paste somewhere else — an FRN into the
     FCC's search, most often from a phone, where selecting text by hand is genuinely awkward.
 
-    .icon-action rather than a labelled button: these sit inline beside the value they copy, and a
-    full button around the word "Copy" takes several times the width of the figure itself.
+    bi-copy, not bi-clipboard: two overlapping sheets is the near-universal copy glyph, and a
+    clipboard reads as "paste" or "a form" to plenty of people.
+
+    .icon-plain, not .icon-action: this sits inline beside the value it copies, next to the ULS "↗"
+    link, and should read as the same kind of small affordance rather than as a control competing
+    with the figure it belongs to.
 
     The value travels in a data attribute rather than an inline handler because the CSP is
     `script-src 'self'`, which drops inline handlers silently. app.js binds it.
 *@
 @if (!string.IsNullOrWhiteSpace(Model.Value))
 {
-    <button type="button" class="icon-action" data-copy-value="@Model.Value"
+    <button type="button" class="icon-plain" data-copy-value="@Model.Value"
             title="Copy @Model.What @Model.Value" aria-label="Copy @Model.What @Model.Value">
-        <i class="bi bi-clipboard" aria-hidden="true"></i>
+        <i class="bi bi-copy" aria-hidden="true"></i>
     </button>
 }

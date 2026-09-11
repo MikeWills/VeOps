@@ -327,6 +327,10 @@ public class ApplicantStatusPageTests : IClassFixture<WebAppFactory>
         var html = await client.GetStringAsync(Url);
 
         Assert.Contains($"data-copy-value=\"{frn}\"", html, StringComparison.Ordinal);
-        Assert.Contains("bi-clipboard", html, StringComparison.Ordinal);
+        // bi-copy, not bi-clipboard: two overlapping sheets is the near-universal copy glyph, and a
+        // clipboard reads as "paste" or "a form" to plenty of people (Mike, 2026-09-10).
+        Assert.Contains("bi-copy", html, StringComparison.Ordinal);
+        // .icon-plain, not .icon-action -- a bare glyph attached to the value, not a control.
+        Assert.Contains("icon-plain", html, StringComparison.Ordinal);
     }
 }

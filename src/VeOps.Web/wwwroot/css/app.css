@@ -454,6 +454,33 @@ tr[data-clickable-row] .row-actions { cursor: default; }
 .vesm .icon-action:hover { background: var(--ghost-hover); border-color: var(--line-strong); color: var(--ink); }
 .vesm .icon-action.danger:hover { color: var(--brick); }
 
+/* A glyph that DOES something, styled like the inline links beside it rather than like a control.
+   The ULS "↗" next to it is a bare <a> taking the body colour, and a copy button sitting alongside
+   should read as the same kind of thing — a small affordance attached to the value, not a button
+   competing with it (Mike, 2026-09-10).
+
+   **Two classes, deliberately.** `.vesm button` is (0,1,1) — class plus element — and sets its own
+   colour and display, so a single-class `.icon-plain` loses to it and the glyph renders as a button
+   anyway. Same specificity trap recorded in CLAUDE.md that produced a white-on-black CTA and a
+   hamburger that would not hide. */
+.vesm .icon-plain {
+  background: none; border: 0; padding: 0; margin: 0;
+  font: inherit; line-height: 1; color: inherit; cursor: pointer;
+  opacity: .65;
+}
+.vesm .icon-plain:hover, .vesm .icon-plain:focus-visible { opacity: 1; }
+
+/* A value and the small affordances attached to it stay on one line. Until now .cell-inline was
+   only defined inside the card-mode media query, so above the breakpoint it was a plain inline span
+   and its contents wrapped like any other inline run — an FRN in a narrow column put its copy glyph
+   on the next line (reported 2026-09-10).
+
+   Safe to pin here because every table carrying one of these sits inside .table-scroll, which
+   scrolls sideways rather than letting the page do it. Card mode overrides with flex-wrap: wrap,
+   deliberately: on a ~150px phone column the affordances SHOULD drop to a second line rather than
+   push the page off the side of the screen. */
+.cell-inline { display: inline-flex; align-items: baseline; gap: .4em; white-space: nowrap; }
+
 .section-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin: 8px 0 12px; }
 .section-head h2 { font-size: 15px; margin: 0; font-weight: 600; }
 
