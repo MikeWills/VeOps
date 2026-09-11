@@ -13,6 +13,8 @@ There is a self-service page for exactly this — no account, no password.
 2. The app emails you a sign-in link.
 3. Follow it, edit your details, done.
 
+![The VE sign-in page: one email field and a Send me a link button, with no password anywhere](images/ve-self-service.png)
+
 Some things worth knowing about that link, because they are deliberate and will otherwise look like
 bugs:
 
