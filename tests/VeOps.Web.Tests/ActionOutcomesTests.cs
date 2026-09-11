@@ -148,7 +148,7 @@ public class ActionOutcomesTests
             { "MarkCompleted", o => ActionOutcomes.MarkCompleted((SessionCompletionResult)o), completion },
             { "ClearRescheduleFlag", o => ActionOutcomes.ClearRescheduleFlag((SessionActionResult)o), session },
             { "DeleteSession", o => ActionOutcomes.DeleteSession((SessionDeleteResult)o), deletion },
-            { "SetRetainedAmountOverride", o => ActionOutcomes.SetRetainedAmountOverride((SessionActionResult)o, 12.50m), session },
+            { "SetRemitToVecOverride", o => ActionOutcomes.SetRemitToVecOverride((SessionActionResult)o, 12.50m), session },
             { "MarkFailed", o => ActionOutcomes.MarkFailed((CandidateActionResult)o), candidate },
             { "DeleteCandidate", o => ActionOutcomes.DeleteCandidate((CandidateActionResult)o), candidate },
             { "SetFrn", o => ActionOutcomes.SetFrn((CandidateActionResult)o), candidate },
@@ -212,10 +212,10 @@ public class ActionOutcomesTests
 
     /// <summary>Money in a message goes through Usd, never a bare :F2 — see CLAUDE.md's Usd entry.</summary>
     [Fact]
-    public void SetRetainedAmountOverride_FormatsTheAmountAsDollars()
+    public void SetRemitToVecOverride_FormatsTheAmountAsDollars()
     {
-        var set = ActionOutcomes.SetRetainedAmountOverride(SessionActionResult.Success, 12.50m);
-        var cleared = ActionOutcomes.SetRetainedAmountOverride(SessionActionResult.Success, null);
+        var set = ActionOutcomes.SetRemitToVecOverride(SessionActionResult.Success, 12.50m);
+        var cleared = ActionOutcomes.SetRemitToVecOverride(SessionActionResult.Success, null);
 
         Assert.Contains("$12.50", set.Message);
         Assert.True(cleared.Success);

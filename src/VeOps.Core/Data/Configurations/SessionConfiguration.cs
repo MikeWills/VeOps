@@ -20,7 +20,7 @@ public class SessionConfiguration : IEntityTypeConfiguration<Session>
         b.HasOne(s => s.FeeConfiguration).WithMany(f => f.Sessions).HasForeignKey(s => s.FeeConfigurationId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne(s => s.TestingCompletedByUser).WithMany().HasForeignKey(s => s.TestingCompletedByUserId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne(s => s.VecSubmittedByUser).WithMany().HasForeignKey(s => s.VecSubmittedByUserId).OnDelete(DeleteBehavior.Restrict);
-        // NOTE: RetainedAmountOverrideByUser is the one User FK here still left to EF's
+        // NOTE: RemitToVecOverrideByUser is the one User FK here still left to EF's
         // convention (ClientSetNull), which contradicts this block's opening statement that every
         // FK is Restrict. Audit T21 asked for it to be pinned, and it was — then reverted, on
         // purpose:
@@ -36,7 +36,7 @@ public class SessionConfiguration : IEntityTypeConfiguration<Session>
         // the rebuild can be planned rather than ridden along with an index change.
         // Money, so two decimal places rather than the provider's default. Matches
         // FeeConfiguration's amounts above.
-        b.Property(s => s.RetainedAmountOverride).HasPrecision(10, 2);
+        b.Property(s => s.RemitToVecOverride).HasPrecision(10, 2);
         // The session list's default ordering and its date-range filter, per team — the busiest
         // query in the app.
         b.HasIndex(s => new { s.TeamId, s.ScheduledStartUtc });

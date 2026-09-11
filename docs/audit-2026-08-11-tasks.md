@@ -611,7 +611,7 @@ close to free.
 
 ## Correctness / traceability
 
-### T-40 — `SetRetainedAmountOverrideAsync` parses money with ambient culture
+### T-40 — `SetRemitToVecOverrideAsync` parses money with ambient culture
 `Pages/SessionManager/Detail.cshtml.cs:118` · XS · Confirmed — `"12,50"` parses as 1250 under a
 comma-decimal culture. Use `NumberStyles.Number, CultureInfo.InvariantCulture`. Against CLAUDE.md's
 explicit money convention.

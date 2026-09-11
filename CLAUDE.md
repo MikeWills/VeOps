@@ -127,6 +127,23 @@ which is "here's what was built and why, mostly historical.")
 One-line-or-two pointer per feature, newest first — full design rationale lives in the linked
 `/docs/*.md` file, not here. See "Documentation Structure" below for the policy this follows.
 
+- **The session fee override says what the VEC is owed now, not what the team keeps (#544,
+  2026-09-10).** See `docs/arrl-vec-submission.md`'s "The amount". `Session.RetainedAmountOverride`
+  became **`RemitToVecOverride`**, column renamed by `Phase16RemitToVecOverride`, and
+  `GetFeeSummary` now *states* the remit rather than deriving it — `TotalRetained` is the remainder,
+  clamped at zero. Mike, reading the control: *"I read that button as adjusting what we send to the
+  VEC, not the other way around."* **The old meaning was unreachable on exactly the sessions that
+  needed it**: with no payment records, `max(0, 0 − 16)` was zero and every figure stayed `$0.00`
+  however it was set, so a real ARRL filing went out with a hand-typed amount. The remit is also the
+  number with an external consequence and the one an operator independently knows. **What was traded
+  away, knowingly:** VEC rules cap what a team may *keep*, so the regulated quantity is now derived
+  rather than typed — survivable only because session detail shows both figures side by side. **Two
+  traps worth carrying:** an override is *stated*, so a refund landing afterwards changes what was
+  collected but not what is owed, and nothing flags it; and the migration **renames without
+  converting** — safe here because exactly one production session was overridden and its operator
+  had meant the new sense all along, but there is no safe automatic conversion in general, since
+  retained and remit are only interchangeable when what was collected is known and right.
+
 - **A user manual, in `docs/wiki`, published to the GitHub wiki on merge (2026-09-09).** See
   `docs/wiki/About-this-wiki.md`. **The mechanism is ported from the sibling Course Ops repo**
   (`AprsWebTracker`) rather than reinvented — `scripts/build_wiki.py` + `publish-wiki.yml`, kept
@@ -255,27 +272,6 @@ One-line-or-two pointer per feature, newest first — full design rationale live
   pending" (Applicant Status's own list, its per-team nav badge, and this screen's recipient pool) are
   now one shared `CandidateApplicationStatusExtensions.AwaitingFccGrant`, replacing three copies that
   had already started drifting apart in comment-only form.
-
-- **A manual switch for a real FCC-wide processing stall (2026-08-26).** See `docs/trigger-points.md`'s
-  "FCC-wide-issue suppression" section. Mike, watching a live incident: the FCC's payment-verification
-  subsystem stalling for new-license candidates while upgrade grants kept flowing — a distinction
-  `FccFeeOutstandingScanner` had no way to represent. `Admin/FccStatus` (`RoleGroups.Admins`, so
-  TeamAdmin as well as SystemAdmin) sets a master switch plus one sub-switch per candidate population;
-  checking the master auto-checks all three in the UI. **Only two of the three do anything** —
-  Renewal is stored and shown but never read, since this app has no renewal-candidate concept at all;
-  it exists only so the control is already there the day that might change. **Suppressed is terminal,
-  never a silent exclude** — `MessageDispatchService.SuppressByFccIssueAsync` marks it the same way a
-  muted team's Zoom/Discord/Email already is, so flipping the switch back off never sends a backlog of
-  everything that was held back, the same failure `MessageRuleEligibility.FloorUtc` already prevents
-  for a different kind of "off." The four checkboxes render as real on/off switches now (`.switch` in
-  `app.css`, generic enough for any future boolean setting to reuse) — a plain checkbox reads as "pick
-  this option," and a state like "the FCC has a known issue" isn't a choice among several. A separate,
-  general-purpose **System Banner** (`SystemSettings.SystemBannerEnabled`/`SystemBannerMessage`,
-  `Admin/SystemSettings`, SystemAdmin-only) shipped alongside it — site-wide, free-text, not tied to
-  the FCC switches at all; an operator types the message and turns it on/off by hand for anything
-  worth telling every signed-in user, an FCC outage being only the first reason to.
-
-
 **Kept here vs. `CHANGELOG.md`:** this section is a bounded, recent-only window (rule of thumb: cap
 around 10 entries), since CLAUDE.md is read in full on every conversation turn and this is the one
 section that would otherwise grow forever. Phase-numbered work (Phase 0-10) is never listed here at

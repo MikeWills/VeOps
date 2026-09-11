@@ -65,7 +65,7 @@ Once each mapping had one home, being exhaustive over its enum cost nothing:
 
 - `MarkCompleted` distinguishes `AlreadyDone` from `NotFound` (both page models said
   "Could not mark session completed." for either).
-- `ClearRescheduleFlag`, `DeleteSession` and `SetRetainedAmountOverride` each got their `NotFound`
+- `ClearRescheduleFlag`, `DeleteSession` and `SetRemitToVecOverride` each got their `NotFound`
   branch.
 - **The email actions no longer show the user a raw enum name.** `CandidateEmailSendResult` has
   seven values and all three email handlers rendered them with `$"…: {result}."`, so

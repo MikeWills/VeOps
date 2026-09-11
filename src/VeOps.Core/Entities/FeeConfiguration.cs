@@ -26,7 +26,7 @@ public class FeeConfiguration
     /// would go negative instead. Null (not zero) when RetainedAmount itself isn't set, since that
     /// means "unknown," not "nothing owed." This is the per-candidate default; a session can instead
     /// retain a flat total for the whole session (real per-session expenses vary and aren't a
-    /// per-candidate cost) — see Session.RetainedAmountOverride/Session.GetFeeSummary.
+    /// per-candidate cost) — see Session.RemitToVecOverride/Session.GetFeeSummary.
     /// </summary>
     public decimal? RemitToVecAmount(decimal chargedAmount) =>
         RetainedAmount is null ? null : Math.Max(0m, chargedAmount - RetainedAmount.Value);
