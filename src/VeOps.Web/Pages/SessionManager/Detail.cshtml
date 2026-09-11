@@ -58,11 +58,15 @@
             </div>
             <div class="meta-item"><span class="k">Fee</span><span class="v mono">@Model.Session.FeeLine</span></div>
             <div class="meta-item"><span class="k">Total collected</span><span class="v mono">@Model.Session.TotalCollectedLine</span></div>
+            <div class="meta-item"><span class="k">Total retained</span><span class="v mono">@Model.Session.TotalRetainedLine</span></div>
+            @* The override states what is OWED, so the chip and the pencil belong here rather than on
+               Total retained, which is now purely the remainder. They sat on the wrong figure until
+               2026-09-10 -- see #544. *@
             <div class="meta-item">
-                <span class="k">Total retained</span>
+                <span class="k">Remit to VEC</span>
                 <span class="v mono">
-                    @Model.Session.TotalRetainedLine
-                    @if (Model.Session.RetainedAmountOverridden)
+                    @Model.Session.TotalRemitToVecLine
+                    @if (Model.Session.RemitToVecOverridden)
                     {
                         <span class="chip chip-amber" style="margin-left:6px;">Overridden</span>
                     }
@@ -71,14 +75,13 @@
                         @* .icon-action, not a labelled button: a full btn-secondary around one word
                            takes four times the width and is what made this cell tower over its
                            neighbours. Same control as the Edit pencil on the message-rule rows. *@
-                        <button type="button" class="icon-action" style="margin-left:6px;" data-open-modal="retainedAmountOverrideModal"
-                                title="Override total retained" aria-label="Override total retained">
+                        <button type="button" class="icon-action" style="margin-left:6px;" data-open-modal="remitToVecOverrideModal"
+                                title="Set what this session owes the VEC" aria-label="Set what this session owes the VEC">
                             <i class="bi bi-pencil" aria-hidden="true"></i>
                         </button>
                     }
                 </span>
             </div>
-            <div class="meta-item"><span class="k">Remit to VEC</span><span class="v mono">@Model.Session.TotalRemitToVecLine</span></div>
             <div class="meta-item"><span class="k">Testing status</span><span class="v">@Model.Session.TestingStatusLine</span></div>
             <div class="meta-item">
                 <span class="k">VEC submission</span>
@@ -454,19 +457,20 @@
 @if (Model.CanEdit)
 {
     <!-- Retained amount override modal -->
-    <div class="modal-backdrop" id="retainedAmountOverrideModal">
+    <div class="modal-backdrop" id="remitToVecOverrideModal">
         <div class="modal">
-            <h3>Override total retained for this session</h3>
+            <h3>What does this session owe the VEC?</h3>
             <p class="session-sub">
-                The default is @Model.Session.FeeLine, applied per candidate and summed. Most sessions'
-                real costs (pencils, paper, postage) are a flat session expense, not a per-candidate
-                one — enter the actual total your team is keeping from this session instead. Leave
-                blank to clear the override and go back to the per-candidate default.
+                The default is @Model.Session.FeeLine, applied per candidate and summed from the
+                payments recorded here. Enter a figure to send that amount instead — useful when this
+                app has no record of the payments, or when the real total differs from the arithmetic.
+                It is what gets filed with the VEC, and whatever is left of the money collected counts
+                as retained. Leave blank to go back to the per-candidate default.
             </p>
-            <form method="post" asp-page-handler="SetRetainedAmountOverride">
+            <form method="post" asp-page-handler="SetRemitToVecOverride">
                 <div class="field">
-                    <label for="retainedAmountOverride">Total retained ($)</label>
-                    <input id="retainedAmountOverride" name="overrideAmount" type="number" step="0.01" min="0" value="@Model.Session.RetainedAmountOverrideRawValue" placeholder="Use per-candidate default" />
+                    <label for="remitToVecOverride">Owed to the VEC ($)</label>
+                    <input id="remitToVecOverride" name="overrideAmount" type="number" step="0.01" min="0" value="@Model.Session.RemitToVecOverrideRawValue" placeholder="Use per-candidate default" />
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn-secondary btn-sm" data-close-modal>Cancel</button>

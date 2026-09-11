@@ -148,19 +148,28 @@ public class SessionFeeSummaryRefundTests
     }
 
     /// <summary>
-    /// The flat-override path nets refunds too. Without this, a session retaining a flat total would
-    /// remit collected-minus-override on money that had been given back.
+    /// ⚠️ <b>An override is a stated figure and does not move when a refund lands afterwards.</b>
+    /// Refunds still net out of TotalCollected, so they change what is left over — but the amount
+    /// owed to the VEC is whatever the operator said it was.
+    ///
+    /// <para>That is the right default: they stated it precisely because the arithmetic here could
+    /// not reach the right answer. It does mean a refund issued <i>after</i> an override is set
+    /// leaves the figure stale, and nothing flags it. The default (un-overridden) path does net
+    /// refunds, because there the remit is derived per payment.</para>
+    ///
+    /// <para>Before 2026-09-10 the override meant the retained total, so this same test asserted
+    /// <c>remit = collected − override</c>. The reversal is #544.</para>
     /// </summary>
     [Fact]
-    public void TheFlatRetainedOverride_AlsoNetsRefunds()
+    public void AnOverride_IsStated_AndDoesNotSelfAdjustForARefund()
     {
         var session = SessionWith(Paid(15m), Paid(15m, Refunded(15m)));
-        session.RetainedAmountOverride = 5m;
+        session.RemitToVecOverride = 5m;
 
         var summary = session.GetFeeSummary();
 
-        Assert.Equal(15m, summary.TotalCollected);
-        Assert.Equal(10m, summary.TotalRemitToVec);
-        Assert.Equal(5m, summary.TotalRetained);
+        Assert.Equal(15m, summary.TotalCollected);  // the refunded payment nets out
+        Assert.Equal(5m, summary.TotalRemitToVec);  // stated, unchanged by the refund
+        Assert.Equal(10m, summary.TotalRetained);   // whatever is left of what was collected
     }
 }
