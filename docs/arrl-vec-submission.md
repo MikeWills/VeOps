@@ -108,8 +108,24 @@ identifier ExamTools already minted, the form field answers "what day did the ex
 
 ## The amount
 
-`Session.GetFeeSummary().TotalRemitToVec` — paid payments **net of refunds**, less either the
-per-candidate retained cap or the session's flat `RetainedAmountOverride`, clamped at zero.
+`Session.GetFeeSummary().TotalRemitToVec` — by default, paid payments **net of refunds** less the
+per-candidate retained cap, clamped at zero.
+
+**Or the session's `RemitToVecOverride`, which states the figure outright** (#544, 2026-09-10). That
+field used to mean the flat total the team *keeps*, and the remit was derived by subtracting it from
+what had been collected. Mike, reading the control: *"I read that button as adjusting what we send to
+the VEC, not the other way around. To me, that makes more sense."*
+
+He is right, and the reason is this page. The remit is the number with an external consequence — it
+is what goes in `amountCharged` below and what money actually moves — and it is the number an
+operator independently knows ("$8 a head, two candidates, $16"). Under the old meaning it was
+unreachable on exactly the sessions that needed it: with no payment records, `max(0, 0 − 16)` was
+zero and the figure stayed `$0.00` however it was set. A real filing went out with a hand-typed
+amount instead.
+
+⚠️ **An override is stated, so it does not self-adjust.** A refund issued afterwards changes what was
+collected — and therefore what is retained — but not what the operator said is owed. The default path
+does net refunds, because there the remit is derived per payment.
 
 **A refunded fee is not owed to the VEC** (Mike, 2026-08-19): "the person has not tested". This was a
 real bug in shipped code, not merely a wrong assumption in this feature — see

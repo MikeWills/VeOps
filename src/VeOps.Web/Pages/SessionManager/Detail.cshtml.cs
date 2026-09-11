@@ -123,7 +123,7 @@ public class DetailModel(
     /// value must parse as a non-negative decimal — SessionActionService itself trusts the caller to
     /// have already validated this, same division of responsibility as OnPostSetFrnAsync's blank-check.
     /// </summary>
-    public async Task<IActionResult> OnPostSetRetainedAmountOverrideAsync(string? overrideAmount)
+    public async Task<IActionResult> OnPostSetRemitToVecOverrideAsync(string? overrideAmount)
     {
         var auth = await AuthorizeAsync();
         if (auth is null) return Forbid();
@@ -133,15 +133,15 @@ public class DetailModel(
         {
             if (!Usd.TryParse(overrideAmount, out var value) || value < 0)
             {
-                Apply(new ActionOutcome(false, "Retained amount must be a non-negative dollar amount."));
+                Apply(new ActionOutcome(false, "The amount owed to the VEC must be a non-negative dollar amount."));
                 return RedirectToPage(new { id = Id });
             }
 
             parsedAmount = value;
         }
 
-        Apply(ActionOutcomes.SetRetainedAmountOverride(
-            await sessionActionService.SetRetainedAmountOverrideAsync(Id, parsedAmount, auth.Value.User.Id, CancellationToken.None),
+        Apply(ActionOutcomes.SetRemitToVecOverride(
+            await sessionActionService.SetRemitToVecOverrideAsync(Id, parsedAmount, auth.Value.User.Id, CancellationToken.None),
             parsedAmount));
         return RedirectToPage(new { id = Id });
     }
@@ -431,8 +431,8 @@ public class DetailModel(
             Usd.Format(feeSummary.TotalCollected),
             Usd.Format(feeSummary.TotalRetained),
             Usd.Format(feeSummary.TotalRemitToVec),
-            session.RetainedAmountOverride is not null,
-            session.RetainedAmountOverride is { } ov ? Usd.Raw(ov) : null,
+            session.RemitToVecOverride is not null,
+            session.RemitToVecOverride is { } ov ? Usd.Raw(ov) : null,
             // Same rule as the session list's Status chip: completed by either route — a Session
             // Manager marking it, or ExamTools closing it (ExamToolsClosedUtc). Preferring the
             // manual timestamp keeps the more specific fact when both exist.
@@ -564,8 +564,8 @@ public class DetailModel(
         string TotalCollectedLine,
         string TotalRetainedLine,
         string TotalRemitToVecLine,
-        bool RetainedAmountOverridden,
-        string? RetainedAmountOverrideRawValue,
+        bool RemitToVecOverridden,
+        string? RemitToVecOverrideRawValue,
         string TestingStatusLine,
         string VecSubmissionChipClass,
         string VecSubmissionChipLabel,

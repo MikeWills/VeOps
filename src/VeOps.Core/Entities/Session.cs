@@ -59,19 +59,34 @@ public class Session
     public FeeConfiguration FeeConfiguration { get; set; } = null!;
 
     /// <summary>
-    /// Flat TOTAL dollar amount this whole session retains, overriding the default per-candidate
-    /// FeeConfiguration.RetainedAmount x candidate-count math entirely. A VE team may only keep
-    /// enough to cover its real expenses (capped at RetainedAmount per candidate) — most sessions'
-    /// real costs (pencils, paper, postage) are a fixed session-level expense, not a per-candidate
-    /// one, so a team with $20 of real expenses and 50 candidates wants to retain $20 total, not
-    /// compute/edit a per-candidate figure across 50 rows. Null means "use the per-candidate default
-    /// as normal" (FeeConfiguration.RemitToVecAmount summed across every Paid payment) — the common
-    /// case for teams whose real costs (e.g. Zoom) already justify keeping the full per-candidate
-    /// amount. See GetFeeSummary.
+    /// Flat TOTAL dollar amount this whole session owes the VEC, stated rather than derived. Null
+    /// means "work it out per candidate as normal" (FeeConfiguration.RemitToVecAmount summed across
+    /// every Paid payment), which is the common case.
+    ///
+    /// <para><b>This states the REMIT, not the retained amount</b> (Mike, 2026-09-10, #544). It
+    /// used to mean the reverse — the flat total the team keeps — and the reversal matters for one
+    /// reason worth keeping in mind: the remit is the number with an external consequence. It is
+    /// what goes on ARRL's form and what money actually moves, and it is the number an operator
+    /// independently knows ("$8 a head, two candidates, $16"). Nobody arrives knowing what their
+    /// team is keeping.</para>
+    ///
+    /// <para><b>The case that forced it:</b> a session the app has no payment records for still
+    /// owes the VEC. Under the old meaning the override was subtracted from what had been
+    /// collected, so <c>max(0, 0 − 16)</c> was zero and every figure stayed $0.00 however the
+    /// operator set it — the real filing went out with a hand-typed amount instead.</para>
+    ///
+    /// <para><b>What was given up, deliberately:</b> VEC rules cap what a team may <i>keep</i>
+    /// (at RetainedAmount per candidate), so the regulated quantity is now the derived one rather
+    /// than the one typed. Session detail shows Total retained beside Remit to VEC, so the capped
+    /// figure stays on screen either way — that is what makes the trade survivable.</para>
+    ///
+    /// <para>Most sessions' real costs (pencils, paper, postage) are a fixed session-level expense
+    /// rather than a per-candidate one, which is why a flat session total is worth overriding to at
+    /// all. See GetFeeSummary.</para>
     /// </summary>
-    public decimal? RetainedAmountOverride { get; set; }
-    public int? RetainedAmountOverrideByUserId { get; set; }
-    public User? RetainedAmountOverrideByUser { get; set; }
+    public decimal? RemitToVecOverride { get; set; }
+    public int? RemitToVecOverrideByUserId { get; set; }
+    public User? RemitToVecOverrideByUser { get; set; }
     /// <summary>
     /// Written, never read back by any query or screen — **deliberately retained** (audit T36,
     /// decided 2026-08-11). It answers a question that only ever gets asked after something has gone
@@ -81,7 +96,7 @@ public class Session
     /// <para>Recorded here so the next reader can tell "kept on purpose" from "forgotten", which was
     /// the actual finding — the ambiguity, not the column.</para>
     /// </summary>
-    public DateTime? RetainedAmountOverrideUtc { get; set; }
+    public DateTime? RemitToVecOverrideUtc { get; set; }
 
     public SessionStatus Status { get; set; } = SessionStatus.Active;
     /// <summary>
@@ -197,14 +212,21 @@ public class Session
     public bool HasEnded(DateTime now) => ScheduledStartUtc.AddMinutes(DurationMinutes) <= now;
 
     /// <summary>
-    /// Session-level fee reconciliation — TotalCollected sums every Paid payment's Amount **net of any refund against it** across
-    /// every candidate in the session (only money actually in hand can be remitted). Without an
-    /// override, TotalRemitToVec is the sum of each individual payment's own
-    /// FeeConfiguration.RemitToVecAmount (the normal per-candidate default, clamped per-payment so a
-    /// youth fee under the retained cap never goes negative). With RetainedAmountOverride set,
-    /// TotalRemitToVec is instead TotalCollected minus that flat total, clamped at zero — no
-    /// per-candidate math at all. TotalRetained is always whatever's left of TotalCollected. Requires
-    /// FeeConfiguration and Candidates (with their Payments) loaded.
+    /// Session-level fee reconciliation. TotalCollected sums every Paid payment's Amount **net of any
+    /// refund against it** across every candidate in the session.
+    ///
+    /// <para>Without an override, TotalRemitToVec is the sum of each individual payment's own
+    /// FeeConfiguration.RemitToVecAmount — the normal per-candidate default, clamped per-payment so a
+    /// youth fee under the retained cap never goes negative. With RemitToVecOverride set,
+    /// TotalRemitToVec **is** that figure: what the session owes the VEC, stated rather than derived,
+    /// with no per-candidate math at all.</para>
+    ///
+    /// <para>TotalRetained is then whatever is left of what was collected, clamped at zero. ⚠️ It
+    /// clamps because <b>owing the VEC more than was collected is a normal state, not an error</b> —
+    /// a session whose payments this app never saw collects nothing here and still owes. Retained
+    /// cannot go negative: you cannot keep money you did not take in.</para>
+    ///
+    /// <para>Requires FeeConfiguration and Candidates (with their Payments) loaded.</para>
     /// </summary>
     public SessionFeeSummary GetFeeSummary()
     {
@@ -215,11 +237,17 @@ public class Session
             .ToList();
 
         var totalCollected = netAmounts.Sum();
-        var totalRemitToVec = RetainedAmountOverride is { } overrideAmount
-            ? Math.Max(0m, totalCollected - overrideAmount)
+
+        // The override states what is owed. It is not subtracted from what was collected -- that was
+        // the old meaning, and it made the override unreachable on exactly the sessions that needed
+        // it (see RemitToVecOverride's own remarks, and #544).
+        var totalRemitToVec = RemitToVecOverride is { } owedToVec
+            ? owedToVec
             : netAmounts.Sum(amount => FeeConfiguration.RemitToVecAmount(amount) ?? 0m);
 
-        return new SessionFeeSummary(totalCollected, totalCollected - totalRemitToVec, totalRemitToVec);
+        var totalRetained = Math.Max(0m, totalCollected - totalRemitToVec);
+
+        return new SessionFeeSummary(totalCollected, totalRetained, totalRemitToVec);
     }
 
     /// <summary>

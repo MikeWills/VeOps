@@ -96,7 +96,7 @@ public class SessionActionService(
     /// here beyond non-negative — the caller (Detail.cshtml.cs) parses/validates the raw form input
     /// first, same division of responsibility as SetFrnAsync's blank-check.
     /// </summary>
-    public async Task<SessionActionResult> SetRetainedAmountOverrideAsync(int sessionId, decimal? overrideAmount, int userId, CancellationToken cancellationToken)
+    public async Task<SessionActionResult> SetRemitToVecOverrideAsync(int sessionId, decimal? overrideAmount, int userId, CancellationToken cancellationToken)
     {
         var session = await dbContext.Sessions.FirstOrDefaultAsync(s => s.Id == sessionId, cancellationToken);
         if (session is null)
@@ -105,17 +105,17 @@ public class SessionActionService(
         }
 
         var now = timeProvider.GetUtcNow().UtcDateTime;
-        session.RetainedAmountOverride = overrideAmount;
-        session.RetainedAmountOverrideByUserId = overrideAmount is null ? null : userId;
-        session.RetainedAmountOverrideUtc = overrideAmount is null ? null : now;
+        session.RemitToVecOverride = overrideAmount;
+        session.RemitToVecOverrideByUserId = overrideAmount is null ? null : userId;
+        session.RemitToVecOverrideUtc = overrideAmount is null ? null : now;
 
-        dbContext.AddAuditLog(userId, "SessionRetainedAmountOverrideSet", nameof(Session), session.Id,
+        dbContext.AddAuditLog(userId, "SessionRemitToVecOverrideSet", nameof(Session), session.Id,
             overrideAmount is null
-                ? $"Session {session.ExamToolsSessionId} total-retained override cleared — back to the per-candidate fee schedule default."
-                : $"Session {session.ExamToolsSessionId} total-retained override set to {Usd.Format(overrideAmount!.Value)} for the whole session.",
+                ? $"Session {session.ExamToolsSessionId} VEC-amount override cleared — back to the per-candidate fee schedule default."
+                : $"Session {session.ExamToolsSessionId} now owes the VEC {Usd.Format(overrideAmount!.Value)} for the whole session, overriding the per-candidate default.",
             now);
         await dbContext.SaveChangesAsync(cancellationToken);
-        logger.LogInformation("Session {SessionId} retained-amount override set to {OverrideAmount} by user {UserId}", session.Id, overrideAmount, userId);
+        logger.LogInformation("Session {SessionId} VEC-amount override set to {OverrideAmount} by user {UserId}", session.Id, overrideAmount, userId);
         return SessionActionResult.Success;
     }
 

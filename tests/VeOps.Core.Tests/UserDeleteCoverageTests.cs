@@ -33,7 +33,7 @@ public class UserDeleteCoverageTests
         "Session.TestingCompletedByUserId",
         "Session.VecSubmittedByUserId",
         "ArrlVecSubmission.SubmittedByUserId",
-        "Session.RetainedAmountOverrideByUserId",
+        "Session.RemitToVecOverrideByUserId",
         "Candidate.ResultMarkedByUserId",
         "Refund.RequestedByUserId",
         "HistoricalImportRequest.RequestedByUserId",

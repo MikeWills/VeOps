@@ -90,13 +90,14 @@ public static class ActionOutcomes
         _ => new(false, "Could not delete session.")
     };
 
-    public static ActionOutcome SetRetainedAmountOverride(SessionActionResult result, decimal? amount) => result switch
+    public static ActionOutcome SetRemitToVecOverride(SessionActionResult result, decimal? amount) => result switch
     {
-        SessionActionResult.Success when amount is null => new(true, "Retained amount override cleared."),
+        SessionActionResult.Success when amount is null => new(true,
+            "Back to the per-candidate default for what this session owes the VEC."),
         SessionActionResult.Success => new(true,
-            $"Retained amount overridden to {Usd.Format(amount!.Value)} for this session."),
+            $"This session now owes the VEC {Usd.Format(amount!.Value)}."),
         SessionActionResult.NotFound => new(false, "Session not found."),
-        _ => new(false, "Could not update retained amount override.")
+        _ => new(false, "Could not update what this session owes the VEC.")
     };
 
     // ---- Candidate actions -----------------------------------------------------------------
@@ -120,7 +121,7 @@ public static class ActionOutcomes
     /// <summary>
     /// Rejected before the service is called, so it has no <see cref="CandidateActionResult"/> of its
     /// own — the service trusts the caller to have checked, same division as
-    /// <c>SetRetainedAmountOverride</c>'s parse.
+    /// <c>SetRemitToVecOverride</c>'s parse.
     /// </summary>
     public static ActionOutcome BlankFrn() => new(false, "FRN cannot be blank.");
 

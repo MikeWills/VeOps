@@ -8,6 +8,25 @@ that window, or immediately if it's phase-numbered work already summarized in "C
 design rationale for any entry still lives in its linked `/docs/*.md` file, not here or in
 CLAUDE.md — this file, like CLAUDE.md's Change Log, is pointers only.
 
+- **A manual switch for a real FCC-wide processing stall (2026-08-26).** See `docs/trigger-points.md`'s
+  "FCC-wide-issue suppression" section. Mike, watching a live incident: the FCC's payment-verification
+  subsystem stalling for new-license candidates while upgrade grants kept flowing — a distinction
+  `FccFeeOutstandingScanner` had no way to represent. `Admin/FccStatus` (`RoleGroups.Admins`, so
+  TeamAdmin as well as SystemAdmin) sets a master switch plus one sub-switch per candidate population;
+  checking the master auto-checks all three in the UI. **Only two of the three do anything** —
+  Renewal is stored and shown but never read, since this app has no renewal-candidate concept at all;
+  it exists only so the control is already there the day that might change. **Suppressed is terminal,
+  never a silent exclude** — `MessageDispatchService.SuppressByFccIssueAsync` marks it the same way a
+  muted team's Zoom/Discord/Email already is, so flipping the switch back off never sends a backlog of
+  everything that was held back, the same failure `MessageRuleEligibility.FloorUtc` already prevents
+  for a different kind of "off." The four checkboxes render as real on/off switches now (`.switch` in
+  `app.css`, generic enough for any future boolean setting to reuse) — a plain checkbox reads as "pick
+  this option," and a state like "the FCC has a known issue" isn't a choice among several. A separate,
+  general-purpose **System Banner** (`SystemSettings.SystemBannerEnabled`/`SystemBannerMessage`,
+  `Admin/SystemSettings`, SystemAdmin-only) shipped alongside it — site-wide, free-text, not tied to
+  the FCC switches at all; an operator types the message and turns it on/off by hand for anything
+  worth telling every signed-in user, an FCC outage being only the first reason to.
+
 - **A picked team now carries across every team-filtered page (2026-08-26).** Mike: a TeamAdmin/
   SessionManager/TeamLead can sit on several teams too, not just SystemAdmin, so this isn't a niche
   case. New `SharedTeamFilterCookie` (design rationale in its own doc comment and
