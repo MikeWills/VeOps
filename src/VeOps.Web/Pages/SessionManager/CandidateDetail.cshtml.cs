@@ -258,6 +258,7 @@ public class CandidateDetailModel(
                     : candidate.FrnMissingAtRegistration
                         ? "Missing at registration"
                         : "No FRN on file",
+            Frn: isWithdrawn ? null : candidate.Frn,
             CallSign: isWithdrawn ? null : candidate.CallSign,
             FccLicenseUrl: isWithdrawn ? null : FccUlsLinks.License(candidate.FccUlsLicenseKey),
             StatusLabel: CandidatePresentation.StatusLabel(candidate.ApplicationStatus),
@@ -382,6 +383,12 @@ public class CandidateDetailModel(
         string? FirstName,
         string? Email,
         string FrnLine,
+        /// <summary>
+        /// The bare FRN, or null when there isn't one. Separate from <see cref="FrnLine"/>, which is
+        /// display text and is just as often "No FRN on file" or "Missing at registration" — copying
+        /// one of those to the clipboard would be worse than offering no button at all.
+        /// </summary>
+        string? Frn,
         string? CallSign,
         string? FccLicenseUrl,
         string StatusLabel,

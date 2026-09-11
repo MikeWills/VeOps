@@ -291,4 +291,42 @@ public class ApplicantStatusPageTests : IClassFixture<WebAppFactory>
         Assert.Contains("Application received", html);
     }
 
+
+    /// <summary>
+    /// The FRN is a lookup key people paste into the FCC's own search, usually from a phone where
+    /// selecting a ten-digit run of text by hand is genuinely awkward. The copy button carries the
+    /// bare FRN in <c>data-copy-value</c>, which is what <c>app.js</c> binds to.
+    ///
+    /// <para>Asserted against the rendered page because the failure is silent: a mistyped partial
+    /// name or a renamed attribute produces markup that looks fine and a button that does nothing.
+    /// There is no compiler error and no exception to catch.</para>
+    /// </summary>
+    [Fact]
+    public async Task PendingRows_OfferTheFrnForCopying()
+    {
+        const string frn = "0038689741";
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.Candidates.RemoveRange(await db.Candidates.ToListAsync());
+            db.Candidates.Add(new Candidate
+            {
+                SessionId = _factory.Seeded.SessionId,
+                Name = "Copyable Candidate",
+                Email = "copyable@localhost",
+                DateRegisteredUtc = DateTime.UtcNow.AddDays(-14),
+                Tested = true,
+                ApplicationStatus = CandidateApplicationStatus.Received,
+                Frn = frn
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var client = _factory.CreateClientAs(UserRole.SystemAdmin);
+        var html = await client.GetStringAsync(Url);
+
+        Assert.Contains($"data-copy-value=\"{frn}\"", html, StringComparison.Ordinal);
+        Assert.Contains("bi-clipboard", html, StringComparison.Ordinal);
+    }
 }
