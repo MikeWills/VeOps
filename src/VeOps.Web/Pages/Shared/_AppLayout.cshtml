@@ -96,10 +96,9 @@
     @* Render-blocking and first in <head> on purpose: it stamps data-theme before anything paints,
        which is what stops a dark-mode user seeing a white flash on every navigation. See theme.js. *@
     <script src="~/js/theme.js" asp-append-version="true"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    @* Self-hosted: the CSP allows font-src 'self' only (plus Google Fonts), and a CDN
-       reference would be blocked. Loaded before app.css so the design system can override it. *@
+    @* Self-hosted fonts and icons: the CSP allows font-src 'self' only, so a Google Fonts or CDN
+       reference would be blocked. Loaded before app.css so the design system can override them. *@
+    <link rel="stylesheet" href="~/lib/fonts/fonts.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/lib/bootstrap-icons/bootstrap-icons.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/app.css" asp-append-version="true" />
     @* For page-specific stylesheets that shouldn't load site-wide — currently only Quill's, on the

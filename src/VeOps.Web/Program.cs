@@ -578,10 +578,10 @@ app.UseHttpsRedirection();
 // encoding slip is contained instead of becoming a session-stealing XSS.
 //
 // Two allowances are deliberate and verified against the actual markup, not guesses:
-//   - style-src 'unsafe-inline' + fonts.googleapis.com: both layouts load Google Fonts, and there
-//     are ~139 inline style="" attributes across the pages. Removing those is the prerequisite for
-//     tightening this, not something to do blind.
-//   - font-src fonts.gstatic.com: what the Google Fonts stylesheet itself pulls.
+//   - style-src 'unsafe-inline': there are ~139 inline style="" attributes across the pages.
+//     Removing those is the prerequisite for tightening this, not something to do blind.
+//   - font-src 'self' only: fonts and icons are self-hosted under wwwroot/lib (Google Fonts was
+//     dropped 2026-09-11), so a page load makes no third-party request at all.
 // script-src stays 'self'. There is no inline JavaScript anywhere in Pages/ — and that is now
 // enforced by InlineEventHandlerTests rather than asserted, because the failure mode is silent:
 // an inline onchange= renders fine, reads correctly in the markup, and simply never runs. Two
@@ -607,8 +607,8 @@ app.Use(async (context, next) =>
         "frame-ancestors 'none'; " +
         "img-src 'self' data:; " +
         "script-src 'self'; " +
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-        "font-src 'self' https://fonts.gstatic.com; " +
+        "style-src 'self' 'unsafe-inline'; " +
+        "font-src 'self'; " +
         // Square is listed because the youth-rate flow hands the candidate off to Square-hosted
         // checkout; today that is a server-issued redirect rather than a cross-origin form post,
         // so 'self' alone would also pass — this keeps it correct if that ever becomes a direct post.

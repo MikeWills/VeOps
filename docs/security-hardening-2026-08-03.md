@@ -52,11 +52,13 @@ encoding slip is contained instead of escalating to a session-stealing XSS.
 
 Two allowances are deliberate and were **verified against the actual markup, not assumed**:
 
-- `style-src 'unsafe-inline' https://fonts.googleapis.com` — both layouts load Google Fonts, and
-  there are ~139 inline `style=""` attributes across the pages. A stricter `style-src` would have
-  silently destroyed the site's typography and layout. Removing the inline styles is the
-  prerequisite for tightening this, not something to do blind.
-- `font-src https://fonts.gstatic.com` — what the Google Fonts stylesheet itself then pulls.
+- `style-src 'unsafe-inline'` — there are ~139 inline `style=""` attributes across the pages. A
+  stricter `style-src` would have silently destroyed the site's typography and layout. Removing
+  the inline styles is the prerequisite for tightening this, not something to do blind.
+- `font-src 'self'` — fonts are self-hosted (see `docs/typography.md`). *Until 2026-09-11 both
+  layouts loaded Google Fonts, and `style-src`/`font-src` allowed `fonts.googleapis.com` /
+  `fonts.gstatic.com` for it; both allowances went with the swap to self-hosted Inter/JetBrains
+  Mono, so a page load now makes no third-party request.*
 
 `script-src` stays `'self'`: there is no inline JavaScript anywhere under `Pages/` (verified by
 grep; the only non-`src` `<script>` is an empty importmap in the otherwise-unused Bootstrap layout).

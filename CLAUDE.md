@@ -127,6 +127,15 @@ which is "here's what was built and why, mostly historical.")
 One-line-or-two pointer per feature, newest first — full design rationale lives in the linked
 `/docs/*.md` file, not here. See "Documentation Structure" below for the policy this follows.
 
+- **Inter / JetBrains Mono, self-hosted, replacing IBM Plex (2026-09-11).** See
+  `docs/typography.md`. Mike: *"I'm not a fan"* of Plex; the pairing was picked from four rendered
+  side by side on the same Sessions list, and the mono-everywhere chrome split was offered as a
+  separate toggle and **kept as-is** — only the faces changed, plus table text 13.5 → 14px. Fonts
+  live under `wwwroot/lib/fonts` like the icons do, so the CSP's `fonts.googleapis.com` /
+  `fonts.gstatic.com` allowances are gone and a page load makes no third-party request. Two things
+  to carry: `fonts.css` declares weight *ranges* (`400 700` / `400 600`) and a weight outside them
+  renders synthetically rather than failing; and the doc records how to re-fetch the four files.
+
 - **The session fee override says what the VEC is owed now, not what the team keeps (#544,
   2026-09-10).** See `docs/arrl-vec-submission.md`'s "The amount". `Session.RetainedAmountOverride`
   became **`RemitToVecOverride`**, column renamed by `Phase16RemitToVecOverride`, and
@@ -262,16 +271,7 @@ One-line-or-two pointer per feature, newest first — full design rationale live
   payment links and sends registration confirmations for anyone new, which is the point (a walk-in
   needs exactly those).
 
-- **A bulk-email screen off Applicant Status (2026-08-26).** See `docs/candidate-email.md`'s new
-  section. Same mechanism as #144's session-scoped compose screen — pick candidates, start from a
-  template, edit, send — reached instead from Applicant Status, over every candidate on one team still
-  waiting on an FCC grant. Built as the other half of the FCC-issue switches above: reminders
-  suppressed, and a human who still wants to tell some or all of those people what's going on.
-  **Requires one specific team, not "All teams"** — a message needs some team's own SMTP credentials,
-  so the button only appears once a specific team is picked. The three predicates answering "who's
-  pending" (Applicant Status's own list, its per-team nav badge, and this screen's recipient pool) are
-  now one shared `CandidateApplicationStatusExtensions.AwaitingFccGrant`, replacing three copies that
-  had already started drifting apart in comment-only form.
+
 **Kept here vs. `CHANGELOG.md`:** this section is a bounded, recent-only window (rule of thumb: cap
 around 10 entries), since CLAUDE.md is read in full on every conversation turn and this is the one
 section that would otherwise grow forever. Phase-numbered work (Phase 0-10) is never listed here at

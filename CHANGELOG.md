@@ -8,6 +8,17 @@ that window, or immediately if it's phase-numbered work already summarized in "C
 design rationale for any entry still lives in its linked `/docs/*.md` file, not here or in
 CLAUDE.md — this file, like CLAUDE.md's Change Log, is pointers only.
 
+- **A bulk-email screen off Applicant Status (2026-08-26).** See `docs/candidate-email.md`'s new
+  section. Same mechanism as #144's session-scoped compose screen — pick candidates, start from a
+  template, edit, send — reached instead from Applicant Status, over every candidate on one team still
+  waiting on an FCC grant. Built as the other half of the FCC-issue switches above: reminders
+  suppressed, and a human who still wants to tell some or all of those people what's going on.
+  **Requires one specific team, not "All teams"** — a message needs some team's own SMTP credentials,
+  so the button only appears once a specific team is picked. The three predicates answering "who's
+  pending" (Applicant Status's own list, its per-team nav badge, and this screen's recipient pool) are
+  now one shared `CandidateApplicationStatusExtensions.AwaitingFccGrant`, replacing three copies that
+  had already started drifting apart in comment-only form.
+
 - **A manual switch for a real FCC-wide processing stall (2026-08-26).** See `docs/trigger-points.md`'s
   "FCC-wide-issue suppression" section. Mike, watching a live incident: the FCC's payment-verification
   subsystem stalling for new-license candidates while upgrade grants kept flowing — a distinction
