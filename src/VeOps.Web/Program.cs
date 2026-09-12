@@ -600,6 +600,11 @@ app.Use(async (context, next) =>
     headers["X-Content-Type-Options"] = "nosniff";
     headers["X-Frame-Options"] = "DENY";
     headers["Referrer-Policy"] = "same-origin";
+    // Keep the whole deployment out of search engines (2026-09-12). wwwroot/robots.txt stops a
+    // crawler fetching anything; this header is the half robots.txt cannot do — an engine that
+    // learned a URL from a link elsewhere may index it without ever crawling it, and only
+    // noindex on the response itself prevents that. NoIndexingTests pins both.
+    headers["X-Robots-Tag"] = "noindex, nofollow";
     headers["Content-Security-Policy"] =
         "default-src 'self'; " +
         "base-uri 'self'; " +
