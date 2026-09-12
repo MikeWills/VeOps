@@ -512,6 +512,13 @@ tr[data-clickable-row] .row-actions { cursor: default; }
 
 .section-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin: 8px 0 12px; }
 .section-head h2 { font-size: 15px; margin: 0; font-weight: 600; }
+/* Instructions for a section go under its heading as one paragraph, not beside a field (Mike,
+   2026-09-12, on a TLS note wrapped into a 160px column at body size). .hint is the per-field
+   form: one short line under the control it belongs to. Both had no rule until now, so they
+   rendered at 16px — bigger than the labels they were meant to sit under. */
+.section-intro, .hint { font-size: 13px; line-height: 1.5; color: var(--ink-soft); max-width: 70ch; }
+.section-intro { margin: -4px 0 14px; }
+.hint { margin: 2px 0 0; }
 
 /* A row of buttons beside a section heading (Detail's "Email candidates"/"Refresh candidates",
    VeDirectory's "Email VEs"/"Export CSV"). Was an inline `display:inline-flex` style with no wrap
