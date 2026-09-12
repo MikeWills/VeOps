@@ -50,6 +50,12 @@ can frame an authenticated page and overlay a decoy over a destructive control, 
 signed-in Session Manager into deleting a candidate. The CSP is defence in depth — with it, a future
 encoding slip is contained instead of escalating to a session-stealing XSS.
 
+*Added later, same middleware (2026-09-12):* `X-Robots-Tag: noindex, nofollow` on every response,
+paired with a `wwwroot/robots.txt` that disallows everything. The deployment is reachable on the
+public internet but is not meant to be found — `robots.txt` stops a crawler fetching pages, and the
+header stops a URL learned from a link elsewhere being indexed without a crawl, which `robots.txt`
+alone cannot. `NoIndexingTests` pins both.
+
 Two allowances are deliberate and were **verified against the actual markup, not assumed**:
 
 - `style-src 'unsafe-inline'` — there are ~139 inline `style=""` attributes across the pages. A
