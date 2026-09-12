@@ -339,6 +339,7 @@ else
         }
 
         <div class="section-head" style="margin-top:28px;"><h2>SMTP</h2></div>
+        <p class="section-intro">Connections always use TLS: implicit on port 465, STARTTLS on any other port.</p>
         <form method="post" asp-page-handler="UpdateSmtp">
             <input type="hidden" name="TeamId" value="@Model.TeamId" />
             <div class="meta-grid">
@@ -346,14 +347,18 @@ else
                 <div class="field" style="max-width:120px;"><label for="smtpPort">Port</label><input id="smtpPort" name="port" type="number" value="@Model.Team.SmtpPort" placeholder="587" /></div>
                 <div class="field" style="max-width:220px;"><label for="smtpUsername">Username</label><input id="smtpUsername" name="username" value="@Model.Team.SmtpUsername" /></div>
                 <div class="field" style="max-width:220px;"><label for="smtpPassword">Password</label><input id="smtpPassword" name="password" type="password" placeholder="@(Model.Team.IsEmailConfigured ? "•••••••• (unchanged)" : "Not set")" /></div>
-                <div class="field" style="max-width:160px;">
-                    <p class="hint" style="margin:0;">Connections always use TLS — implicit on port 465, required STARTTLS otherwise. The old opt-out was removed in issue #259: it fell back to plaintext when a server declined, which sent the password in the clear.</p>
-                </div>
             </div>
             <button type="submit" class="btn-primary btn-sm" style="margin-top:12px;">Save SMTP</button>
         </form>
 
         <div class="section-head" style="margin-top:28px;"><h2>Email Settings</h2></div>
+        <p class="section-intro">
+            Blind-copy sends a silent copy of every candidate email to one address so you can see what
+            actually goes out. Those copies contain candidate names and email addresses and stay in that
+            mailbox after the candidate&rsquo;s details are purged here, so use it as a temporary check and
+            clear it afterward. Password resets and VE self-service links are never copied &mdash; they
+            carry access tokens.
+        </p>
         <form method="post" asp-page-handler="UpdateEmailSettings">
             <input type="hidden" name="TeamId" value="@Model.TeamId" />
             <div class="meta-grid">
@@ -365,15 +370,7 @@ else
                 <div class="field" style="max-width:220px;">
                     <label for="bccAddress">Blind-copy candidate email to</label>
                     <input id="bccAddress" name="bccAddress" type="email" value="@Model.EmailSettings?.BccAddress" placeholder="(off)" />
-                    <p class="hint">
-                        Sends a silent copy of every <strong>candidate</strong> email to this address, so you
-                        can see what actually goes out. Never applied to password resets or VE self-service
-                        links &mdash; those carry access tokens.
-                        <br />
-                        Those copies contain candidate names and email addresses, and stay in that mailbox
-                        even after the candidate&rsquo;s details are purged from this system. Best used as a
-                        temporary check and cleared afterwards. Leave blank to turn off.
-                    </p>
+                    <p class="hint">Leave blank to turn off.</p>
                 </div>
             </div>
 

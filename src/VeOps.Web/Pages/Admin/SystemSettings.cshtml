@@ -123,7 +123,8 @@
         today that means password reset links. Candidate email (confirmations, reminders, payment
         notices) is unaffected and still sends from each team's own SMTP settings. A password reset
         can't be sent at all until this is filled in, because a system administrator may not belong to
-        any team. Test mode, above, redirects these emails too.
+        any team. Test mode, above, redirects these emails too. Connections always use TLS: implicit on
+        port 465, STARTTLS on any other port.
     </p>
     <form method="post" asp-page-handler="SystemEmail">
         <div class="field" style="max-width:400px;">
@@ -143,9 +144,6 @@
             @* Never rendered back — an empty box means "keep the stored secret". *@
             <input id="systemSmtpPassword" name="systemSmtpPassword" type="password" autocomplete="new-password"
                    placeholder="@(Model.SystemSmtpPasswordIsSet ? "Stored — leave blank to keep" : "")" />
-        </div>
-        <div class="field" style="max-width:400px;">
-            <p class="hint" style="margin:0;">Connections always use TLS — implicit on port 465, required STARTTLS otherwise (issue #259).</p>
         </div>
         <div class="field" style="max-width:400px;">
             <label for="systemSmtpFromAddress">From address</label>
