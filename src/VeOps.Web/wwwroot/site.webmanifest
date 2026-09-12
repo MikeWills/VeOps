@@ -1,0 +1,11 @@
+{
+  "name": "VE Ops",
+  "short_name": "VE Ops",
+  "icons": [
+    { "src": "/img/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/img/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ],
+  "theme_color": "#2A2E31",
+  "background_color": "#F5F6F4",
+  "display": "browser"
+}

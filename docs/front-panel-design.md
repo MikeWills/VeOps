@@ -65,7 +65,9 @@ border, fill and radius say "separate object"; spend them where that is true.
 
 - **The markup.** This was a CSS pass. The only Razor edits were the brand text (`VE OPS` →
   `VE Ops`, since the brand is no longer letterspaced mono caps) and a `.mono` span around the VE
-  call sign on Session Detail's roster chips.
+  call sign on Session Detail's roster chips. *(Later the same day the brand gained Mike's mark —
+  `wwwroot/img/veops-icon.svg`, also the source of `favicon.ico`, the Apple touch icon and the
+  manifest icons; `docs/brand-assets.md`.)*
 - **The responsive layer.** Card tables, the mobile accordion nav and the 768px breakpoint are
   as they were. The mobile panel keeps the *pill* highlight for the active link (a background on
   a stacked list reads better than an underline); the tab underline is desktop-only.

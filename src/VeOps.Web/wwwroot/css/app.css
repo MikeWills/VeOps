@@ -67,9 +67,9 @@
 /* The 3px amber rule is the one flourish in the design — a power-LED strip over the panel. */
 header.chassis { background: var(--panel); color: #EDEFEC; border-top: 3px solid var(--amber); padding: 8px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .brand { font-weight: 600; font-size: 14px; letter-spacing: .01em; display: flex; align-items: center; gap: 9px; text-decoration: none; }
-/* An outlined amber square with a filled centre — a front-panel indicator, not a status dot. */
-.brand .dot { width: 14px; height: 14px; border-radius: 3px; border: 2px solid var(--amber); position: relative; }
-.brand .dot::after { content: ""; position: absolute; inset: 3px; background: var(--amber); border-radius: 1px; }
+/* The mark (wwwroot/img/veops-icon.svg, Mike's, 2026-09-12) — the same file the favicon and the
+   home-screen icons come from. Two classes so `.vesm img`-style base rules can never outrank it. */
+.vesm .brand .mark { width: 22px; height: 22px; border-radius: 5px; display: block; }
 
 /* Hamburger — mobile only, hidden from --bp-md up. margin-left:auto is what pins it to the right of
    the bar while the brand sits left; on desktop the nav's own flex:1 takes over that job.

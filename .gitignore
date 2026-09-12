@@ -517,3 +517,6 @@ $RECYCLE.BIN/
 
 # Local-only starting point for the backup script, kept out of the repo on purpose.
 BACKUP.md
+
+# Scratch drop folder for assets handed over by hand (logos, screenshots) — never committed.
+temp/

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 260 260" role="img" aria-labelledby="title">
+  <title id="title">VE Ops icon</title>
+  <rect x="0" y="0" width="260" height="260" rx="44" fill="#E8A33D"/>
+  <path d="M54 98 Q130 26 206 98" fill="none" stroke="#1B2023" stroke-width="18" stroke-linecap="round"/>
+  <path d="M78 126 Q130 76 182 126" fill="none" stroke="#1B2023" stroke-width="18" stroke-linecap="round"/>
+  <circle cx="130" cy="150" r="13" fill="#1B2023"/>
+  <rect x="42" y="172" width="176" height="58" rx="15" fill="#1B2023"/>
+  <rect x="59" y="188" width="78" height="26" rx="5" fill="#E8A33D"/>
+  <rect x="154" y="187" width="14" height="14" rx="3" fill="#E8A33D"/>
+  <rect x="177" y="187" width="14" height="14" rx="3" fill="#E8A33D"/>
+  <rect x="154" y="207" width="14" height="14" rx="3" fill="#E8A33D"/>
+  <rect x="177" y="207" width="14" height="14" rx="3" fill="#E8A33D"/>
+</svg>

@@ -13,13 +13,17 @@
     <script src="~/js/theme.js" asp-append-version="true"></script>
     @* Self-hosted fonts and icons: the CSP allows font-src 'self' only, so a Google Fonts or CDN
        reference would be blocked. Loaded before app.css so the design system can override them. *@
+    <link rel="icon" href="~/favicon.ico" sizes="32x32" />
+    <link rel="icon" href="~/img/veops-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="~/img/apple-touch-icon.png" />
+    <link rel="manifest" href="~/site.webmanifest" />
     <link rel="stylesheet" href="~/lib/fonts/fonts.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/lib/bootstrap-icons/bootstrap-icons.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/app.css" asp-append-version="true" />
 </head>
 <body class="vesm">
     <header class="chassis">
-        <span class="brand"><span class="dot"></span>VE Ops</span>
+        <span class="brand"><img class="mark" src="~/img/veops-icon.svg" alt="" width="22" height="22" />VE Ops</span>
         <div style="flex:1"></div>
         <button id="themeToggle" class="theme-toggle" type="button"></button>
     </header>
