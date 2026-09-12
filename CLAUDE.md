@@ -127,6 +127,16 @@ which is "here's what was built and why, mostly historical.")
 One-line-or-two pointer per feature, newest first — full design rationale lives in the linked
 `/docs/*.md` file, not here. See "Documentation Structure" below for the policy this follows.
 
+- **The "front panel" design pass (2026-09-12).** See `docs/front-panel-design.md`. A CSS-only
+  reshaping after the font swap changed nothing visible: graphite chassis under a 3px amber rule,
+  amber as the *one* accent (active nav underline, primary button), mono for data only, sentence-
+  case labels with no tracking (zero `text-transform: uppercase` left in `app.css`), tables as
+  ruled rows with no card, filters as tabs on a rule, the session header as a facts list. Markup
+  untouched except `VE OPS` → `VE Ops`. Rules for new screens are in the doc's "The rules". **One
+  trap for anyone verifying `app.css` through the harness recipe: strip the BOM** — inlined into a
+  `<style>`, U+FEFF makes the first selector `﻿:root`, and light mode silently loses every
+  token while dark mode looks fine.
+
 - **Inter / JetBrains Mono, self-hosted, replacing IBM Plex (2026-09-11).** See
   `docs/typography.md`. Mike: *"I'm not a fan"* of Plex; the pairing was picked from four rendered
   side by side on the same Sessions list, and the mono-everywhere chrome split was offered as a
@@ -261,16 +271,6 @@ One-line-or-two pointer per feature, newest first — full design rationale live
   batched message has no single address for (`SingleDigest`, a batch spanning *every* session, stays
   Discord-only for the same underlying reason). A true VEC-the-organization notification is still a
   different, unbuilt thing — see the doc's "Still to come."
-
-- **TeamLead can run the two day-of session actions (2026-08-27).** See `docs/admin-auth.md`'s
-  "second exception" section. Mike, during role-access testing: *"These are a key part of running a
-  test session. The SM might not be available to do that for them."*
-  `SessionAccessScope.CanRunDayOfActions` grants exactly "Refresh candidates" and "Create retest
-  payment" on Session Detail to every role that can view the session; every other write stays behind
-  `CanEdit`, which remains false for TeamLead. Worth knowing: Refresh is not a pure read — it mints
-  payment links and sends registration confirmations for anyone new, which is the point (a walk-in
-  needs exactly those).
-
 
 **Kept here vs. `CHANGELOG.md`:** this section is a bounded, recent-only window (rule of thumb: cap
 around 10 entries), since CLAUDE.md is read in full on every conversation turn and this is the one

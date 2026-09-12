@@ -8,6 +8,15 @@ that window, or immediately if it's phase-numbered work already summarized in "C
 design rationale for any entry still lives in its linked `/docs/*.md` file, not here or in
 CLAUDE.md — this file, like CLAUDE.md's Change Log, is pointers only.
 
+- **TeamLead can run the two day-of session actions (2026-08-27).** See `docs/admin-auth.md`'s
+  "second exception" section. Mike, during role-access testing: *"These are a key part of running a
+  test session. The SM might not be available to do that for them."*
+  `SessionAccessScope.CanRunDayOfActions` grants exactly "Refresh candidates" and "Create retest
+  payment" on Session Detail to every role that can view the session; every other write stays behind
+  `CanEdit`, which remains false for TeamLead. Worth knowing: Refresh is not a pure read — it mints
+  payment links and sends registration confirmations for anyone new, which is the point (a walk-in
+  needs exactly those).
+
 - **A bulk-email screen off Applicant Status (2026-08-26).** See `docs/candidate-email.md`'s new
   section. Same mechanism as #144's session-scoped compose screen — pick candidates, start from a
   template, edit, send — reached instead from Applicant Status, over every candidate on one team still
