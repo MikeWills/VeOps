@@ -22,7 +22,7 @@ Before this, affordances were bare Unicode characters typed into the markup — 
 for row menus, `⚑` for the reschedule flag, `↻` for refresh, `✓` for tested.
 
 **Those work only if the user's device happens to have a font containing them.** IBM Plex Mono, which
-this app loads, contains some and not others, so the browser silently falls back to whatever else is
+this app loaded at the time (JetBrains Mono since 2026-09-11), contained some and not others, so the browser silently falls back to whatever else is
 installed — and what is installed differs per device.
 
 That is not hypothetical. The withdrawn-roster disclosure used `content: "\25B8"` (BLACK
@@ -44,7 +44,7 @@ An icon font ships the glyphs with the app, so there is no fallback lottery.
 
 Loaded by both `_AppLayout` and `_PublicLayout`, before `app.css` so the design system can override
 it. `app.css` carries one shared rule (`.vesm .bi`) nudging the baseline, since Bootstrap Icons sit
-slightly high against IBM Plex; individual icons need no styling and inherit colour and size from
+slightly high against the text; individual icons need no styling and inherit colour and size from
 context.
 
 ## Conventions

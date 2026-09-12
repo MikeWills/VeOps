@@ -53,7 +53,7 @@
 
 .vesm { box-sizing: border-box; }
 .vesm *, .vesm *::before, .vesm *::after { box-sizing: border-box; }
-.vesm { background: var(--paper); color: var(--ink); font-family: "IBM Plex Sans", system-ui, sans-serif; min-height: 100vh; }
+.vesm { background: var(--paper); color: var(--ink); font-family: "Inter", system-ui, sans-serif; min-height: 100vh; }
 .vesm a { color: inherit; }
 .vesm :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
@@ -63,7 +63,7 @@
    below them. The desktop single-row layout is restored at the --bp-md min-width block near the
    bottom of this file — see "Desktop layer". */
 header.chassis { background: var(--panel); color: #EDEFEC; padding: 8px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
-.brand { font-family: "IBM Plex Mono", monospace; font-weight: 600; font-size: 13px; letter-spacing: .06em; display: flex; align-items: center; gap: 8px; text-decoration: none; }
+.brand { font-family: "JetBrains Mono", monospace; font-weight: 600; font-size: 13px; letter-spacing: .06em; display: flex; align-items: center; gap: 8px; text-decoration: none; }
 .brand .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px rgba(63, 143, 95, .8); }
 
 /* Hamburger — mobile only, hidden from --bp-md up. margin-left:auto is what pins it to the right of
@@ -90,7 +90,7 @@ nav.chassis-nav a:hover { color: #fff; }
 
 /* Outstanding-work count on a nav link/trigger (see NavBadgeCountService). Only rendered when the
    count is non-zero — an always-visible "0" is noise, so there's no zero-state style. */
-.nav-badge { display: inline-block; min-width: 16px; padding: 1px 5px; margin-left: 5px; border-radius: 99px; background: var(--brick); color: #fff; font-family: "IBM Plex Mono", monospace; font-size: 10.5px; font-weight: 600; line-height: 1.5; text-align: center; vertical-align: 1px; }
+.nav-badge { display: inline-block; min-width: 16px; padding: 1px 5px; margin-left: 5px; border-radius: 99px; background: var(--brick); color: #fff; font-family: "JetBrains Mono", monospace; font-size: 10.5px; font-weight: 600; line-height: 1.5; text-align: center; vertical-align: 1px; }
 
 /* Grouped nav dropdowns (Applicants / VEs / Settings) — same row-action kebab/menu component as
    everywhere else, restyled so the trigger reads as just another chassis-nav link. */
@@ -114,7 +114,7 @@ nav.chassis-nav a:hover { color: #fff; }
 .nav-group .menu a.item.active { background: var(--panel-2); color: #fff; }
 .nav-group .menu hr, .user-menu .menu hr, .help-menu .menu hr, .alert-menu .menu hr { border-top-color: #333B40; }
 
-.who { font-family: "IBM Plex Mono", monospace; font-size: 11.5px; color: #9AA39D; display: none; flex-basis: 100%; flex-wrap: wrap; align-items: center; gap: 8px; padding-bottom: 6px; }
+.who { font-family: "JetBrains Mono", monospace; font-size: 11.5px; color: #9AA39D; display: none; flex-basis: 100%; flex-wrap: wrap; align-items: center; gap: 8px; padding-bottom: 6px; }
 header.chassis.nav-open .who { display: flex; }
 
 .theme-toggle { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; background: var(--panel-2); color: #EDEFEC; border: none; border-radius: 99px; cursor: pointer; padding: 0; }
@@ -123,12 +123,12 @@ header.chassis.nav-open .who { display: flex; }
 main.vesm-main { max-width: 1160px; margin: 0 auto; padding: 20px 16px 56px; }
 main.vesm-main.wide { max-width: 1280px; padding: 20px 16px 56px; }
 
-.vesm-footer { max-width: 1160px; margin: 0 auto; padding: 0 16px 24px; font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: .06em; color: var(--ink-soft); display: flex; gap: 14px; flex-wrap: wrap; }
+.vesm-footer { max-width: 1160px; margin: 0 auto; padding: 0 16px 24px; font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: .06em; color: var(--ink-soft); display: flex; gap: 14px; flex-wrap: wrap; }
 .vesm-footer a { color: inherit; }
 
 .page-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
 h1 { font-size: 24px; margin: 0 0 4px; letter-spacing: -.01em; }
-.eyebrow { font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-soft); margin: 0; }
+.eyebrow { font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-soft); margin: 0; }
 /* Breadcrumb back to a page's parent list — here `.crumb` IS the <a> (_ParentCrumb.cshtml), unlike
    the multi-segment `<div class="crumb">` below, so scoping to `a.crumb` is deliberate, not just
    belt-and-braces: two classes beat `.vesm a { color: inherit }` (class-plus-element, 0,1,1) either
@@ -144,7 +144,7 @@ h1 { font-size: 24px; margin: 0 0 4px; letter-spacing: -.01em; }
    zooms on focus below that and never zooms back. */
 .ve-search { display: inline-flex; align-items: center; gap: 6px; padding: 0 14px; border: 1px solid var(--line-strong); border-radius: 99px; background: var(--surface); }
 .ve-search .bi { color: var(--ink-soft); font-size: 12px; }
-.vesm .ve-search input { border: none; background: none; padding: 6px 0; font-family: "IBM Plex Mono", monospace; font-size: 16px; color: var(--ink); width: 190px; }
+.vesm .ve-search input { border: none; background: none; padding: 6px 0; font-family: "JetBrains Mono", monospace; font-size: 16px; color: var(--ink); width: 190px; }
 .vesm .ve-search input:focus { outline: none; }
 .ve-search:focus-within { border-color: var(--panel); }
 /* Label text for screen readers only — the magnifier icon carries no meaning on its own. */
@@ -154,7 +154,7 @@ h1 { font-size: 24px; margin: 0 0 4px; letter-spacing: -.01em; }
    inheriting it stretched this pill across a third of the bar with the checkbox stranded in the
    middle and the label shoved to the far right. Matches .filter-pill's metrics so the row of
    controls lines up; slightly less vertical padding because a checkbox is taller than 12px text. */
-.toggle-pill { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border: 1px solid var(--line-strong); border-radius: 99px; background: var(--surface); font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--ink-soft); cursor: pointer; }
+.toggle-pill { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border: 1px solid var(--line-strong); border-radius: 99px; background: var(--surface); font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--ink-soft); cursor: pointer; }
 .toggle-pill:hover { border-color: var(--panel); }
 /* Two classes, not one: `.vesm input` is class-plus-element (0,1,1) and would win. Same trap the
    .ve-search block above documents. */
@@ -182,7 +182,7 @@ h1 { font-size: 24px; margin: 0 0 4px; letter-spacing: -.01em; }
    of subscriptions, where a per-row id/for pair would be pure boilerplate. */
 .switch-row { display: flex; align-items: center; gap: 10px; cursor: pointer; }
 
-.filters a.filter-pill { font-family: "IBM Plex Mono", monospace; font-size: 12px; padding: 9px 14px; border-radius: 99px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-soft); cursor: pointer; text-decoration: none; display: inline-block; }
+.filters a.filter-pill { font-family: "JetBrains Mono", monospace; font-size: 12px; padding: 9px 14px; border-radius: 99px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-soft); cursor: pointer; text-decoration: none; display: inline-block; }
 .filters a.filter-pill.active { background: var(--panel); color: #fff; border-color: var(--panel); }
 
 /* Outstanding-work count inside a team-picker pill (Applicant Status / Unmatched Payments). Unlike
@@ -206,21 +206,21 @@ h1 { font-size: 24px; margin: 0 0 4px; letter-spacing: -.01em; }
    the ghost-icon look the kebab has inside a table row, and left-aligned since the trigger sits at
    the start of the row rather than a table row's right edge. */
 .filter-dropdown { position: relative; display: inline-flex; }
-.filter-dropdown > .kebab { font-family: "IBM Plex Mono", monospace; font-size: 12px; padding: 9px 14px; border-radius: 99px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-soft); }
+.filter-dropdown > .kebab { font-family: "JetBrains Mono", monospace; font-size: 12px; padding: 9px 14px; border-radius: 99px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-soft); }
 .filter-dropdown > .kebab.active { background: var(--panel); color: #fff; border-color: var(--panel); }
 .filter-dropdown > .menu { left: 0; right: auto; top: 44px; width: 240px; }
 .menu label.item { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 5px; cursor: pointer; font-size: 14px; color: var(--ink); }
 .menu label.item:hover { background: var(--paper); }
 .menu label.item input[type="checkbox"], .menu label.item input[type="radio"] { width: auto; min-width: 18px; min-height: 18px; margin: 0; }
-.filter-select { font-family: "IBM Plex Mono", monospace; font-size: 16px; padding: 9px 14px; border-radius: 99px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-soft); cursor: pointer; max-width: 100%; }
+.filter-select { font-family: "JetBrains Mono", monospace; font-size: 16px; padding: 9px 14px; border-radius: 99px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-soft); cursor: pointer; max-width: 100%; }
 
 .pagination { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; flex-wrap: wrap; gap: 12px; }
-.pagination-summary { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--ink-soft); }
+.pagination-summary { font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--ink-soft); }
 .pagination-controls { align-items: center; }
-.pagination-page { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--ink-soft); padding: 7px 4px; }
+.pagination-page { font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--ink-soft); padding: 7px 4px; }
 
 table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; overflow: visible; }
-thead th { text-align: left; font-family: "IBM Plex Mono", monospace; font-size: 10.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-soft); padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--thead-bg); }
+thead th { text-align: left; font-family: "JetBrains Mono", monospace; font-size: 10.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-soft); padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--thead-bg); }
 
 /* Click-to-sort headers (app.js's initSortableTable for client-sorted tables, server-rendered
    <a> links on the paged Sessions list — both produce the same th.sortable + .sort-arrow shape so
@@ -237,7 +237,7 @@ thead th[aria-sort="ascending"] .sort-arrow, thead th[aria-sort="descending"] .s
 thead th[aria-sort="ascending"] .sort-arrow::after { content: "\f235"; }
 thead th[aria-sort="descending"] .sort-arrow::after { content: "\f229"; }
 
-tbody td { padding: 14px 16px; border-bottom: 1px solid var(--line); font-size: 13.5px; vertical-align: middle; }
+tbody td { padding: 14px 16px; border-bottom: 1px solid var(--line); font-size: 14px; vertical-align: middle; }
 tbody tr:last-child td { border-bottom: none; }
 tbody tr:hover { background: var(--row-hover); }
 tbody tr.row-past { background: var(--paper); }
@@ -248,8 +248,8 @@ tbody tr.row-past:hover { background: var(--row-hover); }
    in both mobile and desktop layers because table.cards restacks the row into a card. */
 tbody tr.row-highlight, tbody tr.row-highlight:hover { background: var(--amber-dim); box-shadow: inset 3px 0 0 var(--amber); }
 .session-title { font-weight: 600; }
-.session-sub { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
-.count { font-family: "IBM Plex Mono", monospace; }
+.session-sub { font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
+.count { font-family: "JetBrains Mono", monospace; }
 
 /* Two treatments that stack, not alternatives (see docs/responsive-ui.md):
 
@@ -282,9 +282,9 @@ tbody tr.row-highlight, tbody tr.row-highlight:hover { background: var(--amber-d
    Applied to a <span> inside the cell, never the <td> itself — display:inline-block on a table cell
    pulls it out of the table formatting context and visibly breaks row alignment. */
 .count .days-warning { display: inline-block; min-width: 22px; padding: 1px 7px; border-radius: 99px; font-weight: 600; text-align: center; line-height: 1.5; background: var(--amber-dim); color: var(--ink); }
-.mono { font-family: "IBM Plex Mono", monospace; font-size: 12.5px; }
+.mono { font-family: "JetBrains Mono", monospace; font-size: 12.5px; }
 
-.chip { display: inline-flex; align-items: center; gap: 6px; font-family: "IBM Plex Mono", monospace; font-size: 11.5px; font-weight: 500; padding: 4px 9px; border-radius: 99px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; font-family: "JetBrains Mono", monospace; font-size: 11.5px; font-weight: 500; padding: 4px 9px; border-radius: 99px; }
 .chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; }
 .chip-green { background: var(--green-dim); color: var(--chip-green-text); }
 .chip-green::before { background: var(--green); }
@@ -304,7 +304,7 @@ tbody tr.row-highlight, tbody tr.row-highlight:hover { background: var(--amber-d
 .chip-blue { background: var(--blue-dim); color: var(--chip-blue-text); }
 .chip-blue::before { background: var(--blue); }
 .flag { color: var(--amber); font-size: 14px; }
-.view-link { font-family: "IBM Plex Mono", monospace; font-size: 12px; font-weight: 600; color: var(--focus); text-decoration: none; }
+.view-link { font-family: "JetBrains Mono", monospace; font-size: 12px; font-weight: 600; color: var(--focus); text-decoration: none; }
 .view-link:hover { text-decoration: underline; }
 
 /* Whole-row affordance for tr[data-clickable-row] (app.js). The row-actions cell keeps the default
@@ -354,7 +354,7 @@ tr[data-clickable-row] .row-actions { cursor: default; }
    element for as long as the pointer is anywhere inside its box, children included, so a rule on the
    container underlines the plain text too the moment the pointer crosses it — which is exactly what
    made the whole line look clickable (issue #465). Only the <a> gets the hover treatment. */
-.crumb { font-family: "IBM Plex Mono", monospace; font-size: 11.5px; color: var(--ink-soft); margin-bottom: 14px; }
+.crumb { font-family: "JetBrains Mono", monospace; font-size: 11.5px; color: var(--ink-soft); margin-bottom: 14px; }
 .crumb a { color: var(--focus); text-decoration: none; }
 .crumb a:hover { text-decoration: underline; }
 
@@ -376,7 +376,7 @@ tr[data-clickable-row] .row-actions { cursor: default; }
 .meta-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 18px; margin-top: 14px; }
 .meta-item { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .meta-item .v { overflow-wrap: anywhere; }
-.meta-item .k { font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-soft); }
+.meta-item .k { font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-soft); }
 /* A row of values must share one line, whatever each carries. Some of these values are text and
    some are text plus a chip and a button, and a button is taller than a line of text — so without a
    floor and a common centre, the money figure beside an Edit button sat lower than the money figure
@@ -425,7 +425,7 @@ tr[data-clickable-row] .row-actions { cursor: default; }
 .stat-row { display: flex; flex-wrap: wrap; gap: 28px; margin: 4px 0 18px; }
 .stat { display: flex; flex-direction: column; gap: 2px; }
 .stat-value { font-size: 26px; font-weight: 600; line-height: 1; }
-.stat-label { font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); }
+.stat-label { font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); }
 
 /* The "Add a VE" panel on the directory. Collapsed by default: it is the exception (a prospect who
    has never worked a session), and everyone else arrives through ingestion — so it must not read as
@@ -549,7 +549,7 @@ tr[data-clickable-row] .row-actions { cursor: default; }
    restyled to sit readably on the chassis's permanently-dark background rather than the light
    content area. */
 .help-menu, .user-menu, .alert-menu { position: relative; display: inline-flex; }
-.help-menu .kebab, .user-menu .kebab, .alert-menu .kebab { background: var(--panel-2); color: #EDEFEC; border-radius: 99px; padding: 6px 12px; font-family: "IBM Plex Mono", monospace; font-size: 11.5px; display: inline-flex; align-items: center; gap: 6px; }
+.help-menu .kebab, .user-menu .kebab, .alert-menu .kebab { background: var(--panel-2); color: #EDEFEC; border-radius: 99px; padding: 6px 12px; font-family: "JetBrains Mono", monospace; font-size: 11.5px; display: inline-flex; align-items: center; gap: 6px; }
 .help-menu .kebab:hover, .user-menu .kebab:hover, .alert-menu .kebab:hover { background: #2A3338; border-color: transparent; }
 
 /* Alert bell (#339). The trigger is the same chassis pill as its neighbours; what is different is
@@ -562,11 +562,11 @@ tr[data-clickable-row] .row-actions { cursor: default; }
 .alert-menu a.alert-item { padding: 9px 10px; }
 .alert-menu a.alert-item .alert-item-title { display: block; font-weight: 600; font-size: 13px; }
 .alert-menu a.alert-item .alert-item-detail { display: block; font-size: 12px; line-height: 1.45; margin-top: 2px; opacity: .85; }
-.alert-menu a.alert-item .alert-item-meta { display: block; font-family: "IBM Plex Mono", monospace; font-size: 10.5px; letter-spacing: .03em; margin-top: 4px; opacity: .7; }
+.alert-menu a.alert-item .alert-item-meta { display: block; font-family: "JetBrains Mono", monospace; font-size: 10.5px; letter-spacing: .03em; margin-top: 4px; opacity: .7; }
 
 footer.roster { margin-top: 28px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
 .roster-list { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
-.ve-chip { font-family: "IBM Plex Mono", monospace; font-size: 12px; background: var(--paper); border: 1px solid var(--line); padding: 6px 12px; border-radius: 99px; display: inline-flex; align-items: center; gap: 8px; }
+.ve-chip { font-family: "JetBrains Mono", monospace; font-size: 12px; background: var(--paper); border: 1px solid var(--line); padding: 6px 12px; border-radius: 99px; display: inline-flex; align-items: center; gap: 8px; }
 /* Session-relative eligibility markers (issue #107). Colour alone is not the signal — the two use
    different glyphs as well, so they stay distinguishable to a colour-blind reader and in a
    screenshot. Bootstrap Icons rather than a Unicode symbol: a bare character renders only if the
@@ -601,8 +601,8 @@ footer.roster { margin-top: 28px; background: var(--surface); border: 1px solid 
    therefore 16px on mobile and drops to the design's 14px at --bp-md, where no such behaviour
    exists. Same reason .filter-select and .menu-input below are sized the way they are. */
 .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.field label { font-family: "IBM Plex Mono", monospace; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-soft); }
-.field input, .field select, .field textarea { font-family: "IBM Plex Mono", monospace; font-size: 16px; padding: 10px; max-width: 100%; border: 1px solid var(--line-strong); border-radius: 5px; background: var(--surface); color: var(--ink); }
+.field label { font-family: "JetBrains Mono", monospace; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-soft); }
+.field input, .field select, .field textarea { font-family: "JetBrains Mono", monospace; font-size: 16px; padding: 10px; max-width: 100%; border: 1px solid var(--line-strong); border-radius: 5px; background: var(--surface); color: var(--ink); }
 .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--focus); }
 
 /* A checkbox with its label beside it, rather than the stacked uppercase-caption shape .field gives
@@ -620,7 +620,7 @@ footer.roster { margin-top: 28px; background: var(--surface); border: 1px solid 
 /* Controls inside a dropdown .menu (the Sessions date-range preset/custom-range inputs). Replaces
    the repeated inline style="" those carried, which no media query could reach to fix the iOS
    zoom above. */
-.menu-input { width: 100%; font-family: "IBM Plex Mono", monospace; font-size: 16px; padding: 8px; border: 1px solid var(--line-strong); border-radius: 5px; background: var(--surface); color: var(--ink); }
+.menu-input { width: 100%; font-family: "JetBrains Mono", monospace; font-size: 16px; padding: 8px; border: 1px solid var(--line-strong); border-radius: 5px; background: var(--surface); color: var(--ink); }
 .menu-input + .menu-input { margin-top: 6px; }
 
 /* Icon-only row actions (Teams list: settings + maintenance). currentColor means both themes work
@@ -629,13 +629,13 @@ footer.roster { margin-top: 28px; background: var(--surface); border: 1px solid 
    guess for a sighted user and invisible to a screen reader. */
 
 /* Icons inherit colour and size from their context, so they need no per-site styling — only a small
-   baseline nudge, since Bootstrap Icons sit high against IBM Plex at these sizes. */
+   baseline nudge, since Bootstrap Icons sit high against the text at these sizes. */
 .vesm .bi { line-height: 1; vertical-align: -0.08em; }
 
 /* Collapsed roster of withdrawn candidates (Session Detail). A native <details> — no JavaScript, no
    query parameter, no extra page load, and it simply is not rendered when the list is empty. */
 .withdrawn-roster { margin-top: 14px; }
-.withdrawn-roster > summary { font-family: "IBM Plex Mono", monospace; font-size: 12px; letter-spacing: .04em; color: var(--ink-soft); cursor: pointer; padding: 8px 2px; list-style: none; display: flex; align-items: center; gap: 8px; }
+.withdrawn-roster > summary { font-family: "JetBrains Mono", monospace; font-size: 12px; letter-spacing: .04em; color: var(--ink-soft); cursor: pointer; padding: 8px 2px; list-style: none; display: flex; align-items: center; gap: 8px; }
 .withdrawn-roster > summary::-webkit-details-marker { display: none; }
 /* Own marker, so it points the right way in both states without relying on the UA default.
    Was content: "B8", which IBM Plex Mono does not ship — it rendered as a tofu box on a phone.
@@ -668,7 +668,7 @@ footer.roster { margin-top: 28px; background: var(--surface); border: 1px solid 
    and this app has a theme toggle, so every hard-coded light value it ships needs an override
    below or the editor is a white slab in dark mode. */
 .message-editor .editor-tabs { display: flex; gap: 4px; margin-bottom: -1px; }
-.message-editor .editor-tab { font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; padding: 7px 12px; border: 1px solid var(--line-strong); border-bottom-color: transparent; border-radius: 5px 5px 0 0; background: var(--paper); color: var(--ink-soft); cursor: pointer; }
+.message-editor .editor-tab { font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; padding: 7px 12px; border: 1px solid var(--line-strong); border-bottom-color: transparent; border-radius: 5px 5px 0 0; background: var(--paper); color: var(--ink-soft); cursor: pointer; }
 .message-editor .editor-tab.active { background: var(--surface); color: var(--ink); }
 
 /* Exactly one of the two views is present at a time, so the tab is a real mode switch rather than
@@ -677,10 +677,10 @@ footer.roster { margin-top: 28px; background: var(--surface); border: 1px solid 
 .message-editor > textarea { display: none; }
 .message-editor.show-html .editor-visual { display: none; }
 .message-editor.show-html > textarea { display: block; }
-.message-editor > textarea { font-family: "IBM Plex Mono", monospace; font-size: 13px; line-height: 1.5; border-radius: 0 5px 5px 5px; }
+.message-editor > textarea { font-family: "JetBrains Mono", monospace; font-size: 13px; line-height: 1.5; border-radius: 0 5px 5px 5px; }
 
 .message-editor .ql-toolbar.ql-snow { border-color: var(--line-strong); border-radius: 0 5px 0 0; background: var(--paper); }
-.message-editor .ql-container.ql-snow { border-color: var(--line-strong); border-radius: 0 0 5px 5px; background: var(--surface); font-family: "IBM Plex Sans", system-ui, sans-serif; font-size: 14px; }
+.message-editor .ql-container.ql-snow { border-color: var(--line-strong); border-radius: 0 0 5px 5px; background: var(--surface); font-family: "Inter", system-ui, sans-serif; font-size: 14px; }
 .message-editor .ql-editor { min-height: 200px; color: var(--ink); }
 .message-editor .ql-editor.ql-blank::before { color: var(--ink-soft); font-style: normal; }
 /* Quill's own CSS zeroes every block element's margin (quill.snow.css: ".ql-editor p{margin:0}"),
@@ -710,7 +710,7 @@ footer.roster { margin-top: 28px; background: var(--surface); border: 1px solid 
 /* Clickable placeholder chips. They're <button>s for keyboard reach, so the button reset in the
    Buttons section has to be undone at a specificity that beats `.vesm button` (0,1,1) — the same
    trap as .nav-toggle above. */
-.vesm .placeholder-chip { border: none; font-family: "IBM Plex Mono", monospace; font-size: 11.5px; font-weight: 500; padding: 4px 9px; cursor: pointer; }
+.vesm .placeholder-chip { border: none; font-family: "JetBrains Mono", monospace; font-size: 11.5px; font-weight: 500; padding: 4px 9px; cursor: pointer; }
 .vesm .placeholder-chip:hover { background: var(--line); }
 
 /* Quill's Snow skin hard-codes light greys for its toolbar icons and dropdowns. */
@@ -740,7 +740,7 @@ footer.roster { margin-top: 28px; background: var(--surface); border: 1px solid 
 .auth-card h1 { font-size: 20px; margin: 0 0 22px; letter-spacing: -.01em; }
 .auth-card .field { margin-bottom: 16px; }
 .auth-card .btn-primary { width: 100%; }
-.auth-card .auth-divider { display: flex; align-items: center; gap: 10px; margin: 20px 0; color: var(--ink-soft); font-size: 11px; font-family: "IBM Plex Mono", monospace; text-transform: uppercase; letter-spacing: .08em; }
+.auth-card .auth-divider { display: flex; align-items: center; gap: 10px; margin: 20px 0; color: var(--ink-soft); font-size: 11px; font-family: "JetBrains Mono", monospace; text-transform: uppercase; letter-spacing: .08em; }
 .auth-card .auth-divider::before, .auth-card .auth-divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
 .auth-card .btn-secondary { width: 100%; margin-bottom: 8px; }
 /* The base, for the admin forms that report a field problem inline (2026-09-08 — the message
@@ -756,7 +756,7 @@ footer.roster { margin-top: 28px; background: var(--surface); border: 1px solid 
 
 /* Public policy page (e.g. Privacy) */
 .policy h1 { font-size: 24px; margin: 0 0 6px; letter-spacing: -.01em; }
-.policy .policy-updated { font-family: "IBM Plex Mono", monospace; font-size: 11.5px; color: var(--ink-soft); margin: 0 0 28px; }
+.policy .policy-updated { font-family: "JetBrains Mono", monospace; font-size: 11.5px; color: var(--ink-soft); margin: 0 0 28px; }
 .policy h2 { font-size: 15px; font-weight: 600; margin: 28px 0 10px; }
 .policy p { font-size: 14px; line-height: 1.6; margin: 0 0 14px; }
 .policy ul { margin: 0 0 14px; padding-left: 20px; font-size: 14px; line-height: 1.6; }
@@ -798,7 +798,7 @@ footer.roster { margin-top: 28px; background: var(--surface); border: 1px solid 
   /* Two columns: the label from the <th>, then the value. minmax(0,1fr) rather than 1fr so a long
      unbroken value (an email, a URL) shrinks instead of widening the card past the screen. */
   table.cards td { display: grid; grid-template-columns: 38% minmax(0, 1fr); gap: 12px; align-items: start; padding: 7px 14px; border-bottom: none; font-size: 13.5px; overflow-wrap: anywhere; }
-  table.cards td::before { content: attr(data-label); font-family: "IBM Plex Mono", monospace; font-size: 10.5px; letter-spacing: .09em; line-height: 1.7; text-transform: uppercase; color: var(--ink-soft); }
+  table.cards td::before { content: attr(data-label); font-family: "JetBrains Mono", monospace; font-size: 10.5px; letter-spacing: .09em; line-height: 1.7; text-transform: uppercase; color: var(--ink-soft); }
   table.cards tbody tr:last-child td { border-bottom: none; }
   /* Every element child is pinned to the value column. Grid auto-placement would otherwise send the
      *second* child of a cell back to column 1, directly under the label — which is what a two-line
@@ -948,7 +948,7 @@ footer.roster { margin-top: 28px; background: var(--surface); border: 1px solid 
 
 .vesm .totp-uri,
 .vesm .totp-key {
-  font-family: var(--mono, 'IBM Plex Mono', monospace); font-size: 13px; user-select: all;
+  font-family: var(--mono, 'JetBrains Mono', monospace); font-size: 13px; user-select: all;
 }
 .vesm .totp-key { font-size: 15px; letter-spacing: 0.08em; }
 .vesm .totp-verify { margin-top: 12px; }
@@ -958,7 +958,7 @@ footer.roster { margin-top: 28px; background: var(--surface); border: 1px solid 
   display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px 16px;
 }
 .vesm .recovery-codes code {
-  font-family: var(--mono, 'IBM Plex Mono', monospace); font-size: 14px; user-select: all;
+  font-family: var(--mono, 'JetBrains Mono', monospace); font-size: 14px; user-select: all;
 }
 
 .vesm .inline-form { display: inline-block; margin: 0 8px 0 0; }
