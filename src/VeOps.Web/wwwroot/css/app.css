@@ -6,19 +6,22 @@
    still keep the original Bootstrap _Layout.cshtml. */
 
 :root {
-  --panel: #14181A; --panel-2: #1F262A;
+  /* "Front panel" (2026-09-12, see docs/front-panel-design.md): the chassis is warm graphite, not
+     near-black, and amber is the ONE accent — the rule above the bar, the active nav item, the
+     primary button. Status colours are semantic and do not count as accent. */
+  --panel: #2A2E31; --panel-2: #383D41;
   --paper: #F5F6F4; --surface: #FFFFFF;
-  --ink: #1B2023; --ink-soft: #5B6460;
-  --amber: #E8A33D; --amber-dim: #F4D9A8;
+  --ink: #1B2023; --ink-soft: #5F6864; --ink-faint: #8A928E;
+  --amber: #D9952E; --amber-dim: #F6E3C4; --amber-ink: #1B1408;
   --green: #3F8F5F; --green-dim: #CFE6D8;
   --brick: #C24C3F; --brick-dim: #F1D4D0;
   /* Upcoming sessions. Same blue the stats charts use for candidate volume. */
   --blue: #3D6F9E; --blue-dim: #D6E3EF;
-  --line: #D8DBD6; --line-strong: #B8BEB9;
+  --line: #DDE0DB; --line-strong: #BFC5C0; --rule: #CBD0CB;
   --focus: #2E6F8E;
-  --chip-neutral-bg: #E9EBE7;
-  --row-hover: #FBFBF9;
-  --thead-bg: #FAFAF8;
+  --chip-neutral-bg: #E8EAE6;
+  --row-hover: #FAFAF8;
+  --thead-bg: transparent;
   --ghost-hover: #E9EBE7;
   --chip-green-text: #245C3B;
   --chip-amber-text: #7A5313;
@@ -27,18 +30,18 @@
 }
 
 :root[data-theme="dark"] {
-  --panel: #14181A; --panel-2: #262E31;
-  --paper: #101416; --surface: #1B2124;
-  --ink: #EDEFEC; --ink-soft: #94A19B;
-  --amber: #F0B15A; --amber-dim: #4A3A1E;
+  --panel: #1A1E21; --panel-2: #2A3034;
+  --paper: #121517; --surface: #1A1E21;
+  --ink: #ECEEEB; --ink-soft: #9AA49F; --ink-faint: #6E7773;
+  --amber: #E6A63E; --amber-dim: #3E311A; --amber-ink: #1B1408;
   --green: #54B37B; --green-dim: #1E3A2A;
   --brick: #E17262; --brick-dim: #4A241E;
   --blue: #6FA8D6; --blue-dim: #1D3346;
-  --line: #2B3236; --line-strong: #3D454A;
+  --line: #2A3034; --line-strong: #3D454A; --rule: #343B40;
   --focus: #5AA6C9;
-  --chip-neutral-bg: #262E31;
-  --row-hover: #20272A;
-  --thead-bg: #1B2124;
+  --chip-neutral-bg: #262C30;
+  --row-hover: #1F2427;
+  --thead-bg: transparent;
   --ghost-hover: #262E31;
   --chip-green-text: #8FE0AE;
   --chip-amber-text: #F5CE8C;
@@ -47,7 +50,6 @@
   color-scheme: dark;
 }
 
-:root[data-theme="dark"] .flag-banner { color: #F5CE8C; border-color: #5A461F; }
 :root[data-theme="dark"] .menu .disabled { color: #4F585C; }
 :root[data-theme="dark"] .chip-neutral::before { background: #7C8985; }
 
@@ -62,9 +64,12 @@
    cluster (user menu / help / theme toggle) live in a panel that `header.chassis.nav-open` reveals
    below them. The desktop single-row layout is restored at the --bp-md min-width block near the
    bottom of this file — see "Desktop layer". */
-header.chassis { background: var(--panel); color: #EDEFEC; padding: 8px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
-.brand { font-family: "JetBrains Mono", monospace; font-weight: 600; font-size: 13px; letter-spacing: .06em; display: flex; align-items: center; gap: 8px; text-decoration: none; }
-.brand .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px rgba(63, 143, 95, .8); }
+/* The 3px amber rule is the one flourish in the design — a power-LED strip over the panel. */
+header.chassis { background: var(--panel); color: #EDEFEC; border-top: 3px solid var(--amber); padding: 8px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.brand { font-weight: 600; font-size: 14px; letter-spacing: .01em; display: flex; align-items: center; gap: 9px; text-decoration: none; }
+/* An outlined amber square with a filled centre — a front-panel indicator, not a status dot. */
+.brand .dot { width: 14px; height: 14px; border-radius: 3px; border: 2px solid var(--amber); position: relative; }
+.brand .dot::after { content: ""; position: absolute; inset: 3px; background: var(--amber); border-radius: 1px; }
 
 /* Hamburger — mobile only, hidden from --bp-md up. margin-left:auto is what pins it to the right of
    the bar while the brand sits left; on desktop the nav's own flex:1 takes over that job.
@@ -75,7 +80,7 @@ header.chassis { background: var(--panel); color: #EDEFEC; padding: 8px 16px; di
    lost and the hamburger stayed visible on desktop. Same trap as the anchor-button colour note
    further down; any new rule that fights `.vesm button` needs two classes to win. */
 .vesm .nav-toggle { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; padding: 0; background: var(--panel-2); color: #EDEFEC; border: none; border-radius: 5px; cursor: pointer; }
-.vesm .nav-toggle:hover { background: #2A3338; }
+.vesm .nav-toggle:hover { background: #454B50; }
 .nav-toggle .bars, .nav-toggle .bars::before, .nav-toggle .bars::after { display: block; width: 17px; height: 2px; border-radius: 2px; background: currentColor; }
 .nav-toggle .bars { position: relative; }
 .nav-toggle .bars::before, .nav-toggle .bars::after { content: ""; position: absolute; left: 0; }
@@ -90,7 +95,7 @@ nav.chassis-nav a:hover { color: #fff; }
 
 /* Outstanding-work count on a nav link/trigger (see NavBadgeCountService). Only rendered when the
    count is non-zero — an always-visible "0" is noise, so there's no zero-state style. */
-.nav-badge { display: inline-block; min-width: 16px; padding: 1px 5px; margin-left: 5px; border-radius: 99px; background: var(--brick); color: #fff; font-family: "JetBrains Mono", monospace; font-size: 10.5px; font-weight: 600; line-height: 1.5; text-align: center; vertical-align: 1px; }
+.nav-badge { display: inline-block; min-width: 18px; padding: 0 5px; margin-left: 5px; border-radius: 9px; background: var(--brick); color: #fff; font-size: 11px; font-weight: 600; line-height: 18px; text-align: center; vertical-align: 1px; }
 
 /* Grouped nav dropdowns (Applicants / VEs / Settings) — same row-action kebab/menu component as
    everywhere else, restyled so the trigger reads as just another chassis-nav link. */
@@ -114,21 +119,22 @@ nav.chassis-nav a:hover { color: #fff; }
 .nav-group .menu a.item.active { background: var(--panel-2); color: #fff; }
 .nav-group .menu hr, .user-menu .menu hr, .help-menu .menu hr, .alert-menu .menu hr { border-top-color: #333B40; }
 
-.who { font-family: "JetBrains Mono", monospace; font-size: 11.5px; color: #9AA39D; display: none; flex-basis: 100%; flex-wrap: wrap; align-items: center; gap: 8px; padding-bottom: 6px; }
+.who { font-size: 13px; color: #9AA39D; display: none; flex-basis: 100%; flex-wrap: wrap; align-items: center; gap: 8px; padding-bottom: 6px; }
 header.chassis.nav-open .who { display: flex; }
 
 .theme-toggle { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; background: var(--panel-2); color: #EDEFEC; border: none; border-radius: 99px; cursor: pointer; padding: 0; }
-.theme-toggle:hover { background: #2A3338; }
+.theme-toggle:hover { background: #454B50; }
 
 main.vesm-main { max-width: 1160px; margin: 0 auto; padding: 20px 16px 56px; }
 main.vesm-main.wide { max-width: 1280px; padding: 20px 16px 56px; }
 
-.vesm-footer { max-width: 1160px; margin: 0 auto; padding: 0 16px 24px; font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: .06em; color: var(--ink-soft); display: flex; gap: 14px; flex-wrap: wrap; }
+.vesm-footer { max-width: 1160px; margin: 0 auto; padding: 0 16px 24px; font-size: 12.5px; color: var(--ink-soft); display: flex; gap: 14px; flex-wrap: wrap; }
 .vesm-footer a { color: inherit; }
 
 .page-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
-h1 { font-size: 24px; margin: 0 0 4px; letter-spacing: -.01em; }
-.eyebrow { font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-soft); margin: 0; }
+h1 { font-size: 24px; margin: 0 0 4px; letter-spacing: -.015em; line-height: 1.15; text-wrap: balance; }
+/* Sentence case, no tracking: a label is a small line of text, not a stencil on a panel. */
+.eyebrow { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); margin: 0; }
 /* Breadcrumb back to a page's parent list — here `.crumb` IS the <a> (_ParentCrumb.cshtml), unlike
    the multi-segment `<div class="crumb">` below, so scoping to `a.crumb` is deliberate, not just
    belt-and-braces: two classes beat `.vesm a { color: inherit }` (class-plus-element, 0,1,1) either
@@ -138,13 +144,17 @@ h1 { font-size: 24px; margin: 0 0 4px; letter-spacing: -.01em; }
 .vesm a.crumb { display: inline-flex; align-items: center; gap: 3px; color: var(--ink-soft); text-decoration: none; }
 .vesm a.crumb:hover { color: var(--ink); text-decoration: underline; }
 .vesm .crumb .bi { font-size: 12px; }
-.filters { display: flex; gap: 8px; flex-wrap: wrap; }
+/* Filter bar: the status choices are tabs on a rule; anything else in the bar (search, team
+   picker, a checkbox toggle) is a plain bordered control lifted 6px so it sits above the rule. */
+.filters { display: flex; gap: 4px 2px; flex-wrap: wrap; align-items: center; border-bottom: 1px solid var(--line); }
+.filters > :not(.filter-pill) { margin-bottom: 6px; }
+.filters > .filter-pill + :not(.filter-pill) { margin-left: 8px; }
 /* Search box in a filters bar (issue #135). Two classes on the input because `.vesm input` is
    class-plus-element (0,1,1) and beats a bare `.ve-search input`. 16px is not cosmetic: iOS Safari
    zooms on focus below that and never zooms back. */
-.ve-search { display: inline-flex; align-items: center; gap: 6px; padding: 0 14px; border: 1px solid var(--line-strong); border-radius: 99px; background: var(--surface); }
+.ve-search { display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border: 1px solid var(--line-strong); border-radius: 5px; background: var(--surface); }
 .ve-search .bi { color: var(--ink-soft); font-size: 12px; }
-.vesm .ve-search input { border: none; background: none; padding: 6px 0; font-family: "JetBrains Mono", monospace; font-size: 16px; color: var(--ink); width: 190px; }
+.vesm .ve-search input { border: none; background: none; padding: 6px 0; font-family: inherit; font-size: 16px; color: var(--ink); width: 190px; }
 .vesm .ve-search input:focus { outline: none; }
 .ve-search:focus-within { border-color: var(--panel); }
 /* Label text for screen readers only — the magnifier icon carries no meaning on its own. */
@@ -154,7 +164,7 @@ h1 { font-size: 24px; margin: 0 0 4px; letter-spacing: -.01em; }
    inheriting it stretched this pill across a third of the bar with the checkbox stranded in the
    middle and the label shoved to the far right. Matches .filter-pill's metrics so the row of
    controls lines up; slightly less vertical padding because a checkbox is taller than 12px text. */
-.toggle-pill { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border: 1px solid var(--line-strong); border-radius: 99px; background: var(--surface); font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--ink-soft); cursor: pointer; }
+.toggle-pill { display: inline-flex; align-items: center; gap: 8px; padding: 7px 10px; border: 1px solid var(--line-strong); border-radius: 5px; background: var(--surface); font-size: 13.5px; color: var(--ink-soft); cursor: pointer; }
 .toggle-pill:hover { border-color: var(--panel); }
 /* Two classes, not one: `.vesm input` is class-plus-element (0,1,1) and would win. Same trap the
    .ve-search block above documents. */
@@ -182,8 +192,9 @@ h1 { font-size: 24px; margin: 0 0 4px; letter-spacing: -.01em; }
    of subscriptions, where a per-row id/for pair would be pure boilerplate. */
 .switch-row { display: flex; align-items: center; gap: 10px; cursor: pointer; }
 
-.filters a.filter-pill { font-family: "JetBrains Mono", monospace; font-size: 12px; padding: 9px 14px; border-radius: 99px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-soft); cursor: pointer; text-decoration: none; display: inline-block; }
-.filters a.filter-pill.active { background: var(--panel); color: #fff; border-color: var(--panel); }
+.filters a.filter-pill { font-size: 14px; padding: 8px 12px 10px; margin-bottom: -1px; border-bottom: 2px solid transparent; color: var(--ink-soft); cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 7px; }
+.filters a.filter-pill:hover { color: var(--ink); }
+.filters a.filter-pill.active { color: var(--ink); border-bottom-color: var(--ink); font-weight: 500; }
 
 /* Outstanding-work count inside a team-picker pill (Applicant Status / Unmatched Payments). Unlike
    .nav-badge this always renders, including "0" — comparing teams at a glance is the whole point —
@@ -194,9 +205,10 @@ h1 { font-size: 24px; margin: 0 0 4px; letter-spacing: -.01em; }
    to `.vesm a`/`.vesm button` on colour, which app.css has been bitten by twice. */
 /* Also on a section heading (Applicant Status' "Pending FCC grant"), where the count says how many
    rows the table below holds. Same two-classes-deep rule as above. */
-.filters a.filter-pill .pill-count,
 .menu label.item .pill-count,
 .page-head h2 .pill-count { margin-left: 7px; padding: 1px 6px; border-radius: 99px; background: color-mix(in srgb, currentColor 14%, transparent); font-size: 11px; font-weight: 600; }
+/* On a tab the count is a quiet second word, not a badge. */
+.filters a.filter-pill .pill-count { color: var(--ink-faint); font-size: 13px; font-weight: 400; }
 .filters a.filter-pill .pill-count.zero,
 .menu label.item .pill-count.zero,
 .page-head h2 .pill-count.zero { opacity: .45; font-weight: 400; }
@@ -206,21 +218,25 @@ h1 { font-size: 24px; margin: 0 0 4px; letter-spacing: -.01em; }
    the ghost-icon look the kebab has inside a table row, and left-aligned since the trigger sits at
    the start of the row rather than a table row's right edge. */
 .filter-dropdown { position: relative; display: inline-flex; }
-.filter-dropdown > .kebab { font-family: "JetBrains Mono", monospace; font-size: 12px; padding: 9px 14px; border-radius: 99px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-soft); }
-.filter-dropdown > .kebab.active { background: var(--panel); color: #fff; border-color: var(--panel); }
+.filter-dropdown > .kebab { font-size: 13.5px; padding: 7px 10px; border-radius: 5px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); }
+.filter-dropdown > .kebab.active { border-color: var(--ink); }
 .filter-dropdown > .menu { left: 0; right: auto; top: 44px; width: 240px; }
 .menu label.item { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 5px; cursor: pointer; font-size: 14px; color: var(--ink); }
 .menu label.item:hover { background: var(--paper); }
 .menu label.item input[type="checkbox"], .menu label.item input[type="radio"] { width: auto; min-width: 18px; min-height: 18px; margin: 0; }
-.filter-select { font-family: "JetBrains Mono", monospace; font-size: 16px; padding: 9px 14px; border-radius: 99px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink-soft); cursor: pointer; max-width: 100%; }
+.filter-select { font-family: inherit; font-size: 16px; padding: 7px 10px; border-radius: 5px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); cursor: pointer; max-width: 100%; }
 
 .pagination { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; flex-wrap: wrap; gap: 12px; }
-.pagination-summary { font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--ink-soft); }
+.pagination-summary { font-size: 13px; color: var(--ink-soft); }
 .pagination-controls { align-items: center; }
-.pagination-page { font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--ink-soft); padding: 7px 4px; }
+.pagination-page { font-size: 13px; color: var(--ink-soft); padding: 7px 4px; }
 
-table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; overflow: visible; }
-thead th { text-align: left; font-family: "JetBrains Mono", monospace; font-size: 10.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-soft); padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--thead-bg); }
+/* Ruled rows on the page itself — no card, no tinted header band. The first and last columns
+   sit flush with the heading above so the table is part of the page, not a widget on it. */
+table { width: 100%; border-collapse: collapse; background: transparent; overflow: visible; }
+thead th { text-align: left; font-size: 12.5px; font-weight: 600; color: var(--ink-soft); padding: 6px 12px 10px; border-bottom: 1px solid var(--rule); background: var(--thead-bg); }
+thead th:first-child, tbody td:first-child { padding-left: 0; }
+thead th:last-child, tbody td:last-child { padding-right: 0; }
 
 /* Click-to-sort headers (app.js's initSortableTable for client-sorted tables, server-rendered
    <a> links on the paged Sessions list — both produce the same th.sortable + .sort-arrow shape so
@@ -237,8 +253,7 @@ thead th[aria-sort="ascending"] .sort-arrow, thead th[aria-sort="descending"] .s
 thead th[aria-sort="ascending"] .sort-arrow::after { content: "\f235"; }
 thead th[aria-sort="descending"] .sort-arrow::after { content: "\f229"; }
 
-tbody td { padding: 14px 16px; border-bottom: 1px solid var(--line); font-size: 14px; vertical-align: middle; }
-tbody tr:last-child td { border-bottom: none; }
+tbody td { padding: 13px 12px; border-bottom: 1px solid var(--line); font-size: 14px; vertical-align: middle; }
 tbody tr:hover { background: var(--row-hover); }
 tbody tr.row-past { background: var(--paper); }
 tbody tr.row-past:hover { background: var(--row-hover); }
@@ -247,9 +262,10 @@ tbody tr.row-past:hover { background: var(--row-hover); }
    not to be told where it is. Declared after :hover so hovering it does not wash the marker out, and
    in both mobile and desktop layers because table.cards restacks the row into a card. */
 tbody tr.row-highlight, tbody tr.row-highlight:hover { background: var(--amber-dim); box-shadow: inset 3px 0 0 var(--amber); }
-.session-title { font-weight: 600; }
-.session-sub { font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
-.count { font-family: "JetBrains Mono", monospace; }
+.session-title { font-weight: 500; }
+.session-sub { font-size: 13px; color: var(--ink-soft); margin-top: 2px; }
+/* Mono is for data only now: identifiers, call signs, amounts, counts, times. */
+.count { font-family: "JetBrains Mono", monospace; font-variant-numeric: tabular-nums; }
 
 /* Two treatments that stack, not alternatives (see docs/responsive-ui.md):
 
@@ -282,9 +298,9 @@ tbody tr.row-highlight, tbody tr.row-highlight:hover { background: var(--amber-d
    Applied to a <span> inside the cell, never the <td> itself — display:inline-block on a table cell
    pulls it out of the table formatting context and visibly breaks row alignment. */
 .count .days-warning { display: inline-block; min-width: 22px; padding: 1px 7px; border-radius: 99px; font-weight: 600; text-align: center; line-height: 1.5; background: var(--amber-dim); color: var(--ink); }
-.mono { font-family: "JetBrains Mono", monospace; font-size: 12.5px; }
+.mono { font-family: "JetBrains Mono", monospace; font-size: 13px; font-variant-numeric: tabular-nums; }
 
-.chip { display: inline-flex; align-items: center; gap: 6px; font-family: "JetBrains Mono", monospace; font-size: 11.5px; font-weight: 500; padding: 4px 9px; border-radius: 99px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 500; padding: 3px 9px 3px 7px; border-radius: 99px; white-space: nowrap; }
 .chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; }
 .chip-green { background: var(--green-dim); color: var(--chip-green-text); }
 .chip-green::before { background: var(--green); }
@@ -304,7 +320,7 @@ tbody tr.row-highlight, tbody tr.row-highlight:hover { background: var(--amber-d
 .chip-blue { background: var(--blue-dim); color: var(--chip-blue-text); }
 .chip-blue::before { background: var(--blue); }
 .flag { color: var(--amber); font-size: 14px; }
-.view-link { font-family: "JetBrains Mono", monospace; font-size: 12px; font-weight: 600; color: var(--focus); text-decoration: none; }
+.view-link { font-size: 13.5px; font-weight: 500; color: var(--focus); text-decoration: none; }
 .view-link:hover { text-decoration: underline; }
 
 /* Whole-row affordance for tr[data-clickable-row] (app.js). The row-actions cell keeps the default
@@ -319,9 +335,11 @@ tr[data-clickable-row] .row-actions { cursor: default; }
    `display: inline`, sitting next to an identically-classed <button> that had all four. Measured in
    a browser rather than reasoned about, because this is the `.vesm button` specificity trap
    CLAUDE.md records and it had already been misread three times. */
-.vesm button, .vesm .btn, .vesm .btn-primary, .vesm .btn-secondary, .vesm .btn-danger { font-family: inherit; font-size: 14px; font-weight: 600; border-radius: 5px; padding: 11px 16px; cursor: pointer; border: 1px solid transparent; white-space: nowrap; display: inline-block; text-decoration: none; }
-.btn-primary { background: var(--panel); color: #fff; }
-.btn-primary:hover { background: var(--panel-2); }
+.vesm button, .vesm .btn, .vesm .btn-primary, .vesm .btn-secondary, .vesm .btn-danger { font-family: inherit; font-size: 14px; font-weight: 600; border-radius: 5px; padding: 10px 14px; cursor: pointer; border: 1px solid transparent; white-space: nowrap; display: inline-block; text-decoration: none; }
+/* Amber, the accent, on the one action a screen leads with. Dark text on it in both themes —
+   amber is a light colour whichever ground it sits on. */
+.btn-primary { background: var(--amber); color: var(--amber-ink); border-color: var(--amber); }
+.btn-primary:hover { filter: brightness(.94); }
 .btn-secondary { background: var(--surface); color: var(--ink); border-color: var(--line-strong); }
 /* Two classes, and that is load-bearing: `.vesm button` above sets the `border` SHORTHAND to
    transparent at (0,1,1), which beats a bare `.btn-secondary` setting only `border-color` at
@@ -345,7 +363,7 @@ tr[data-clickable-row] .row-actions { cursor: default; }
    to action on the only public page was unreadable (found on the live beta, 2026-08-04).
    `.btn-secondary` and friends happened to survive because their colour is close to the inherited
    ink — restated here anyway so the next anchor-button isn't a coin flip. */
-.vesm a.btn-primary { color: #fff; }
+.vesm a.btn-primary { color: var(--amber-ink); }
 .vesm a.btn-secondary { color: var(--ink); }
 .vesm a.btn-danger { color: var(--brick); }
 
@@ -354,13 +372,13 @@ tr[data-clickable-row] .row-actions { cursor: default; }
    element for as long as the pointer is anywhere inside its box, children included, so a rule on the
    container underlines the plain text too the moment the pointer crosses it — which is exactly what
    made the whole line look clickable (issue #465). Only the <a> gets the hover treatment. */
-.crumb { font-family: "JetBrains Mono", monospace; font-size: 11.5px; color: var(--ink-soft); margin-bottom: 14px; }
+.crumb { font-size: 13px; color: var(--ink-soft); margin-bottom: 14px; }
 .crumb a { color: var(--focus); text-decoration: none; }
 .crumb a:hover { text-decoration: underline; }
 
 /* Session header panel */
-.session-panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px 16px; display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 22px; }
-.session-panel h1 { font-size: 21px; margin: 0 0 6px; letter-spacing: -.01em; }
+.session-panel { border-bottom: 1px solid var(--line); padding: 0 0 20px; display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 22px; }
+.session-panel h1 { font-size: 24px; margin: 0 0 6px; }
 /* The left half of the panel must CLAIM the width, not be sized by its contents.
    .session-panel is a flex row, and this child holds the heading plus .meta-grid. While .meta-grid
    was a wrapped flex row its max-content width was enormous, so the item filled the panel by
@@ -374,22 +392,23 @@ tr[data-clickable-row] .row-actions { cursor: default; }
 /* A flex row of key/value pairs on desktop; a two-up grid on a phone, so the labels line up in
    columns instead of reflowing into a ragged single file. */
 .meta-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 18px; margin-top: 14px; }
-.meta-item { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+/* Label beside value, like a definition list, rather than a caption over it. */
+.meta-item { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .meta-item .v { overflow-wrap: anywhere; }
-.meta-item .k { font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-soft); }
+.meta-item .k { flex: 0 0 118px; font-size: 13px; color: var(--ink-soft); }
 /* A row of values must share one line, whatever each carries. Some of these values are text and
    some are text plus a chip and a button, and a button is taller than a line of text — so without a
    floor and a common centre, the money figure beside an Edit button sat lower than the money figure
    next to it. 30px is .icon-action's own height (14px glyph + 7px padding each side + border),
    so a text-only value reserves the same band and every value in the row lines up. Change one and
    change the other. */
-.meta-item .v { font-size: 13.5px; font-weight: 500; min-height: 30px; display: flex; align-items: center; flex-wrap: wrap; }
+.meta-item .v { font-size: 14px; font-weight: 500; min-height: 30px; display: flex; align-items: center; flex-wrap: wrap; gap: 0 6px; }
 .meta-item .v a { color: var(--focus); }
 /* Row-wrapped on a phone so the actions sit under the session meta rather than in a narrow
    right-hand column; a right-aligned stack again from --bp-md. */
 .panel-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .panel-actions form { margin: 0; }
-.flag-banner { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; background: var(--amber-dim); color: #7A5313; border: 1px solid #E4C486; border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 20px; }
+.flag-banner { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; background: var(--amber-dim); color: var(--chip-amber-text); border-left: 3px solid var(--amber); border-radius: 0 5px 5px 0; padding: 10px 14px; font-size: 13.5px; margin-bottom: 20px; }
 .flag-banner b { font-weight: 600; }
 .flag-banner form { margin-left: auto; }
 
@@ -424,8 +443,8 @@ tr[data-clickable-row] .row-actions { cursor: default; }
    or three of these stay readable on a phone. */
 .stat-row { display: flex; flex-wrap: wrap; gap: 28px; margin: 4px 0 18px; }
 .stat { display: flex; flex-direction: column; gap: 2px; }
-.stat-value { font-size: 26px; font-weight: 600; line-height: 1; }
-.stat-label { font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); }
+.stat-value { font-family: "JetBrains Mono", monospace; font-size: 26px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
+.stat-label { font-size: 12.5px; color: var(--ink-soft); }
 
 /* The "Add a VE" panel on the directory. Collapsed by default: it is the exception (a prospect who
    has never worked a session), and everyone else arrives through ingestion — so it must not read as
@@ -505,7 +524,7 @@ tr[data-clickable-row] .row-actions { cursor: default; }
 /* Candidate table specifics */
 .cand-name { font-weight: 600; }
 .cand-name .no-show { font-weight: 400; color: var(--ink-soft); font-style: italic; }
-.id-cell .frn { color: var(--ink-soft); font-size: 11.5px; margin-top: 2px; }
+.id-cell .frn { color: var(--ink-soft); font-size: 12.5px; margin-top: 2px; }
 
 .meter { display: inline-flex; gap: 3px; padding: 5px; background: var(--panel); border-radius: 5px; vertical-align: middle; }
 .seg { width: 11px; height: 16px; border-radius: 2px; background: #2A3236; }
@@ -543,14 +562,14 @@ tr[data-clickable-row] .row-actions { cursor: default; }
 /* Non-interactive label at the top of a menu (the user menu's role + team scope). Deliberately sets
    no colour here: the chassis menu is dark, so it inherits .who's muted grey. The desktop layer
    recolours it for the light popover, where that grey is too faint against white. */
-.menu-head { padding: 8px 10px 4px; font-size: 11.5px; letter-spacing: .04em; }
+.menu-head { padding: 8px 10px 4px; font-size: 12px; }
 
 /* Help menu + user menu (chassis nav) — both reuse the row-actions kebab/menu component above,
    restyled to sit readably on the chassis's permanently-dark background rather than the light
    content area. */
 .help-menu, .user-menu, .alert-menu { position: relative; display: inline-flex; }
-.help-menu .kebab, .user-menu .kebab, .alert-menu .kebab { background: var(--panel-2); color: #EDEFEC; border-radius: 99px; padding: 6px 12px; font-family: "JetBrains Mono", monospace; font-size: 11.5px; display: inline-flex; align-items: center; gap: 6px; }
-.help-menu .kebab:hover, .user-menu .kebab:hover, .alert-menu .kebab:hover { background: #2A3338; border-color: transparent; }
+.help-menu .kebab, .user-menu .kebab, .alert-menu .kebab { background: transparent; color: #C9D0CC; border-radius: 5px; padding: 6px 10px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; }
+.help-menu .kebab:hover, .user-menu .kebab:hover, .alert-menu .kebab:hover { background: var(--panel-2); color: #EDEFEC; border-color: transparent; }
 
 /* Alert bell (#339). The trigger is the same chassis pill as its neighbours; what is different is
    the menu, whose items are three stacked lines rather than one label — .menu a.item is `all: unset`
@@ -562,11 +581,11 @@ tr[data-clickable-row] .row-actions { cursor: default; }
 .alert-menu a.alert-item { padding: 9px 10px; }
 .alert-menu a.alert-item .alert-item-title { display: block; font-weight: 600; font-size: 13px; }
 .alert-menu a.alert-item .alert-item-detail { display: block; font-size: 12px; line-height: 1.45; margin-top: 2px; opacity: .85; }
-.alert-menu a.alert-item .alert-item-meta { display: block; font-family: "JetBrains Mono", monospace; font-size: 10.5px; letter-spacing: .03em; margin-top: 4px; opacity: .7; }
+.alert-menu a.alert-item .alert-item-meta { display: block; font-size: 11.5px; margin-top: 4px; opacity: .7; }
 
 footer.roster { margin-top: 28px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
 .roster-list { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
-.ve-chip { font-family: "JetBrains Mono", monospace; font-size: 12px; background: var(--paper); border: 1px solid var(--line); padding: 6px 12px; border-radius: 99px; display: inline-flex; align-items: center; gap: 8px; }
+.ve-chip { font-size: 13px; background: transparent; border: 1px solid var(--line-strong); padding: 4px 11px; border-radius: 99px; display: inline-flex; align-items: center; gap: 8px; }
 /* Session-relative eligibility markers (issue #107). Colour alone is not the signal — the two use
    different glyphs as well, so they stay distinguishable to a colour-blind reader and in a
    screenshot. Bootstrap Icons rather than a Unicode symbol: a bare character renders only if the
@@ -601,14 +620,14 @@ footer.roster { margin-top: 28px; background: var(--surface); border: 1px solid 
    therefore 16px on mobile and drops to the design's 14px at --bp-md, where no such behaviour
    exists. Same reason .filter-select and .menu-input below are sized the way they are. */
 .field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.field label { font-family: "JetBrains Mono", monospace; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-soft); }
-.field input, .field select, .field textarea { font-family: "JetBrains Mono", monospace; font-size: 16px; padding: 10px; max-width: 100%; border: 1px solid var(--line-strong); border-radius: 5px; background: var(--surface); color: var(--ink); }
+.field label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
+.field input, .field select, .field textarea { font-family: inherit; font-size: 16px; padding: 10px; max-width: 100%; border: 1px solid var(--line-strong); border-radius: 5px; background: var(--surface); color: var(--ink); }
 .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--focus); }
 
-/* A checkbox with its label beside it, rather than the stacked uppercase-caption shape .field gives
+/* A checkbox with its label beside it, rather than the stacked caption shape .field gives
    every other input. Both child rules have to out-specify `.field label` and `.field input` above
    (each 0,1,1), which is why they are written two classes deep -- a bare `.field-check label` would
-   lose on font-size and the label would render as an uppercase mono caption. Same specificity trap
+   lose on font-size and the label would render as a muted caption. Same specificity trap
    as `.vesm a` / `.vesm button`, which app.css has been bitten by twice. */
 .field.field-check { flex-direction: row; align-items: flex-start; gap: 9px; flex-wrap: wrap; }
 .field.field-check label { display: flex; align-items: center; gap: 9px; font-family: inherit; font-size: 14px; text-transform: none; letter-spacing: normal; color: var(--ink); cursor: pointer; }
@@ -620,7 +639,7 @@ footer.roster { margin-top: 28px; background: var(--surface); border: 1px solid 
 /* Controls inside a dropdown .menu (the Sessions date-range preset/custom-range inputs). Replaces
    the repeated inline style="" those carried, which no media query could reach to fix the iOS
    zoom above. */
-.menu-input { width: 100%; font-family: "JetBrains Mono", monospace; font-size: 16px; padding: 8px; border: 1px solid var(--line-strong); border-radius: 5px; background: var(--surface); color: var(--ink); }
+.menu-input { width: 100%; font-family: inherit; font-size: 16px; padding: 8px; border: 1px solid var(--line-strong); border-radius: 5px; background: var(--surface); color: var(--ink); }
 .menu-input + .menu-input { margin-top: 6px; }
 
 /* Icon-only row actions (Teams list: settings + maintenance). currentColor means both themes work
@@ -635,7 +654,7 @@ footer.roster { margin-top: 28px; background: var(--surface); border: 1px solid 
 /* Collapsed roster of withdrawn candidates (Session Detail). A native <details> — no JavaScript, no
    query parameter, no extra page load, and it simply is not rendered when the list is empty. */
 .withdrawn-roster { margin-top: 14px; }
-.withdrawn-roster > summary { font-family: "JetBrains Mono", monospace; font-size: 12px; letter-spacing: .04em; color: var(--ink-soft); cursor: pointer; padding: 8px 2px; list-style: none; display: flex; align-items: center; gap: 8px; }
+.withdrawn-roster > summary { font-size: 13px; color: var(--ink-soft); cursor: pointer; padding: 8px 2px; list-style: none; display: flex; align-items: center; gap: 8px; }
 .withdrawn-roster > summary::-webkit-details-marker { display: none; }
 /* Own marker, so it points the right way in both states without relying on the UA default.
    Was content: "B8", which IBM Plex Mono does not ship — it rendered as a tofu box on a phone.
@@ -668,7 +687,7 @@ footer.roster { margin-top: 28px; background: var(--surface); border: 1px solid 
    and this app has a theme toggle, so every hard-coded light value it ships needs an override
    below or the editor is a white slab in dark mode. */
 .message-editor .editor-tabs { display: flex; gap: 4px; margin-bottom: -1px; }
-.message-editor .editor-tab { font-family: "JetBrains Mono", monospace; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; padding: 7px 12px; border: 1px solid var(--line-strong); border-bottom-color: transparent; border-radius: 5px 5px 0 0; background: var(--paper); color: var(--ink-soft); cursor: pointer; }
+.message-editor .editor-tab { font-size: 12.5px; font-weight: 600; padding: 7px 12px; border: 1px solid var(--line-strong); border-bottom-color: transparent; border-radius: 5px 5px 0 0; background: var(--paper); color: var(--ink-soft); cursor: pointer; }
 .message-editor .editor-tab.active { background: var(--surface); color: var(--ink); }
 
 /* Exactly one of the two views is present at a time, so the tab is a real mode switch rather than
@@ -710,7 +729,7 @@ footer.roster { margin-top: 28px; background: var(--surface); border: 1px solid 
 /* Clickable placeholder chips. They're <button>s for keyboard reach, so the button reset in the
    Buttons section has to be undone at a specificity that beats `.vesm button` (0,1,1) — the same
    trap as .nav-toggle above. */
-.vesm .placeholder-chip { border: none; font-family: "JetBrains Mono", monospace; font-size: 11.5px; font-weight: 500; padding: 4px 9px; cursor: pointer; }
+.vesm .placeholder-chip { border: none; font-family: "JetBrains Mono", monospace; font-size: 12px; font-weight: 500; padding: 3px 9px; cursor: pointer; }
 .vesm .placeholder-chip:hover { background: var(--line); }
 
 /* Quill's Snow skin hard-codes light greys for its toolbar icons and dropdowns. */
@@ -722,7 +741,7 @@ footer.roster { margin-top: 28px; background: var(--surface); border: 1px solid 
 :root[data-theme="dark"] .message-editor .ql-snow.ql-toolbar button:hover .ql-fill { fill: var(--ink); }
 :root[data-theme="dark"] .message-editor .ql-snow a { color: var(--focus); }
 
-.vesm-alert { border-radius: 8px; padding: 10px 16px; font-size: 13px; margin-bottom: 20px; }
+.vesm-alert { border-radius: 6px; padding: 10px 16px; font-size: 13px; margin-bottom: 20px; }
 .vesm-alert.success { background: var(--green-dim); color: var(--chip-green-text); border: 1px solid var(--green); }
 .vesm-alert.error { background: var(--brick-dim); color: var(--chip-brick-text); border: 1px solid var(--brick); }
 
@@ -740,7 +759,7 @@ footer.roster { margin-top: 28px; background: var(--surface); border: 1px solid 
 .auth-card h1 { font-size: 20px; margin: 0 0 22px; letter-spacing: -.01em; }
 .auth-card .field { margin-bottom: 16px; }
 .auth-card .btn-primary { width: 100%; }
-.auth-card .auth-divider { display: flex; align-items: center; gap: 10px; margin: 20px 0; color: var(--ink-soft); font-size: 11px; font-family: "JetBrains Mono", monospace; text-transform: uppercase; letter-spacing: .08em; }
+.auth-card .auth-divider { display: flex; align-items: center; gap: 10px; margin: 20px 0; color: var(--ink-soft); font-size: 12.5px; }
 .auth-card .auth-divider::before, .auth-card .auth-divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
 .auth-card .btn-secondary { width: 100%; margin-bottom: 8px; }
 /* The base, for the admin forms that report a field problem inline (2026-09-08 — the message
@@ -756,7 +775,7 @@ footer.roster { margin-top: 28px; background: var(--surface); border: 1px solid 
 
 /* Public policy page (e.g. Privacy) */
 .policy h1 { font-size: 24px; margin: 0 0 6px; letter-spacing: -.01em; }
-.policy .policy-updated { font-family: "JetBrains Mono", monospace; font-size: 11.5px; color: var(--ink-soft); margin: 0 0 28px; }
+.policy .policy-updated { font-size: 13px; color: var(--ink-soft); margin: 0 0 28px; }
 .policy h2 { font-size: 15px; font-weight: 600; margin: 28px 0 10px; }
 .policy p { font-size: 14px; line-height: 1.6; margin: 0 0 14px; }
 .policy ul { margin: 0 0 14px; padding-left: 20px; font-size: 14px; line-height: 1.6; }
@@ -797,8 +816,8 @@ footer.roster { margin-top: 28px; background: var(--surface); border: 1px solid 
 
   /* Two columns: the label from the <th>, then the value. minmax(0,1fr) rather than 1fr so a long
      unbroken value (an email, a URL) shrinks instead of widening the card past the screen. */
-  table.cards td { display: grid; grid-template-columns: 38% minmax(0, 1fr); gap: 12px; align-items: start; padding: 7px 14px; border-bottom: none; font-size: 13.5px; overflow-wrap: anywhere; }
-  table.cards td::before { content: attr(data-label); font-family: "JetBrains Mono", monospace; font-size: 10.5px; letter-spacing: .09em; line-height: 1.7; text-transform: uppercase; color: var(--ink-soft); }
+  table.cards td { display: grid; grid-template-columns: 38% minmax(0, 1fr); gap: 12px; align-items: start; padding: 7px 14px; border-bottom: none; font-size: 14px; overflow-wrap: anywhere; }
+  table.cards td::before { content: attr(data-label); font-size: 12.5px; font-weight: 600; line-height: 1.5; color: var(--ink-soft); }
   table.cards tbody tr:last-child td { border-bottom: none; }
   /* Every element child is pinned to the value column. Grid auto-placement would otherwise send the
      *second* child of a cell back to column 1, directly under the label — which is what a two-line
@@ -847,23 +866,29 @@ footer.roster { margin-top: 28px; background: var(--surface); border: 1px solid 
 
 /* ---- 2. Desktop layer (the original design, from the breakpoint up) ------------------------ */
 @media (min-width: 768px) {
-  header.chassis { flex-wrap: nowrap; gap: 28px; height: 56px; padding: 0 28px; }
+  header.chassis { flex-wrap: nowrap; gap: 20px; height: 49px; padding: 0 28px; }
   .vesm .nav-toggle { display: none; }
 
-  nav.chassis-nav { display: flex; flex-basis: auto; flex-direction: row; align-items: center; gap: 4px; flex: 1; padding-bottom: 0; }
-  nav.chassis-nav a { font-size: 13px; padding: 8px 12px; }
+  /* Links run the bar's full height so the active item's amber underline sits on its bottom
+     edge — the tab treatment, not the pill highlight the collapsed mobile panel keeps. */
+  nav.chassis-nav { display: flex; flex-basis: auto; flex-direction: row; align-items: stretch; gap: 2px; flex: 1; padding-bottom: 0; align-self: stretch; }
+  nav.chassis-nav a { font-size: 14px; padding: 0 11px; display: inline-flex; align-items: center; border-radius: 0; border-bottom: 2px solid transparent; }
+  nav.chassis-nav a.active { background: transparent; border-bottom-color: var(--amber); }
+  nav.chassis-nav a:hover { background: transparent; }
 
   .nav-group, .user-menu, .help-menu, .alert-menu { flex-basis: auto; display: inline-flex; flex-direction: row; align-items: center; }
-  .nav-group { position: relative; }
-  .nav-group > .kebab { flex: none; font-size: 13px; padding: 8px 12px; }
+  .nav-group { position: relative; align-items: stretch; }
+  .nav-group > .kebab { flex: none; font-size: 14px; padding: 0 11px; border-radius: 0; border-bottom: 2px solid transparent; display: inline-flex; align-items: center; gap: 5px; }
+  .nav-group > .kebab.active { background: transparent; border-bottom-color: var(--amber); }
+  .nav-group > .kebab:hover { background: transparent; }
 
   /* See the .ve-search block above: 16px is a mobile-only requirement, and keeping it here made the
      search box taller than the filter pills either side of it. */
-  .vesm .ve-search input { font-size: 12px; padding: 9px 0; }
+  .vesm .ve-search input { font-size: 13.5px; padding: 7px 0; }
 
   /* Back to floating dropdowns — undoing the inline/accordion form the mobile panel needs. */
   .nav-group .menu, .user-menu .menu, .help-menu .menu, .alert-menu .menu { position: absolute; width: 260px; margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 10px 28px rgba(20, 24, 26, .14); padding: 6px; }
-  .nav-group .menu { top: 38px; left: 0; right: auto; }
+  .nav-group .menu { top: 46px; left: 0; right: auto; }
   .user-menu .menu, .help-menu .menu, .alert-menu .menu { top: 38px; right: 0; left: auto; }
   .nav-group .menu .item, .user-menu .menu .item, .help-menu .menu .item, .alert-menu .menu .item { color: var(--ink); padding: 8px 10px; }
   .nav-group .menu .item:hover, .user-menu .menu .item:hover, .help-menu .menu .item:hover, .alert-menu .menu .item:hover { background: var(--paper); }
@@ -879,7 +904,7 @@ footer.roster { margin-top: 28px; background: var(--surface); border: 1px solid 
   main.vesm-main.wide { padding: 32px 28px 100px; }
   .vesm-footer { padding: 0 28px 32px; }
 
-  .vesm button, .vesm .btn, .vesm .btn-primary, .vesm .btn-secondary, .vesm .btn-danger { font-size: 13px; padding: 9px 16px; }
+  .vesm button, .vesm .btn, .vesm .btn-primary, .vesm .btn-secondary, .vesm .btn-danger { font-size: 13.5px; padding: 8px 14px; }
   .btn-sm { padding: 6px 11px; font-size: 12px; }
   .kebab { padding: 6px 9px; }
 
@@ -890,12 +915,14 @@ footer.roster { margin-top: 28px; background: var(--surface); border: 1px solid 
 
   .field input, .field select, .field textarea { font-size: 14px; padding: 9px 10px; }
   .menu-input { font-size: 12px; padding: 6px 8px; }
-  .filter-select { font-size: 12px; padding: 7px 13px; }
-  .filters a.filter-pill { padding: 7px 13px; }
-  .filter-dropdown > .kebab { padding: 7px 13px; }
+  .filter-select { font-size: 13.5px; padding: 6px 10px; }
+  .filter-dropdown > .kebab { padding: 6px 10px; }
+  .toggle-pill { padding: 6px 10px; }
+  h1 { font-size: 28px; }
   .filter-dropdown > .menu { top: 40px; width: 200px; }
 
-  .session-panel { padding: 22px 26px; gap: 24px; margin-bottom: 28px; }
+  .session-panel { padding: 0 0 24px; gap: 24px; margin-bottom: 28px; }
+  .session-panel h1 { font-size: 26px; }
   /* Columns, not a wrapped row. This was `display: flex; flex-wrap: wrap`, which sized every item
      to its own content — so nine items produced nine different left edges and nothing lined up,
      least of all the second row against the first (reported 2026-09-10). The base layer is already
@@ -906,7 +933,7 @@ footer.roster { margin-top: 28px; background: var(--surface); border: 1px solid 
      instead of squeezing values onto a second line.
      align-items: start keeps every label on the row's top edge, so a cell carrying a button does
      not push its neighbours' text down. */
-  .meta-grid { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px 24px; align-items: start; }
+  .meta-grid { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 8px 32px; align-items: start; }
   .panel-actions { flex-direction: column; flex-wrap: nowrap; align-items: flex-end; }
 
   .auth-wrap { padding-top: 48px; }
@@ -938,8 +965,7 @@ footer.roster { margin-top: 28px; background: var(--surface); border: 1px solid 
 .vesm .setup-option { margin: 14px 0 0; }
 .vesm .setup-option label,
 .vesm .setup-option .setup-option-label {
-  display: block; font-size: 12px; font-weight: 600; color: var(--ink-soft);
-  text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 5px;
+  display: block; font-size: 12.5px; font-weight: 600; color: var(--ink-soft); margin-bottom: 5px;
 }
 .vesm .copy-row { display: flex; gap: 8px; align-items: stretch; max-width: 460px; }
 .vesm .copy-row input { flex: 1; min-width: 0; }

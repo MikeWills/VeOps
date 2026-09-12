@@ -9,20 +9,19 @@ everything in, JetBrains Mono because it reads as a *typeface* rather than a ter
 
 ## Where each one goes
 
-The split is unchanged from the Plex days, and it was offered as a separate choice and declined —
-the question "which faces" and the question "how much of the chrome is monospace" were shown
-side by side with a toggle, and the answer was "everywhere":
+**Mono is for data only** (since the 2026-09-12 front-panel pass, `docs/front-panel-design.md`).
+The day before, "mono everywhere" had been offered as a separate toggle beside the face choice and
+kept; it lasted one day, because the swap of faces alone changed nothing anyone could see — the
+mono chrome was what defined the look.
 
-- **Inter** — body, headings, table cells, buttons, form controls, the nav links.
-- **JetBrains Mono** — the *chrome*: brand mark, `.eyebrow`, `thead th`, filter pills, pagination,
-  crumbs, footer, `.who`, chips, `.meta-item .k` labels; and the *data*: `.mono`, `.count`, IDs,
-  call signs, FRNs, amounts.
+- **Inter** — everything that is a word: body, headings, labels, table headers, nav, filters,
+  chips, pagination, crumbs, footer, form controls.
+- **JetBrains Mono** — everything that is a value: `.mono`, `.count`, `.stat-value`, identifiers,
+  call signs, FRNs, amounts, times; plus the message editor's HTML view and the 2FA key/URI.
 
-`app.css` names the families directly (`"Inter", system-ui, sans-serif` /
-`"JetBrains Mono", monospace`) at every site rather than through a custom property — the only
-`--mono` in the file is a fallback on the two copy-control rules. That is 34 mono sites; a future
-change of face is a `sed`, and a future change of *split* (mono for data only) is a rule-by-rule
-edit, which is the harder and more interesting one.
+`app.css` names the families directly rather than through a custom property — the only `--mono`
+in the file is a fallback on the two copy-control rules. Seven mono sites remain; a future change
+of face is a `sed`.
 
 ## How they are loaded
 
