@@ -18,7 +18,7 @@ deliberately stopped short of the server.
 | `github.com/MikeWills/VeSessionManager` | `github.com/MikeWills/VeOps` |
 | "VE Session Manager" / "VESESSIONMGR" in prose | "VE Ops" / "VE OPS" |
 
-The working directory on the maintainer's machine is unchanged (`…/HamRadio/VeSessionManager`) — it
+The working directory on the maintainer's machine was renamed to match (`…/HamRadio/VeOps`, 2026-09-12) — it
 is a local path, not a name anything depends on.
 
 ## What deliberately did not change, and why
