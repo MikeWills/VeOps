@@ -21,10 +21,11 @@ git diff --stat <last-good-tag>..<bad-tag> -- src/VeOps.Core/Migrations/
 
 ## Step A — redeploy the last good tag
 
-Re-tagging the same commit is cleanest; force-moving an existing tag is not.
+Re-tagging the same commit under the next patch number is cleanest; force-moving an existing tag
+is not. Tags are `YYYY.MM.PATCH`, so a rollback is just the next patch pointing at the old commit.
 
 ```bash
-git tag v0.4.1-rollback <last-good-commit>
+git tag -a 2026.09.2 -m "Rollback to 2026.09.0 -- <why>" <last-good-commit>
 git push --tags
 ```
 

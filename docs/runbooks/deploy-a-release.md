@@ -16,8 +16,11 @@
 
 1. **Tag and push.** An ordinary commit to `main` does *not* deploy — only a version tag does.
 
+   Tags are `YYYY.MM.PATCH` — first release of the month is `.0`, then count up. Check
+   `git tag --list '2*' | sort -V | tail -1` for the last one.
+
    ```bash
-   git tag v0.4.0
+   git tag -a 2026.09.0 -m "What changed"
    git push --tags
    ```
 

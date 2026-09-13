@@ -184,7 +184,7 @@ Then copy each folder to its own directory on the server (e.g. via `scp`/`rsync`
 ## Automated Deploy (GitHub Actions)
 
 `.github/workflows/deploy.yml` deploys automatically whenever a **version tag is pushed**
-(`v*.*.*`) — never on every commit to `main` (that's `ci.yml`'s job: build + test only, on push/PR
+(`YYYY.MM.PATCH`, e.g. `2026.09.0` — see "Triggering a deploy") — never on every commit to `main` (that's `ci.yml`'s job: build + test only, on push/PR
 against `main`). The runner joins the Tailscale network (the server has no public SSH access) as an
 ephemeral node, then over SSH: backs up the SQLite DB, stops both services, `rsync`s each publish
 output to its own subfolder (running remotely as root via `--rsync-path="sudo rsync"`, setting
@@ -444,11 +444,18 @@ Four things in there are load-bearing and should survive any tidying:
 Merge into `main` as usual (this only builds/tests via `ci.yml`), then:
 
 ```bash
-git tag v0.1.0
+git tag -a 2026.09.0 -m "Release notes go here"
 git push --tags
 ```
 
 That tag push is what triggers `deploy.yml` — never an ordinary commit to `main`.
+
+Tags are **calendar versions, `YYYY.MM.PATCH`**: four-digit year, zero-padded month, and a patch
+number that starts at 0 for the first release of a month and counts up — `2026.09.0`, `2026.09.1`,
+then `2026.10.0`. No `v` prefix. The workflow's tag filter and `AppVersion` (the footer) both
+recognise a release by the four-digit year, so an old-style `v0.42.1` tag no longer deploys. Tags
+before 2026-09-12 are semver (`v0.1.0` … `v0.42.1`) and stay as they are. The annotated tag message
+is the release notes — `deploy.yml` publishes a GitHub release from it.
 
 ---
 
