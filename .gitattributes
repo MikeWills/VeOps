@@ -1,0 +1,3 @@
+# Server-side scripts are copied to a Linux box straight from this working tree; a CRLF checkout
+# on Windows would make bash fail on the first line.
+ops/* text eol=lf
