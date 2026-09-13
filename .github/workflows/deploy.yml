@@ -1,6 +1,6 @@
 # Deploys VeOps (Worker + Web) to the production Ubuntu server over Tailscale.
 #
-# Trigger: pushing a version tag (v*.*.*) -- never on every commit to main.
+# Trigger: pushing a version tag (YYYY.MM.PATCH, e.g. 2026.09.0) -- never on every commit to main.
 #
 # Required repo secrets (see docs/deployment.md for setup):
 #   TS_OAUTH_CLIENT_ID  - Tailscale OAuth client ID (tag:ci) -- same client already used by NcsScheduler
@@ -14,7 +14,8 @@ name: Deploy
 on:
   push:
     tags:
-      - 'v*.*.*'
+      # Calendar versions: 2026.09.0, 2026.09.1, 2026.10.0 ... (since 2026-09-12; v0.x.y before that).
+      - '2[0-9][0-9][0-9].[0-9][0-9].[0-9]*'
 
 env:
   DEPLOY_PATH: /opt/vesessionmanager
