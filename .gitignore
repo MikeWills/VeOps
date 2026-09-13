@@ -502,10 +502,6 @@ $RECYCLE.BIN/
 .dataprotection-keys/
 .dataprotection-keys.test/
 
-# Local-only server ops scripts (names internal server accounts/paths -- copy to the server by
-# hand, never commit; see docs/deployment.md)
-/ops/
-
 # Local ASP.NET Data Protection key ring -- machine-local secret material, never commit
 .dataprotection-keys/
 

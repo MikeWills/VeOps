@@ -157,7 +157,7 @@ constraint with nothing enforcing it.
 
 ```bash
 sudo -u vesessionmanager env DOTNET_ENVIRONMENT=Production \
-  sh -c 'cd /opt/vesessionmanager/worker && exec dotnet ./VeOps.Worker.dll --verify-keyring'
+  sh -c 'cd /opt/vesessionmanager/current/worker && exec dotnet ./VeOps.Worker.dll --verify-keyring'
 ```
 
 ⚠️ **The `cd` is load-bearing** — this is not the tidy version of a simpler command. The Worker is a

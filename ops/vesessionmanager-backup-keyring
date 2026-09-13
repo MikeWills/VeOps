@@ -1,0 +1,95 @@
+#!/bin/bash
+# Pre-deploy rollback snapshot of the Data Protection key ring.
+#
+# Installed at /usr/local/sbin/vesessionmanager-backup-keyring, root:root, 0755, allowlisted in
+# /etc/sudoers.d/vesessionmanager-deploy as an EXACT command with no wildcard.
+#
+# Why this exists (issue #254). The workflow used to run `sudo rsync ...` directly, which needed a
+# sudoers rule of `/usr/bin/rsync *`. An unconstrained wildcard on rsync is root-equivalent: it can
+# read or overwrite any file on the box — /etc/shadow, /root/.ssh/authorized_keys, the sudoers file
+# itself — and --rsync-path / -e can execute arbitrary commands. Whoever held the deploy SSH key
+# owned the server. Moving the privileged work into a fixed-purpose, argument-free script lets the
+# sudoers entry drop the wildcard entirely.
+#
+# SEPARATE from the database script on purpose: this runs BEFORE the services stop and that one
+# runs after (#255). One combined script would quietly collapse that ordering.
+#
+# NOTE: a rollback snapshot, not a backup — it lives on the same disk as the thing it protects.
+# Real off-box backup is #256.
+
+set -euo pipefail
+
+KEYRING="/var/lib/vesessionmanager-keys"
+
+# Newest N snapshots to keep. Matches the database helper's RETAIN, deliberately — these two are
+# taken together, one per deploy, and restoring is a pair operation (key ring first, see BACKUP.md).
+# Different retentions would mean a stamp with one half still present and the other already gone.
+RETAIN=5
+
+# Load-bearing, not belt-and-braces. A sudoers entry naming a command with no arguments permits
+# ANY arguments; only an explicit `""` in the rule forbids them. The rule has that `""` now, but
+# this guard is what actually held when it did not.
+if [[ $# -ne 0 ]]; then
+  echo "vesessionmanager-backup-keyring takes no arguments (got $#)" >&2
+  exit 2
+fi
+
+# Absent on a box where the key ring has not been created yet. A clean no-op, not a failed deploy.
+# Deliberately NOT a failure, in either empty case. setup-server.sh creates this directory before
+# the app has ever run, so "exists, no keys yet" is legitimate exactly once — on the first deploy to
+# a new box. Exiting non-zero there would reintroduce the same first-deploy breakage the database
+# backup already had to be fixed for. Loud, not fatal: the step stays green, but a zero-key run is
+# impossible to mistake for a successful one when reading the deploy log.
+if [[ ! -d "$KEYRING" ]]; then
+  echo "NOTE: no key ring directory at $KEYRING yet — nothing to snapshot (expected on a new box)"
+  exit 0
+fi
+
+shopt -s nullglob
+keys=("$KEYRING"/*.xml)
+if [[ ${#keys[@]} -eq 0 ]]; then
+  echo "WARNING: $KEYRING exists but contains no *.xml keys — nothing was snapshotted."
+  echo "WARNING: expected only before the app has started for the first time. If this deployment"
+  echo "WARNING: has been running, the key ring is missing and every stored credential is already"
+  echo "WARNING: unreadable — see docs/credential-encryption.md."
+  exit 0
+fi
+
+STAMP="$(date +%Y%m%d%H%M%S)"
+DEST="$KEYRING/.bak-$STAMP"
+mkdir -p "$DEST"
+chmod 700 "$DEST"
+cp -p -- "${keys[@]}" "$DEST/"
+
+# Selecting *.xml at maxdepth 1 is what the old `--exclude '.bak-*'` flag was for (#268): the
+# destination is a subdirectory of the source, so a recursive copy took the key ring PLUS every
+# previous snapshot — 2^n copies of the most sensitive material on the box after n deploys. A glob
+# that cannot match a .bak-* directory makes that structural rather than a flag to remember.
+echo "key ring snapshot: ${#keys[@]} key(s) -> $DEST"
+
+# Prune old snapshots — AFTER the new one is written, never before, so a failed run cannot also throw
+# away one of the good ones. Same rule and same reasoning as the database helper: stamps are
+# YYYYmmddHHMMSS so lexical order is chronological, and the `^[0-9]{14}$` check means a hand-made
+# `.bak-before-rotation` is left alone by someone who named it that to keep it.
+#
+# These are the most sensitive directories on the box, so the deletion is deliberately narrow: only
+# `.bak-<14 digits>` directories directly inside $KEYRING, never a recursive sweep.
+pruned=0
+kept=0
+
+while read -r name; do
+  stamp="${name#.bak-}"
+  [[ "$stamp" =~ ^[0-9]{14}$ ]] || continue
+
+  kept=$((kept + 1))
+  if [[ $kept -le $RETAIN ]]; then
+    continue
+  fi
+
+  rm -rf -- "${KEYRING:?}/$name"
+  pruned=$((pruned + 1))
+done < <(find "$KEYRING" -maxdepth 1 -type d -name '.bak-*' -printf '%f\n' | sort -r)
+
+if [[ $pruned -gt 0 ]]; then
+  echo "key ring snapshot: pruned $pruned old snapshot(s), keeping newest $RETAIN"
+fi

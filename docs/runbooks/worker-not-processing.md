@@ -28,15 +28,13 @@ systemctl status vesessionmanager-worker
 sudo journalctl -u vesessionmanager-worker -n 200 --no-pager
 ```
 
-Also the file sink — Serilog writes to a **relative** `logs/` path, which resolves under the unit's
-`WorkingDirectory`:
+Also the file sink — `appsettings.Production.json` points Serilog at an absolute path under
+`/var/lib`, outside the release tree, so log history survives a deploy and a prune (the change
+window is exactly when it is most wanted):
 
 ```bash
-sudo ls -lt /opt/vesessionmanager/worker/logs/
+sudo ls -lt /var/lib/vesessionmanager/logs/
 ```
-
-(That directory is excluded from `rsync --delete` on purpose, so log history survives a deploy —
-the change window is exactly when it is most wanted.)
 
 ## If the whole host died
 
@@ -102,7 +100,7 @@ Two halves of the same trap:
 Always:
 
 ```bash
-sudo -u vesessionmanager sh -c 'cd /opt/vesessionmanager/worker && exec dotnet ./VeOps.Worker.dll'
+sudo -u vesessionmanager sh -c 'cd /opt/vesessionmanager/current/worker && exec dotnet ./VeOps.Worker.dll'
 ```
 
 Locally, use `dotnet run --project src/VeOps.Worker`, never the raw `.dll`.

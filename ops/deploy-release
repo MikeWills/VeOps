@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+# /opt/vesessionmanager/ops/deploy-release — runs on the server as `deploy`, invoked through the
+# forced command (ops/ssh-deploy-command) as "deploy <tag>" once the workflow has rsynced the build
+# into releases/<tag>/{web,worker}. The services are still running the previous release at that
+# point; nothing here has touched them yet.
+#
+#   1. snapshot the key ring, stop Web then Worker, snapshot the database (quiet file, so `.backup`
+#      is consistent — #255/#343)
+#   2. flip /opt/vesessionmanager/current to releases/<tag>
+#   3. start Worker, gate on it being active, start Web
+#   4. health check with the real Host header (AllowedHosts rejects anything else with 400)
+#   5. on failure: flip back to the previous release, restart it, exit 1
+#
+# The downtime window is stop -> symlink -> start, a few seconds, rather than the old
+# stop -> rsync -> start. And a bad release never stays up: the box is either on the new tag with a
+# passing health check, or back on the one it was running a minute ago.
+#
+# sudo is limited by /etc/sudoers.d/vesessionmanager-deploy to exactly the commands used here —
+# one stop/start/restart per unit, the two argument-free backup helpers, and the two journalctl
+# lines. No wildcards anywhere (#254).
+set -euo pipefail
+
+TAG="${1:?usage: deploy-release <tag>}"
+APP="vesessionmanager"
+BASE="/opt/$APP"
+WORKER="$APP-worker"
+WEB="$APP-web"
+PORT="5100"                     # must match ASPNETCORE_URLS in the web unit
+NEW="$BASE/releases/$TAG"
+
+say() { printf '\n==> %s\n' "$*"; }
+
+[[ "$TAG" =~ ^2[0-9]{3}\.[0-9]{2}\.[0-9]+$ ]] || { echo "refusing odd tag '$TAG'" >&2; exit 2; }
+[ -d "$NEW/web" ] && [ -d "$NEW/worker" ] || { echo "$NEW/{web,worker} missing — was the rsync step skipped?" >&2; exit 2; }
+
+# The Host header comes from the release being deployed, not from a value typed here, so the two
+# cannot drift. AllowedHosts may be a semicolon-separated list; the first entry is the one served.
+PUBLIC_HOST="$(grep -oP '"AllowedHosts"\s*:\s*"\K[^"]+' "$NEW/web/appsettings.Production.json" | cut -d';' -f1 || true)"
+[ -n "$PUBLIC_HOST" ] || { echo "could not read AllowedHosts from $NEW/web/appsettings.Production.json — refusing to guess" >&2; exit 2; }
+
+PREVIOUS="$(readlink -f "$BASE/current" 2>/dev/null || true)"
+say "current: ${PREVIOUS:-none}  ->  new: $NEW"
+
+stop_all()  { sudo /usr/bin/systemctl stop "$WEB"; sudo /usr/bin/systemctl stop "$WORKER"; }
+# ln + mv -T so the switch is one rename: there is never a moment with no `current` at all.
+switch_to() { ln -sfn "$1" "$BASE/current.tmp" && mv -T "$BASE/current.tmp" "$BASE/current"; }
+start_all() {
+  # Worker first, and confirmed up, before Web. Both call Database.Migrate() at startup; MigrationLock
+  # (#443) serializes them now, but a Worker that dies on a bad migration is the failure worth seeing
+  # by itself rather than through Web's symptoms.
+  sudo /usr/bin/systemctl start "$WORKER"
+  sleep 5
+  if ! systemctl is-active --quiet "$WORKER"; then
+    echo "worker failed to start:"; sudo /usr/bin/journalctl -u "$WORKER" -n 50 --no-pager; return 1
+  fi
+  sudo /usr/bin/systemctl start "$WEB"
+}
+healthy() {
+  # 2xx and 3xx pass; 4xx/5xx fail; no response keeps waiting (the service may still be starting).
+  local last=000
+  for _ in $(seq 1 30); do
+    last=$(curl -s -o /dev/null -w '%{http_code}' -H "Host: $PUBLIC_HOST" "http://localhost:$PORT/")
+    case "$last" in 2*|3*) echo "web healthy — HTTP $last"; return 0;; esac
+    sleep 3
+  done
+  echo "web unhealthy — last HTTP $last (Host: $PUBLIC_HOST)"; sudo /usr/bin/journalctl -u "$WEB" -n 50 --no-pager; return 1
+}
+
+say "Snapshots (key ring first; database after the stop so the file is quiet)"
+# Both helpers are no-ops on a box that has no key ring / no database yet, so the first deploy to a
+# fresh server does not fail here (found 2026-08-04).
+sudo /usr/local/sbin/$APP-backup-keyring
+stop_all
+sudo /usr/local/sbin/$APP-backup-db
+
+say "Switching to $TAG"
+switch_to "$NEW"
+if start_all && healthy; then
+  say "Deployed $TAG"
+  exit 0
+fi
+
+say "ROLLING BACK to ${PREVIOUS:-nothing}"
+stop_all || true
+if [ -n "$PREVIOUS" ] && [ -d "$PREVIOUS" ] && [ "$PREVIOUS" != "$NEW" ]; then
+  switch_to "$PREVIOUS"
+  if start_all && healthy; then
+    echo "rolled back to $PREVIOUS; deploy of $TAG FAILED"
+  else
+    echo "rollback did not come up either — service is DOWN"
+  fi
+else
+  echo "no previous release to roll back to — service is DOWN"
+fi
+echo "Code is rolled back; data is not. If $TAG ran a migration, restore the .bak- snapshot pair:"
+echo "see docs/runbooks/roll-back-a-release.md"
+exit 1

@@ -1,0 +1,99 @@
+#!/bin/bash
+# Pre-deploy rollback snapshot of the SQLite database. See vesessionmanager-backup-keyring for why
+# these are argument-free scripts rather than `sudo rsync` (issue #254), and why they are separate.
+#
+# Produces ONE file — `<db>.bak-<stamp>` — via SQLite's own backup API (#343). That replaced a
+# three-file `cp` of the .db plus its -wal and -shm sidecars, which was correct but only because
+# deploy.yml runs this after both services stop: the three files are mutually consistent only while
+# nothing is writing, and restoring the set meant putting all three back together.
+#
+# History worth keeping, because the failure was silent: this used to copy the .db ALONE, and the
+# database is in WAL mode (EF Core enables it on databases it creates, and the journal mode persists
+# in the file header — so "nothing sets PRAGMA journal_mode" in the source proves nothing). In WAL
+# mode committed transactions live in the -wal file until checkpoint, so a .db-only copy was missing
+# every transaction since the last checkpoint AND opened cleanly. That was #255.
+#
+# `.backup` takes a proper read lock and resolves the WAL itself, so the result needs no sidecars and
+# no ordering constraint. Keeping it after the service stop anyway: it costs nothing there, and the
+# stop is what the rest of the deploy already depends on.
+
+set -euo pipefail
+
+DB="/var/lib/vesessionmanager/vesessionmanager.db"
+
+# How many snapshots to keep, newest first. Before this, nothing pruned them and they accumulated one
+# per deploy forever, on the same disk as the database they protect. Five is "the last few releases":
+# a rollback snapshot exists to undo a bad deploy, and anything older is a data-recovery question,
+# which is the off-box backup's job (#256), not this file's.
+RETAIN=5
+
+# Load-bearing, not belt-and-braces. A sudoers entry naming a command with no arguments permits
+# ANY arguments; only an explicit `""` in the rule forbids them. The rule has that `""` now, but
+# this guard is what actually held when it did not.
+if [[ $# -ne 0 ]]; then
+  echo "vesessionmanager-backup-db takes no arguments (got $#)" >&2
+  exit 2
+fi
+
+# Missing is normal, not an error: on a brand-new server the database does not exist until a service
+# first runs Database.Migrate(). An unconditional snapshot made the very FIRST deploy to any box fail
+# here (found 2026-08-04).
+if [[ ! -f "$DB" ]]; then
+  echo "database snapshot: no database at $DB yet, nothing to snapshot"
+  exit 0
+fi
+
+STAMP="$(date +%Y%m%d%H%M%S)"
+DEST="$DB.bak-$STAMP"
+
+sqlite3 "$DB" ".backup '$DEST'"
+
+# A snapshot that cannot be verified is a snapshot you find out about during a rollback — the same
+# reason the off-box backup (#256) checks its own output. Delete a bad one rather than leaving a file
+# that looks like a usable rollback point.
+if [[ "$(sqlite3 "$DEST" 'PRAGMA integrity_check;')" != "ok" ]]; then
+  echo "database snapshot FAILED integrity_check; removing $DEST" >&2
+  rm -f -- "$DEST"
+  exit 1
+fi
+
+# `.backup` creates the file as root with default permissions. The original is owned by the service
+# account, and a restore is a copy back over the original — so a snapshot that does not match it
+# leaves a root-owned database the services cannot write.
+chown --reference="$DB" -- "$DEST"
+chmod --reference="$DB" -- "$DEST"
+
+echo "database snapshot: $DEST (integrity_check ok)"
+
+# Prune old snapshots — AFTER a verified new one exists, never before. Pruning first would mean a
+# failed snapshot had also thrown away one of the good ones it was meant to join.
+#
+# Stamps are YYYYmmddHHMMSS, so lexical order IS chronological order and a plain reverse sort gives
+# newest first. The `^[0-9]{14}$` check is what keeps this from deleting anything whose name merely
+# resembles a snapshot — a hand-made `vesessionmanager.db.bak-before-migration`, say, which someone
+# named that way precisely because they wanted to keep it.
+dir="$(dirname -- "$DB")"
+base="$(basename -- "$DB")"
+pruned=0
+kept=0
+
+# `while read` with process substitution, not a pipe: a pipe runs the loop in a subshell and the
+# counters below would be lost when it exits.
+while read -r name; do
+  stamp="${name#"$base.bak-"}"
+  [[ "$stamp" =~ ^[0-9]{14}$ ]] || continue
+
+  kept=$((kept + 1))
+  if [[ $kept -le $RETAIN ]]; then
+    continue
+  fi
+
+  # A snapshot taken between #255 and #343 is a three-file set sharing one stamp, so the sidecars go
+  # with it. Both are absent for anything this version wrote, which is the point of the change.
+  rm -f -- "$dir/$name" "$dir/$base-wal.bak-$stamp" "$dir/$base-shm.bak-$stamp"
+  pruned=$((pruned + 1))
+done < <(find "$dir" -maxdepth 1 -type f -name "$base.bak-*" -printf '%f\n' | sort -r)
+
+if [[ $pruned -gt 0 ]]; then
+  echo "database snapshot: pruned $pruned old snapshot(s), keeping newest $RETAIN"
+fi

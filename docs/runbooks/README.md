@@ -42,9 +42,10 @@ Where a runbook states a rule without arguing for it, it links to the doc that d
   Its restore procedure is `runbooks/restore.md` **there**. This repo's
   [`restore-from-backup.md`](restore-from-backup.md) is the app-side half only: the order the parts
   go back in, and how to prove it worked. Any other deployment arranges its own off-box backup.
-- **Server-side helper scripts** (`vesessionmanager-backup-db`, `vesessionmanager-backup-keyring`,
-  `setup-server.sh`, `harden-deploy-sudoers.sh`) live in gitignored `ops/`. A change to one is a
-  hand-copied server-side edit that no PR carries.
+- **Server-side scripts** (`vesessionmanager-backup-db`, `vesessionmanager-backup-keyring`,
+  `deploy-release`, `ssh-deploy-command`, `setup-server.sh`) live in `ops/` and are reviewed in
+  PRs like anything else — but a merge does not put them on the box. Re-running
+  `ops/setup-server.sh` there does; the deploy key can only write under `releases/`.
 
 ## The four warnings worth knowing before you need any of these
 
@@ -55,7 +56,7 @@ Where a runbook states a rule without arguing for it, it links to the doc that d
 3. **The pre-deploy `.bak-<stamp>` snapshots are rollback points, not backups** — same disk, newest
    five. The backup that survives losing the box is the separate off-box job.
 4. **Any by-hand `dotnet` invocation on the box needs its working directory**
-   (`sh -c 'cd /opt/vesessionmanager/worker && exec dotnet ./VeOps.Worker.dll …'`).
+   (`sh -c 'cd /opt/vesessionmanager/current/worker && exec dotnet ./VeOps.Worker.dll …'`).
    Elsewhere it finds no `appsettings` at all and reports `no such table: Teams`, which reads as a
    damaged database when the real one was never opened.
 

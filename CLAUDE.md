@@ -127,6 +127,21 @@ which is "here's what was built and why, mostly historical.")
 One-line-or-two pointer per feature, newest first — full design rationale lives in the linked
 `/docs/*.md` file, not here. See "Documentation Structure" below for the policy this follows.
 
+- **Deploys land beside the running release and roll back by themselves (2026-09-13).** See
+  `docs/deployment.md`'s "Releases and rollback". The box is on the on-prem standard now:
+  `/opt/vesessionmanager/releases/<tag>/` + a `current` symlink the units run through, one
+  server-side `ops/deploy-release` that snapshots, flips, starts and health-checks — and **flips
+  back to the previous release if health fails**, so a bad tag no longer leaves the box down;
+  a per-app deploy key whose forced command (`ops/ssh-deploy-command`) accepts only an rsync into
+  `releases/`, `deploy <tag>` and `prune`; the host key pinned from `DEPLOY_HOST_KEY` instead of
+  `ssh-keyscan`; Serilog at an absolute `/var/lib/vesessionmanager/logs/`. `ops/` is **committed**
+  now, not gitignored — but a merge still puts nothing on the box; re-running `setup-server.sh`
+  there does, and it also performs the one-time move off the old in-place layout. **Two things to
+  carry:** the automatic rollback is code-only — a migration that ran stays ran, and the runbook's
+  step B is the way back for data; and the *next* tag deploy fails until the box has been migrated
+  and the two new secrets (`SSH_PRIVATE_KEY` for this app's key, `DEPLOY_HOST_KEY`) exist — the
+  order is in `docs/runbooks/deploy-a-release.md`'s preconditions.
+
 - **The "front panel" design pass (2026-09-12).** See `docs/front-panel-design.md`. A CSS-only
   reshaping after the font swap changed nothing visible: graphite chassis under a 3px amber rule,
   amber as the *one* accent (active nav underline, primary button), mono for data only, sentence-
@@ -254,24 +269,6 @@ One-line-or-two pointer per feature, newest first — full design rationale live
   only, not from the shared `LoadAsync` both verbs call — a failed POST already redirects to a fresh
   GET, so fetching it there too would be a wasted Discord round trip on every validation failure.
 
-- **A calendar invite, and a per-session VE summary email (#491, 2026-08-28).** See
-  `docs/trigger-points.md`'s two new sections. Per-rule opt-in (`MessageRule.IncludeCalendarInvite`),
-  not per-team — Mike: "The toggle I want is per email related to a session, not per team."
-  `IcsInviteBuilder` shipped in #502 and sat unwired for three reasons its own doc comment named; all
-  three landed here: `MessageSessionContext` gained `DurationMinutes`/`ZoomJoinUrl`,
-  `BeforeSessionStartScanner` now populates `Session` the same way `CandidateRegisteredScanner`
-  already did, and `EmailMessage` gained a real MimeKit `Attachment` (`IcsAttachment`), distinct from
-  `InlineLogo`'s `LinkedResource`. A new `MessageTriggerDefinition.CarriesSessionContext` flag gates
-  which triggers may turn the checkbox on — true only for `CandidateRegistered`/`BeforeSessionStart`
-  today. **Same day, asked directly: `MessageFanOut.PerSession` (Discord-only until now) now works on
-  email too** — a VE addressed as `SessionLead` used to get one email per candidate registered, with
-  no candidate-count token available outside Discord's digest; `DispatchEmailPerSessionAsync` groups by
-  session and renders the same `{{Count}}`/`{{SessionTitle}}`/`{{RegisteredCount}}` tokens Discord's
-  `PerSession` posts already use. Refused only when addressed to `Candidate` — the one recipient a
-  batched message has no single address for (`SingleDigest`, a batch spanning *every* session, stays
-  Discord-only for the same underlying reason). A true VEC-the-organization notification is still a
-  different, unbuilt thing — see the doc's "Still to come."
-
 **Kept here vs. `CHANGELOG.md`:** this section is a bounded, recent-only window (rule of thumb: cap
 around 10 entries), since CLAUDE.md is read in full on every conversation turn and this is the one
 section that would otherwise grow forever. Phase-numbered work (Phase 0-10) is never listed here at
@@ -359,13 +356,14 @@ only what shapes decisions elsewhere.
   2026-09-12). A pushed tag is the *only* deploy trigger — an ordinary commit to `main` builds and
   tests, and ships nothing. `deploy.yml`'s tag filter and `AppVersion`'s footer check both key off
   the four-digit year, so an old-style `v*` tag no longer deploys.
-- **There is no previous build to swap back to, and no symlink/`releases/` scheme.** `deploy.yml`
-  `rsync --delete`s straight over `/opt/vesessionmanager/{worker,web}/`, so the prior build is gone
-  the moment the sync runs. **Rolling back means deploying an earlier tag** — tag the last good
-  commit and push. *(This bullet used to describe keeping the previous deployment folder for a
-  symlink/service-restart swap. That was template text, never true of this deployment, and it
-  contradicted the workflow for months.)*
-- **Rollback safety comes from the pre-deploy snapshots, not from retained builds.** Each deploy
+- **The last five releases stay on the box, and a failed deploy rolls itself back (2026-09-13).**
+  `deploy.yml` rsyncs into `/opt/vesessionmanager/releases/<tag>/` beside the running build, and
+  `ops/deploy-release` flips the `current` symlink, starts, health-checks — and flips back to the
+  previous release if that fails. **Rolling back by hand is `sudo -u deploy
+  /opt/vesessionmanager/ops/deploy-release <older-tag>`** for any of the five; older than that, tag
+  the last good commit and push. *(Until 2026-09-13 the sync went straight over `{worker,web}/`, the
+  prior build was gone the moment it ran, and the only rollback was a re-tag.)*
+- **Data rollback safety comes from the pre-deploy snapshots, not from retained builds.** Each deploy
   takes a database snapshot (`sqlite3 .backup` + `PRAGMA integrity_check`) and a key-ring snapshot,
   newest **5** kept, retentions deliberately equal because the pair is taken and restored together.
   ⚠️ Both live on the same disk as the thing they protect — **rollback points, not backups**. The
@@ -401,9 +399,9 @@ To pick up updates: `/plugin marketplace update claude-tools`
 ## Known Constraints
 
 - The deploy server is behind a Tailscale VPN — a GitHub-hosted Actions runner can't reach it directly. **Resolved (2026-07-21):** `.github/workflows/deploy.yml` uses a GitHub-hosted `ubuntu-latest` runner + a `tailscale/github-action@v3` step to join the tailnet ephemerally per-run (`tag:ci`, same OAuth client already used by the sibling `NcsScheduler` project on the same box) — no persistent self-hosted runner needed. Full setup in `docs/deployment.md`.
-- **Deploy topology (2026-07-21):** two systemd services, `vesessionmanager-worker`/`vesessionmanager-web`, run as a dedicated `vesessionmanager` system account (not `www-data` — NcsScheduler's account on the same box) at `/opt/vesessionmanager/{worker,web}/`. They share one SQLite DB at `/var/lib/vesessionmanager/vesessionmanager.db`, deliberately **outside** the app path so `deploy.yml`'s `rsync --delete` can never touch it regardless of exclude flags (unlike NcsScheduler, whose DB sits inside its own synced app directory and is protected only by an `--exclude` flag every run). Deploy triggers only on a pushed version tag (`YYYY.MM.PATCH`), never on an ordinary commit. Because both Worker and Web call `dbContext.Database.Migrate()` at startup, the deploy workflow starts Worker first and confirms it's active before starting Web, to avoid both processes racing to apply the same SQLite migration concurrently. `appsettings.Production.json` needs no manual server-side editing — it carries no secrets (every real integration credential is per-`Team` in the DB, never in appsettings) and syncs automatically like any other file.
+- **Deploy topology (2026-07-21):** two systemd services, `vesessionmanager-worker`/`vesessionmanager-web`, run as a dedicated `vesessionmanager` system account (not `www-data` — NcsScheduler's account on the same box) at `/opt/vesessionmanager/releases/<tag>/{worker,web}/`, through the `/opt/vesessionmanager/current` symlink (since 2026-09-13; in place at `/opt/vesessionmanager/{worker,web}/` before that). Web listens on localhost **5100** (NcsScheduler has 5000). They share one SQLite DB at `/var/lib/vesessionmanager/vesessionmanager.db`, deliberately **outside** the app path so no `rsync --delete` can ever touch it regardless of exclude flags (unlike NcsScheduler, whose DB sits inside its own synced app directory and is protected only by an `--exclude` flag every run); logs are at `/var/lib/vesessionmanager/logs/` for the same reason — a relative `logs/` would be pruned with its release. Deploy triggers only on a pushed version tag (`YYYY.MM.PATCH`), never on an ordinary commit, and rollback is automatic on a failed health check (code only — see Rollback / Versioning). Because both Worker and Web call `dbContext.Database.Migrate()` at startup, `ops/deploy-release` starts Worker first and confirms it's active before starting Web. `appsettings.Production.json` needs no manual server-side editing — it carries no secrets (every real integration credential is per-`Team` in the DB, never in appsettings) and ships inside the release like any other file. **Every server name is frozen at `vesessionmanager`** — paths, accounts, units, sudoers, helpers — see the `docs/veops-rename.md` entry. **A change under `ops/` does nothing until `setup-server.sh` is re-run on the box** — the deploy key can only write under `releases/`.
 - **Duplicative-with-ExamTools features removed (reported 2026-07-21, removed 2026-07-21).** Phase 9b originally built "add walk-in candidate" and "move candidate to a different session" as in-app Session Manager actions, but both are already handled by ExamTools itself — a walk-in registered there, or a candidate moved between sessions there, already flows into this app through `SessionIngestionService`'s normal polling, same as any other candidate/session change. Building (and maintaining) a duplicate in-app path for either was unnecessary, so both were removed entirely: `CandidateActionService.AddWalkInAsync`/`MoveAsync`/`CandidateMoveResult`, their page handlers/modals/menu items in `Pages/SessionManager/Detail.cshtml(.cs)` (including the `CanMove`/`MoveTargetSessions` UI plumbing), their test coverage, and the corresponding spec.md bullet-list lines. **Third instance, removed 2026-08-07: session detail's VE roster editing** (`VolunteerExaminerRosterService` + the "+ Add VE" modal and per-chip remove) — `VolunteerExaminerSyncService` fully reconciles each session's roster from ExamTools on every poll, so an edit made here was reverted on the next tick precisely when ExamTools disagreed, i.e. whenever the button was worth pressing. The roster is now display-only. See Established Patterns above for the general lesson.
-- **Worker Service reads `DOTNET_ENVIRONMENT`, not `ASPNETCORE_ENVIRONMENT`.** `VeOps.Worker` is a plain generic Host (`Host.CreateApplicationBuilder`), which only honors `DOTNET_ENVIRONMENT`. Only the Web project (`WebApplication.CreateBuilder`) reads `ASPNETCORE_ENVIRONMENT` (and falls back to `DOTNET_ENVIRONMENT`). The generic Host's own default when neither is set is `Production` — so running the Worker's built DLL directly (bypassing `launchSettings.json`, which sets `DOTNET_ENVIRONMENT=Development` for `dotnet run`) silently picks up `appsettings.Production.json`'s Linux-only paths and fails on a dev machine. Always use `dotnet run --project ...` locally for the Worker, not the raw `.dll`. **Second half of the same trap, found on the server 2026-08-13: the content root is the *current directory*, not the DLL's directory** — so running the published DLL from anywhere but the app folder finds **no `appsettings` file at all**, leaving the connection string null; SQLite then opens an anonymous temporary database and the first symptom is `no such table: Teams`, which reads as a damaged database when the real one was never opened. The systemd units set `WorkingDirectory` for this reason. Any by-hand invocation on the box needs `sh -c 'cd /opt/vesessionmanager/worker && exec dotnet ./VeOps.Worker.dll <switch>'`.
+- **Worker Service reads `DOTNET_ENVIRONMENT`, not `ASPNETCORE_ENVIRONMENT`.** `VeOps.Worker` is a plain generic Host (`Host.CreateApplicationBuilder`), which only honors `DOTNET_ENVIRONMENT`. Only the Web project (`WebApplication.CreateBuilder`) reads `ASPNETCORE_ENVIRONMENT` (and falls back to `DOTNET_ENVIRONMENT`). The generic Host's own default when neither is set is `Production` — so running the Worker's built DLL directly (bypassing `launchSettings.json`, which sets `DOTNET_ENVIRONMENT=Development` for `dotnet run`) silently picks up `appsettings.Production.json`'s Linux-only paths and fails on a dev machine. Always use `dotnet run --project ...` locally for the Worker, not the raw `.dll`. **Second half of the same trap, found on the server 2026-08-13: the content root is the *current directory*, not the DLL's directory** — so running the published DLL from anywhere but the app folder finds **no `appsettings` file at all**, leaving the connection string null; SQLite then opens an anonymous temporary database and the first symptom is `no such table: Teams`, which reads as a damaged database when the real one was never opened. The systemd units set `WorkingDirectory` for this reason. Any by-hand invocation on the box needs `sh -c 'cd /opt/vesessionmanager/current/worker && exec dotnet ./VeOps.Worker.dll <switch>'`.
 - **Every ExamTools action this app takes is attributed to the stored credential's account, and ExamTools is starting to show its audit log to VEs** (alpha site already; reported 2026-08-07). The end user who clicked is invisible there — every entry reads as whichever VE's login is in `Team.ExamToolsUsername`. Harmless while the app is read-only against ExamTools, which it is today; it becomes a real cost the moment any write-back feature is considered, because this app's audit log would know who acted and ExamTools' would not. Weigh it alongside the "check whether ExamTools already does it" pattern above. See README's Configuration & Secrets note.
 - **ExamTools login returns HTTP 200 on bad credentials** — failure is an `{"error": ...}` body, not a status code. Any code touching `POST /api/ve/login` must check the body (see `ExamToolsClient` and `docs/examtools-api.md`).
 - **ExamTools has no "cancelled" session state** — cancellations are detected by a known session id disappearing from the team feed, reschedules by a changed `date` on the same id. Don't go looking for a status flag that isn't there.

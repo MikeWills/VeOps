@@ -9,9 +9,10 @@ endpoint).
 | Item | Detail |
 |---|---|
 | Server | Same Ubuntu box as `NcsScheduler`, reachable only over Tailscale |
-| App path | `/opt/vesessionmanager/{worker,web}/` |
+| App path | `/opt/vesessionmanager/releases/<tag>/{worker,web}/`, with `/opt/vesessionmanager/current` → the release the units run (since 2026-09-13, see "Releases and rollback" below) |
 | Database path | `/var/lib/vesessionmanager/vesessionmanager.db` — **deliberately outside** the app path (see below) |
 | Data Protection key ring | `/var/lib/vesessionmanager-keys/` — **a separate directory from the database, deliberately** (moved 2026-08-10, see below) |
+| Logs | `/var/lib/vesessionmanager/logs/{web,worker}-<date>.log` — absolute, outside the release tree, so pruning a release never takes its history |
 | Service account | `vesessionmanager` (dedicated, distinct from NcsScheduler's `www-data` on the same box) |
 | Worker service | `vesessionmanager-worker.service` — background jobs, no listening port |
 | Web service | `vesessionmanager-web.service` — `ASPNETCORE_URLS=http://localhost:5100` |
@@ -23,7 +24,7 @@ endpoint).
 `/opt/ncsscheduler/`, the same tree its deploy `rsync --delete`s, protected only by an `--exclude`
 flag on every run), VeOps's `appsettings.Production.json` already points the connection
 string at `/var/lib/vesessionmanager/vesessionmanager.db` — physically outside
-`/opt/vesessionmanager/{worker,web}/` entirely. An `rsync --delete` against the app folders can
+`/opt/vesessionmanager/releases/` entirely. An `rsync --delete` against the app folders can
 never touch it, exclude flags or not. `/var/lib/` is also the conventionally-correct FHS location
 for a service's variable data, vs. `/opt/` for its binaries.
 
@@ -109,8 +110,9 @@ Four things here are deliberate and worth not "tidying up":
 - **Argument-free helpers on the box, not `sudo rsync` from the runner.** A sudoers rule naming
   `/usr/bin/rsync *` is root-equivalent — it can write any file anywhere — which quietly voided every
   narrow rule beside it (#254). The helpers take no arguments at all, and refuse to run if given any.
-- **They live in gitignored `ops/`.** A change to either is a server-side edit that no PR carries;
-  the copies in this repo's working tree are the source, copied to the box by hand.
+- **They live in `ops/`, committed since 2026-09-13, but are copied to the box by hand.** A PR
+  can change one, and that change does nothing until `ops/setup-server.sh` is re-run on the box —
+  the workflow's forced-command key can write only under `releases/`, deliberately.
 - **The database snapshot uses `sqlite3 .backup`, not a file copy** (#343), and runs
   `PRAGMA integrity_check` on the result, deleting it if it fails. It produces one self-contained
   file: no `-wal`/`-shm` sidecars to restore alongside it. A file copy was correct only while nothing
@@ -184,260 +186,116 @@ Then copy each folder to its own directory on the server (e.g. via `scp`/`rsync`
 ## Automated Deploy (GitHub Actions)
 
 `.github/workflows/deploy.yml` deploys automatically whenever a **version tag is pushed**
-(`YYYY.MM.PATCH`, e.g. `2026.09.0` — see "Triggering a deploy") — never on every commit to `main` (that's `ci.yml`'s job: build + test only, on push/PR
-against `main`). The runner joins the Tailscale network (the server has no public SSH access) as an
-ephemeral node, then over SSH: backs up the SQLite DB, stops both services, `rsync`s each publish
-output to its own subfolder (running remotely as root via `--rsync-path="sudo rsync"`, setting
-final ownership inline with `--chown=vesessionmanager:vesessionmanager`), starts the **Worker
-first** and confirms it's actually up before starting **Web** (both call
-`dbContext.Database.Migrate()` at startup — starting them serially avoids a concurrent-migration
-race against the shared SQLite file), then polls `http://localhost:5100/` for a response before
-declaring success.
+(`YYYY.MM.PATCH`, e.g. `2026.09.0` — see "Triggering a deploy") — never on every commit to `main`
+(that's `ci.yml`'s job: build + test only, on push/PR against `main`). The runner joins the
+Tailscale network (the server has no public SSH access) as an ephemeral node, publishes both hosts,
+and then does two things over SSH:
 
-> **Running this yourself?** The workflow is reusable as-is. Everything server-specific is either a
-> repository secret (the table in step 5) or one of the `env:` values at the top of
-> `deploy.yml` — `DEPLOY_PATH`, `DB_PATH`, `KEYRING_PATH`, `WORKER_SERVICE`, `WEB_SERVICE`,
-> `WEB_PORT`. Set the secrets, adjust that block if your layout differs, run the bootstrap script
-> below on your server, push a tag.
+1. **`rsync`s each publish output into `/opt/vesessionmanager/releases/<tag>/{worker,web}/`** —
+   *beside* the running release, not over it. The services are untouched; there is no downtime yet.
+2. **Runs `deploy <tag>` on the box**, which the deploy key's forced command turns into
+   `ops/deploy-release <tag>`: snapshot the key ring, stop Web then Worker, snapshot the database
+   (`.backup` against a quiet file), flip `/opt/vesessionmanager/current` to the new release, start
+   Worker and confirm it is active, start Web, and health-check `http://localhost:5100/` with the
+   `Host:` header read from that release's own `AllowedHosts`. **If any of that fails, it flips
+   `current` back to the previous release, restarts it, and exits non-zero** — the box is never left
+   on a broken build. Then `prune` keeps the newest five releases, and a GitHub release is published
+   with the zipped binaries.
+
+The downtime window is stop → symlink → start, a few seconds. Until 2026-09-13 it was
+stop → rsync → start, and there was no rollback at all: the previous build was overwritten the
+moment the sync ran, so "roll back" meant tagging and redeploying an older commit.
+
+> **Running this yourself?** Everything server-specific is a repository secret (the table under
+> "One-time setup") or a variable at the top of `ops/setup-server.sh` and `ops/deploy-release`
+> (`APP_SLUG`, `WEB_PORT`/`PORT`). Set the secrets, run the bootstrap script on your server, push a
+> tag.
 >
 > Two notes for anyone who is not the original maintainer: the Tailscale step exists because *this*
 > server has no public SSH — delete it and its two secrets if yours is reachable directly — and the
-> references below to reusing NcsScheduler's OAuth client and deploy key are about a sibling project
-> on the same box. Create your own instead; nothing depends on them being shared.
+> references below to reusing NcsScheduler's OAuth client are about a sibling project on the same
+> box. Create your own instead; nothing depends on it being shared.
+
+### Releases and rollback
+
+```
+/opt/vesessionmanager/
+├── current -> /opt/vesessionmanager/releases/2026.09.1     what the systemd units run
+├── releases/
+│   ├── 2026.09.0/{web,worker}/
+│   └── 2026.09.1/{web,worker}/                              newest 5 kept
+└── ops/deploy-release, ops/ssh-deploy-command               root-owned, run by deploy
+```
+
+- Both units' `WorkingDirectory` and `ExecStart` go through `current`; systemd resolves the link at
+  each start, so a deploy and a rollback are the same operation pointed different ways.
+- `releases/` is owned `deploy:vesessionmanager` with setgid directories: the workflow writes as
+  `deploy` with no sudo, the service reads through the group. `ops/` is root-owned so a stolen deploy
+  key can upload a build but cannot rewrite the script that judges it.
+- **Automatic rollback covers code, not data.** A release that ran a migration and then failed
+  health leaves the *previous* binary running against the *newer* schema. The pre-deploy `.bak-`
+  snapshot pair is the way back for the data — [`runbooks/roll-back-a-release.md`](runbooks/roll-back-a-release.md).
+- A rollback by hand is `deploy <older-tag>` for any tag still under `releases/` — which is what
+  makes keeping five worth the disk. Older than that: tag the last good commit and push.
+- Serilog's log path is absolute (`/var/lib/vesessionmanager/logs/`) for the same reason the
+  database is: a relative `logs/` would live inside one release directory and be pruned with it.
 
 ### One-time setup
 
-Steps 2-4 below can be done by hand, or with a bootstrap script. **The example script at the end of
-this section does all three**, is idempotent, and is the faster path on a fresh box. Read the
-per-step notes first regardless — they explain *why* each piece is shaped the way it is, and several
-of them record failures found on real deploys.
-
-**1. Tailscale OAuth client — nothing new to create**
-
-This is the same Ubuntu box as `NcsScheduler`, so reuse its existing OAuth client (tagged
-`tag:ci`, already permitted to reach the server in your tailnet ACLs). **GitHub Actions secrets are
-per-repo, though** — even though the underlying Tailscale client is shared, you still need to add
-`TS_OAUTH_CLIENT_ID`/`TS_OAUTH_SECRET` (the same values NcsScheduler's repo secrets already have) to
-*this* repo's secrets too.
-
-**2. Runtime service account**
-
-A dedicated, unprivileged system account runs both services — not `www-data` (NcsScheduler's
-account on the same box), so the two apps stay isolated from each other:
+**`ops/setup-server.sh` does all of the server side**, idempotently, on a fresh box *or* on one
+still on the pre-2026-09 in-place layout (it detects `/opt/vesessionmanager/web` with no `current`
+link, moves the build under `releases/`, and restarts the units on the new paths — a few seconds
+down). Copy the `ops/` directory to the box and run it as root:
 
 ```bash
-sudo useradd --system --no-create-home --shell /usr/sbin/nologin vesessionmanager
+scp -r ops deploy@<box>:/tmp/veops-ops
+ssh deploy@<box> sudo bash /tmp/veops-ops/setup-server.sh        # add the running tag as $1 to name the moved release
 ```
 
-**3. Deploy user + SSH key — reuse `deploy`, add a new sudoers file**
+What it creates, and why each piece is shaped the way it is:
 
-Reuse the same `deploy` SSH account NcsScheduler's CI already logs in with (same keypair). It still
-doesn't get filesystem access to `/opt/vesessionmanager` or `/var/lib/vesessionmanager` directly —
-every operation that touches them (rsync, the DB backup, service start/stop, journalctl) runs as
-root via a **new**, narrowly-scoped sudoers file specific to this app:
+1. **The `vesessionmanager` service account** — system account, no shell, no home. Not `www-data`
+   (NcsScheduler's account on the same box), so the two apps stay isolated.
+2. **Directories.** `releases/` + `ops/` under `/opt`, the database and `logs/` under
+   `/var/lib/vesessionmanager`, and the key ring at `/var/lib/vesessionmanager-keys` at **0700** —
+   a *sibling* of the database directory, never a child, so no single archive carries both halves
+   (see "The key ring moved out of the database directory" above).
+3. **The two backup helpers** at `/usr/local/sbin/vesessionmanager-backup-{db,keyring}` — root-owned,
+   argument-free, hardcoded paths. The privileged parts of a deploy live here rather than in
+   `sudo rsync`, whose sudoers rule was root-equivalent (#254).
+4. **`/etc/sudoers.d/vesessionmanager-deploy`** — exact commands, no wildcards: one
+   `systemctl stop|start|restart` per unit, the two helpers with `""` (no arguments), the two
+   `journalctl` lines exactly as `deploy-release` runs them. Written to a temp file, `visudo -c`'d,
+   then installed at `0440` — sudo silently ignores a file at any other mode, and a malformed one
+   can lock you out of sudo entirely.
 
-> **These rules are per-unit, and sudo matches the whole command line.** `systemctl stop
-> vesessionmanager-web vesessionmanager-worker` matches *neither* single-unit rule and is rejected —
-> confusingly, as `sudo: a password is required`, which reads like a broken SSH key rather than an
-> allowlist miss. `deploy.yml` therefore issues one `systemctl` call per service; keep it that way
-> rather than widening these rules, since their narrowness is what stops a compromised deploy key
-> from touching anything else on the box.
+   > **sudo matches the whole command line.** `systemctl stop vesessionmanager-web
+   > vesessionmanager-worker` matches *neither* single-unit rule and is rejected as
+   > `sudo: a password is required`, which reads like a broken SSH key. `deploy-release` issues one
+   > call per unit; keep it that way rather than widening the rules.
+5. **The systemd units**, pointing through `current`. Enabled, not started: on a fresh box there is
+   no release yet, and on an upgraded one the script restarts them itself.
+6. **This app's deploy key.** A fresh ed25519 keypair, `~deploy/.ssh/vesessionmanager-ci`, installed
+   in `authorized_keys` with `command="/opt/vesessionmanager/ops/ssh-deploy-command"` and
+   no-pty/no-forwarding. That forced command accepts exactly three things — an rsync whose
+   destination is `releases/<tag>/{web,worker}/`, `deploy <tag>`, and `prune` — so a leaked repo
+   secret cannot open a shell, read `/var/lib`, or touch NcsScheduler's grants on the same account.
+   The script prints where the private half is; copy it into the secret below and `shred -u` it.
 
-```bash
-sudo tee /etc/sudoers.d/vesessionmanager-deploy > /dev/null <<'EOF'
-Defaults:deploy !requiretty
-deploy ALL=(root) NOPASSWD: /usr/bin/systemctl stop vesessionmanager-worker, /usr/bin/systemctl stop vesessionmanager-web, /usr/bin/systemctl start vesessionmanager-worker, /usr/bin/systemctl start vesessionmanager-web, /usr/bin/rsync *, /usr/bin/cp /var/lib/vesessionmanager/vesessionmanager.db *, /usr/bin/journalctl -u vesessionmanager-worker *, /usr/bin/journalctl -u vesessionmanager-web *
-EOF
-sudo chmod 0440 /etc/sudoers.d/vesessionmanager-deploy
-sudo visudo -c
-```
+**Tailscale — nothing new to create.** This is the same box as `NcsScheduler`, so reuse its OAuth
+client (tagged `tag:ci`, already permitted in the tailnet ACLs). GitHub secrets are per-repo, so
+the two values still have to be added here.
 
-> `/etc/sudoers.d/` files **must** be mode `0440` — `tee` creates them with your default umask
-> instead, so sudo silently ignores the file (every sudo call then falls back to demanding a
-> password) until you `chmod` it. `visudo -c` will tell you if a file has the wrong permissions.
-> `!requiretty` is defensive in case the server sets `Defaults requiretty` globally, which also
-> breaks NOPASSWD sudo over a non-interactive SSH session. (Same gotcha NcsScheduler's own
-> `docs/deployment.md` already documents — this file is a second, independent instance of it, not a
-> replacement for NcsScheduler's own `ncsscheduler-deploy` file, which stays as-is.)
-
-If `deploy`'s SSH key isn't already installed (it should be, from NcsScheduler's setup), install the
-existing public key rather than generating a new keypair:
-
-```bash
-ssh-copy-id -i <existing deploy_key.pub> deploy@<server-tailscale-hostname>
-```
-
-**4. App/data directories**
-
-```bash
-sudo mkdir -p /opt/vesessionmanager/worker /opt/vesessionmanager/web /var/lib/vesessionmanager
-sudo chown -R vesessionmanager:vesessionmanager /opt/vesessionmanager /var/lib/vesessionmanager
-```
-
-The key ring directory is created explicitly and kept **out** of `/var/lib/vesessionmanager/`, so a
-backup or disk image of the database directory cannot also carry the key that decrypts its contents:
-
-```bash
-sudo mkdir -p /var/lib/vesessionmanager-keys
-sudo chown vesessionmanager:vesessionmanager /var/lib/vesessionmanager-keys
-sudo chmod 700 /var/lib/vesessionmanager-keys
-```
-
-On a genuinely new deployment it can be left empty — Data Protection writes its first key there on
-startup, and with no credentials stored yet there is nothing to fail to decrypt. **On an existing
-deployment, see "The key ring moved out of the database directory" above: the keys must be copied
-in before the services start against the new path.**
-
-**5. GitHub repo secrets** (Settings → Secrets and variables → Actions)
+**GitHub repo secrets** (Settings → Secrets and variables → Actions)
 
 | Secret | Value |
 |---|---|
 | `TS_OAUTH_CLIENT_ID` | same value as NcsScheduler's repo secret |
 | `TS_OAUTH_SECRET` | same value as NcsScheduler's repo secret |
-| `SSH_PRIVATE_KEY` | contents of the shared `deploy` private key (same as NcsScheduler's repo secret) |
+| `SSH_PRIVATE_KEY` | **this app's** key — the private half `setup-server.sh` generated (not the shared `deploy` key NcsScheduler uses) |
 | `DEPLOY_HOST` | server's Tailscale hostname, e.g. `myserver.tailXXXX.ts.net` |
+| `DEPLOY_HOST_KEY` | one line of `ssh-keyscan -H <DEPLOY_HOST>` — the workflow pins it and **refuses to run without it** rather than falling back to trust-on-first-use |
 | `DEPLOY_USER` | `deploy` |
-
-**Workflow constants** — non-sensitive, hardcoded in the `env:` block at the top of `deploy.yml`
-rather than stored as secrets. Edit them there directly if your setup differs:
-
-| Variable | Default | What it is |
-|---|---|---|
-| `DEPLOY_PATH` | `/opt/vesessionmanager` | Server directory each publish output is synced into (`worker/`/`web/` subfolders) |
-| `DB_PATH` | `/var/lib/vesessionmanager/vesessionmanager.db` | Shared SQLite DB, backed up before every deploy — via `rsync --ignore-missing-args`, so the first deploy to a new box (where the file doesn't exist yet) isn't a failure; see the step's own comment for why `test -f` can't be used here |
-| `WORKER_SERVICE` | `vesessionmanager-worker` | systemd service for the Worker |
-| `WEB_SERVICE` | `vesessionmanager-web` | systemd service for the Web admin backend |
-| `WEB_PORT` | `5100` | Local port the health check polls after restart — **placeholder**, change it (and the Web unit's `ASPNETCORE_URLS`) if it collides with anything else already running on the box (NcsScheduler already occupies 5000) |
-
-#### Example bootstrap script
-
-Everything in steps 2-4 as one idempotent script. **Genericised on purpose** — set the variables at
-the top and it works for any app on this pattern; the real one for this deployment lives outside the
-repo (`ops/`, gitignored) so server-specific values are not published.
-
-Run once, as root, before the first deploy: `sudo bash setup-server.sh`
-
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-
-# ---- Set these ----------------------------------------------------------------
-APP_SLUG="myapp"                       # names the service account, units and paths
-SERVICE_ACCOUNT="$APP_SLUG"            # runs the app; no login, no home directory
-DEPLOY_USER="deploy"                   # the account CI logs in as
-DEPLOY_PATH="/opt/${APP_SLUG}"         # published binaries; rsync --delete target
-DATA_PATH="/var/lib/${APP_SLUG}"       # database — deliberately OUTSIDE DEPLOY_PATH
-KEYRING_PATH="/var/lib/${APP_SLUG}-keys"  # Data Protection keys — a SIBLING of DATA_PATH, not a child
-DB_FILE="${APP_SLUG}.db"
-WORKER_SERVICE="${APP_SLUG}-worker"
-WEB_SERVICE="${APP_SLUG}-web"
-WEB_PORT="5100"                        # must match ASPNETCORE_URLS below and WEB_PORT in deploy.yml
-# -------------------------------------------------------------------------------
-
-[[ $EUID -eq 0 ]] || { echo "Run as root: sudo bash $0" >&2; exit 1; }
-
-# 1. Service account — system account, no shell, no home. Nothing logs in as this.
-id -u "$SERVICE_ACCOUNT" &>/dev/null \
-  || useradd --system --no-create-home --shell /usr/sbin/nologin "$SERVICE_ACCOUNT"
-
-# 2. Directories.
-mkdir -p "${DEPLOY_PATH}/worker" "${DEPLOY_PATH}/web" "$DATA_PATH"
-chown -R "${SERVICE_ACCOUNT}:${SERVICE_ACCOUNT}" "$DEPLOY_PATH" "$DATA_PATH"
-
-# The key ring gets its own directory and 0700, not 0755. It decrypts the credential columns inside
-# the database, so an archive of DATA_PATH must not be able to carry both halves.
-mkdir -p "$KEYRING_PATH"
-chown "${SERVICE_ACCOUNT}:${SERVICE_ACCOUNT}" "$KEYRING_PATH"
-chmod 700 "$KEYRING_PATH"
-
-# Upgrading a box that predates the split? Copy the keys BEFORE deploying the new config, or every
-# credential silently reads back as ciphertext (the app treats undecryptable values as plaintext).
-if [[ -d "${DATA_PATH}/dataprotection-keys" ]] && ! compgen -G "${KEYRING_PATH}/*.xml" > /dev/null; then
-  echo "WARNING: keys still in ${DATA_PATH}/dataprotection-keys and ${KEYRING_PATH} is empty."
-  echo "  sudo cp ${DATA_PATH}/dataprotection-keys/*.xml ${KEYRING_PATH}/"
-  echo "  sudo chown ${SERVICE_ACCOUNT}:${SERVICE_ACCOUNT} ${KEYRING_PATH}/*.xml"
-fi
-
-# 3. Sudoers — one rule per unit, because sudo matches the WHOLE command line. A combined
-#    "systemctl stop web worker" matches neither rule and is rejected as "a password is required",
-#    which reads like a broken SSH key. Validate before installing: a malformed file in
-#    /etc/sudoers.d can lock you out of sudo entirely.
-SUDOERS_TMP="$(mktemp)"
-cat > "$SUDOERS_TMP" <<EOF
-Defaults:${DEPLOY_USER} !requiretty
-${DEPLOY_USER} ALL=(root) NOPASSWD: /usr/bin/systemctl stop ${WORKER_SERVICE}, /usr/bin/systemctl stop ${WEB_SERVICE}, /usr/bin/systemctl start ${WORKER_SERVICE}, /usr/bin/systemctl start ${WEB_SERVICE}, /usr/bin/rsync *, /usr/bin/cp ${DATA_PATH}/${DB_FILE} *, /usr/bin/journalctl -u ${WORKER_SERVICE} *, /usr/bin/journalctl -u ${WEB_SERVICE} *
-EOF
-chmod 0440 "$SUDOERS_TMP"          # 0440 is mandatory — sudo silently ignores any other mode
-visudo -c -f "$SUDOERS_TMP" >/dev/null \
-  || { echo "sudoers validation failed; left at $SUDOERS_TMP, NOT installed" >&2; exit 1; }
-mv "$SUDOERS_TMP" "/etc/sudoers.d/${APP_SLUG}-deploy"
-chmod 0440 "/etc/sudoers.d/${APP_SLUG}-deploy"
-
-# 4. systemd units.
-cat > "/etc/systemd/system/${WORKER_SERVICE}.service" <<EOF
-[Unit]
-Description=${APP_SLUG} Worker
-After=network.target
-
-[Service]
-WorkingDirectory=${DEPLOY_PATH}/worker
-ExecStart=/usr/bin/dotnet ${DEPLOY_PATH}/worker/MyApp.Worker.dll
-Restart=always
-RestartSec=10
-User=${SERVICE_ACCOUNT}
-# A generic Host reads DOTNET_ENVIRONMENT, NOT ASPNETCORE_ENVIRONMENT. Set explicitly so it is
-# never in question.
-Environment=DOTNET_ENVIRONMENT=Production
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-cat > "/etc/systemd/system/${WEB_SERVICE}.service" <<EOF
-[Unit]
-Description=${APP_SLUG} Web
-After=network.target
-
-[Service]
-WorkingDirectory=${DEPLOY_PATH}/web
-ExecStart=/usr/bin/dotnet ${DEPLOY_PATH}/web/MyApp.Web.dll
-Restart=always
-RestartSec=10
-User=${SERVICE_ACCOUNT}
-Environment=ASPNETCORE_ENVIRONMENT=Production
-# Without this Kestrel picks its own port, not the one the proxy and health check expect.
-Environment=ASPNETCORE_URLS=http://localhost:${WEB_PORT}
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-# Enabled, not started: nothing is published yet on a fresh box, so ExecStart would just fail. The
-# first successful deploy starts them for real.
-systemctl daemon-reload
-systemctl enable "$WORKER_SERVICE" "$WEB_SERVICE"
-
-cat <<SUMMARY
-Bootstrap complete. Still manual:
-  1. Install the CI deploy key into ${DEPLOY_USER}'s authorized_keys.
-  2. Add the repo's Actions secrets (Tailscale client id/secret, SSH key, deploy host/user).
-  3. Push a version tag to trigger the first deploy.
-  4. Add the Apache vhost + TLS certificate once a domain exists.
-  5. Back up ${KEYRING_PATH} OFF this box, separately from the database backup.
-SUMMARY
-```
-
-Four things in there are load-bearing and should survive any tidying:
-
-- **`chmod 0440` on the sudoers file, and `visudo -c` before installing it.** `tee`/`cat` create the
-  file with your umask instead, and sudo *silently ignores* a file with any other mode — every sudo
-  call then falls back to demanding a password. A malformed file can lock you out of sudo entirely,
-  which is why it is validated in a temp location first.
-- **One sudoers rule per systemd unit.** See the note above — the combined form matches nothing.
-- **`KEYRING_PATH` as a sibling of `DATA_PATH`, at 0700.** A child directory puts the key inside any
-  archive of the database directory, which is the whole thing the encryption is supposed to prevent.
-- **Services enabled but not started.** There is no published app on a fresh box, so starting them
-  here just produces a failed unit and a confusing first deploy.
 
 ### Triggering a deploy
 
@@ -471,7 +329,7 @@ the "is anyone able to sign in?" check is written against `PasswordHash != null`
 the role or a row count.)
 
 ```bash
-dotnet /opt/vesessionmanager/web/VeOps.Web.dll --create-admin --email you@example.org --name "Your Name" [--callsign WX0MIK]
+dotnet /opt/vesessionmanager/current/web/VeOps.Web.dll --create-admin --email you@example.org --name "Your Name" [--callsign WX0MIK]
 ```
 
 Applies migrations first, so it works on a box where the services have never started. Prints a
@@ -503,7 +361,7 @@ order is:
 
 ```bash
 # after the files are in place, before starting vesessionmanager-web
-dotnet /opt/vesessionmanager/web/VeOps.Web.dll --create-admin --email you@example.org --name "Your Name"
+dotnet /opt/vesessionmanager/current/web/VeOps.Web.dll --create-admin --email you@example.org --name "Your Name"
 sudo systemctl start vesessionmanager-web
 ```
 
@@ -516,16 +374,19 @@ is the safeguard working, not a broken build.
 
 ## systemd Services
 
-Example `/etc/systemd/system/vesessionmanager-worker.service`:
+`ops/setup-server.sh` writes both units; what follows is what it writes. Both paths go through the
+`current` symlink — see "Releases and rollback" above.
+
+`/etc/systemd/system/vesessionmanager-worker.service`:
 
 ```ini
 [Unit]
-Description=VeOps Worker
+Description=VE Ops Worker
 After=network.target
 
 [Service]
-WorkingDirectory=/opt/vesessionmanager/worker
-ExecStart=/usr/bin/dotnet /opt/vesessionmanager/worker/VeOps.Worker.dll
+WorkingDirectory=/opt/vesessionmanager/current/worker
+ExecStart=/usr/bin/dotnet /opt/vesessionmanager/current/worker/VeOps.Worker.dll
 Restart=always
 RestartSec=10
 User=vesessionmanager
@@ -538,23 +399,23 @@ Environment=DOTNET_ENVIRONMENT=Production
 WantedBy=multi-user.target
 ```
 
-Example `/etc/systemd/system/vesessionmanager-web.service`:
+`/etc/systemd/system/vesessionmanager-web.service`:
 
 ```ini
 [Unit]
-Description=VeOps Web
+Description=VE Ops Web
 After=network.target
 
 [Service]
-WorkingDirectory=/opt/vesessionmanager/web
-ExecStart=/usr/bin/dotnet /opt/vesessionmanager/web/VeOps.Web.dll
+WorkingDirectory=/opt/vesessionmanager/current/web
+ExecStart=/usr/bin/dotnet /opt/vesessionmanager/current/web/VeOps.Web.dll
 Restart=always
 RestartSec=10
 User=vesessionmanager
 Environment=ASPNETCORE_ENVIRONMENT=Production
 # Without this, Kestrel falls back to its own default rather than the port Apache/the deploy
 # health check expect -- set it explicitly so the real listening port is never in question. Must
-# match WEB_PORT in deploy.yml.
+# match PORT in ops/deploy-release.
 Environment=ASPNETCORE_URLS=http://localhost:5100
 
 [Install]
