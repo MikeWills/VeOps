@@ -73,7 +73,7 @@ printed just above it for the cause, fix forward, tag again.
 | `rolled back to …; deploy of <tag> FAILED` | new release did not start or did not pass health | fix forward; **if the release carried a migration**, read [`roll-back-a-release.md`](roll-back-a-release.md) — code is rolled back, the schema is not |
 | `rollback did not come up either — service is DOWN` | the previous release will not start either — usually a migration the old binary cannot run against | [`roll-back-a-release.md`](roll-back-a-release.md), step B, now |
 | `refused: 'deploy …'` / `refused dest:` from the box | the SSH key on the box is not this app's forced-command key, or the destination is not `releases/<tag>/` | `SSH_PRIVATE_KEY` must be the key `setup-server.sh` generated; re-run it if unsure |
-| `DEPLOY_HOST_KEY secret is not set` | the pinned host key was never added | `ssh-keyscan -H <host>` on any machine that can reach the box; store one line |
+| `DEPLOY_HOST_KEY secret is not set` | the pinned host key was never added | on the box: `ssh-keyscan -t ed25519 localhost 2>/dev/null \| cut -d' ' -f2-`; store the output |
 | `sudo: a password is required` in `deploy-release` | sudoers is one exact rule per unit and matches the **whole** command line — the rule set on the box is older than the script | re-run `setup-server.sh`; do not widen to `systemctl *` |
 | Web unit reports failed on a **brand-new** box | no administrator exists yet; the Web app refuses to start | [`stand-up-a-new-server.md`](stand-up-a-new-server.md) |
 | Startup crash naming teams and columns | key ring missing or wrong | [`key-ring-problems.md`](key-ring-problems.md) — **stop, do not re-enter credentials** |

@@ -294,7 +294,7 @@ the two values still have to be added here.
 | `TS_OAUTH_SECRET` | same value as NcsScheduler's repo secret |
 | `SSH_PRIVATE_KEY` | **this app's** key — the private half `setup-server.sh` generated (not the shared `deploy` key NcsScheduler uses) |
 | `DEPLOY_HOST` | server's Tailscale hostname, e.g. `myserver.tailXXXX.ts.net` |
-| `DEPLOY_HOST_KEY` | one line of `ssh-keyscan -H <DEPLOY_HOST>` — the workflow pins it and **refuses to run without it** rather than falling back to trust-on-first-use |
+| `DEPLOY_HOST_KEY` | the server's host key, `ssh-keyscan -t ed25519 <host> \| cut -d' ' -f2-` (`ssh-ed25519 AAAA…`); the workflow pairs it with `DEPLOY_HOST` itself, so the name in the secret does not matter, and it **refuses to run without it** rather than falling back to trust-on-first-use |
 | `DEPLOY_USER` | `deploy` |
 
 ### Triggering a deploy
