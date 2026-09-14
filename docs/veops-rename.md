@@ -83,7 +83,7 @@ Worker is active" gate stops the run before Web is touched. The key-ring and dat
 both taken before the sync, so nothing is at risk — the recovery is the same two `sed` commands plus
 a `systemctl start`.
 
-`ops/setup-server.sh` (local-only, gitignored) was updated to emit units with the new DLL names, so a
+`ops/setup-server.sh` (gitignored at the time; committed since 2026-09-13) was updated to emit units with the new DLL names, so a
 fresh box built from it is correct without any manual step.
 
 ## Repo rename fallout

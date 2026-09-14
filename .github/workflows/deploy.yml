@@ -2,11 +2,24 @@
 #
 # Trigger: pushing a version tag (YYYY.MM.PATCH, e.g. 2026.09.0) -- never on every commit to main.
 #
+# Layout on the box (see ops/setup-server.sh and docs/deployment.md):
+#   /opt/vesessionmanager/releases/<tag>/{web,worker}   every deployed build, newest 5 kept
+#   /opt/vesessionmanager/current -> releases/<tag>      what the systemd units run
+#
+# A deploy rsyncs the new build BESIDE the running one (no downtime yet), then hands off to
+# ops/deploy-release on the box, which snapshots the key ring and database, stops the services,
+# flips `current`, starts them, and health-checks with the real Host header. If health fails it
+# flips `current` back to the previous release and restarts it -- the box is never left on a broken
+# build. Code rollback is automatic; a schema migration is not undone by it (see the runbook).
+#
 # Required repo secrets (see docs/deployment.md for setup):
 #   TS_OAUTH_CLIENT_ID  - Tailscale OAuth client ID (tag:ci) -- same client already used by NcsScheduler
 #   TS_OAUTH_SECRET     - Tailscale OAuth client secret
-#   SSH_PRIVATE_KEY     - private half of the shared 'deploy' keypair (same as NcsScheduler)
+#   SSH_PRIVATE_KEY     - THIS app's deploy key; its public half is installed on the box with a
+#                         forced command (ops/ssh-deploy-command) that only accepts an rsync into
+#                         releases/, "deploy <tag>" and "prune"
 #   DEPLOY_HOST         - server's Tailscale hostname/IP (e.g. myserver.tailXXXX.ts.net)
+#   DEPLOY_HOST_KEY     - one line of `ssh-keyscan -H <DEPLOY_HOST>` -- the pinned host key
 #   DEPLOY_USER         - deploy
 
 name: Deploy
@@ -18,17 +31,8 @@ on:
       - '2[0-9][0-9][0-9].[0-9][0-9].[0-9]*'
 
 env:
+  APP: vesessionmanager
   DEPLOY_PATH: /opt/vesessionmanager
-  DB_PATH: /var/lib/vesessionmanager/vesessionmanager.db
-  # Deliberately NOT under /var/lib/vesessionmanager -- see docs/deployment.md. The key ring and the
-  # ciphertext it opens must not end up in one archive, so the two backups below stay in separate
-  # directories rather than one tidy bundle.
-  KEYRING_PATH: /var/lib/vesessionmanager-keys
-  WORKER_SERVICE: vesessionmanager-worker
-  WEB_SERVICE: vesessionmanager-web
-  # Must match ASPNETCORE_URLS in the web systemd unit -- change this (and the unit file) if it
-  # collides with anything else already running on the box (NcsScheduler already occupies 5000).
-  WEB_PORT: 5100
 
 jobs:
   build-and-test:
@@ -49,6 +53,9 @@ jobs:
   deploy:
     needs: build-and-test
     runs-on: ubuntu-latest
+    # Two tags pushed close together would otherwise race each other on the box -- each stops the
+    # services the other just started. Queue them instead.
+    concurrency: deploy-production
     # Needed by the Publish release step below. Scoped to this job rather than the workflow so
     # build-and-test keeps the default read-only token.
     permissions:
@@ -79,219 +86,63 @@ jobs:
           tags: tag:ci
 
       - name: Set up SSH
+        # The host key is PINNED from a secret, not learned with ssh-keyscan on every run. The old
+        # trust-on-first-use form accepted whatever answered (audit item L-03); it was tolerated
+        # because WireGuard already authenticates the peer, but pinning costs one secret and closes
+        # it. A missing secret fails loudly rather than falling back to keyscan -- a deploy that
+        # silently downgrades its own check is worse than one that stops and says so.
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          # Trust-on-first-use, every run: the runner is fresh and ephemeral, so there is no stored
-          # host key to compare against and this accepts whatever answers (audit item L-03).
-          #
-          # Accepted rather than fixed, deliberately. The connection is already inside the tailnet —
-          # WireGuard has authenticated the peer before SSH sees it — so the window for a substituted
-          # host key is "an attacker who is already on the tailnet", which is a bigger problem than
-          # this. Closing it properly means storing the host key as a repo secret (DEPLOY_HOST_KEY)
-          # and writing that to known_hosts instead; worth doing, but it is a change nobody can make
-          # from a PR, since the secret has to exist first or every deploy breaks.
-          ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
-
-      - name: Backup Data Protection key ring
-        # Losing the key ring while the database survives makes every stored team credential
-        # permanently unrecoverable, so it earns the same pre-deploy snapshot the database gets.
-        #
-        # The snapshot stays INSIDE $KEYRING_PATH rather than next to the database on purpose. A
-        # backup that puts the key ring beside the ciphertext undoes the reason the two directories
-        # were separated at all (#157) -- one leaked archive would then carry both halves.
-        #
-        # A server-side helper rather than `sudo rsync` (#254). The old form needed a sudoers rule
-        # of `/usr/bin/rsync *`, and an unconstrained wildcard on rsync is root-equivalent — it can
-        # read or overwrite any file on the box, and --rsync-path/-e can execute commands. That made
-        # the narrow systemctl rules beside it decorative. The helper takes no arguments and hardcodes
-        # every path, so its sudoers entry needs no wildcard.
-        #
-        # It handles the cases the flags used to: a box with no key ring yet is a clean no-op rather
-        # than a failed deploy, and it copies *.xml at one level down so a snapshot can never include
-        # a previous snapshot (#268 — the destination is a SUBDIRECTORY of the source, so a recursive
-        # copy grew 2^n after n deploys). That property is structural now instead of a flag to
-        # remember.
-        #
-        # NOTE: this is a rollback snapshot, not a backup. It lives on the same disk as the thing it
-        # protects. Real off-box backup of $KEYRING_PATH is still a manual, separate job -- see
-        # docs/deployment.md and #256.
-        run: |
-          ssh -i ~/.ssh/deploy_key "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" \
-            "sudo /usr/local/sbin/vesessionmanager-backup-keyring"
-
-      - name: Stop services
-        # One service per command, deliberately. The deploy user's sudoers allowlist grants each
-        # unit its own rule ("systemctl stop vesessionmanager-worker", "systemctl stop
-        # vesessionmanager-web"), and sudo matches the WHOLE command line — so the combined
-        # "systemctl stop web worker" form this used to run matched neither rule and was rejected
-        # with "sudo: a password is required", which reads like a broken SSH key rather than an
-        # allowlist miss. Found on the first real deploy, 2026-08-04.
-        #
-        # Keep these split: the allowlist is per-unit and has no wildcards at all (#254). Widening
-        # sudoers to "systemctl stop *"
-        # would be the wrong trade, since the narrow rules are what stop a compromised deploy key
-        # from touching anything else on the box. Web stops first so it stops serving before the
-        # Worker goes down.
-        run: |
-          ssh -i ~/.ssh/deploy_key "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" \
-            "sudo systemctl stop $WEB_SERVICE && sudo systemctl stop $WORKER_SERVICE"
-
-      - name: Backup database
-        # **One file, via SQLite's own backup API, verified with PRAGMA integrity_check** (#343).
-        #
-        # The database is in WAL mode — EF Core enables it on databases it creates, and journal mode
-        # is persisted in the file header. BACKUP.md asserted the opposite ("rollback-journal mode,
-        # not WAL, nothing sets PRAGMA journal_mode"): the second half is true and the conclusion is
-        # not. In WAL mode committed transactions live in the -wal file until checkpoint, so the
-        # .db-only copy this step originally took was MISSING every transaction since the last
-        # checkpoint — and it opens cleanly, so the loss was silent. That was #255.
-        #
-        # #255 fixed it by moving the snapshot after the service stop and copying the -wal and -shm
-        # sidecars alongside the .db. That was correct, but only conditionally: a plain file copy is
-        # consistent only while nothing is writing, and restoring meant putting all three files back
-        # together with their shared stamp. `.backup` takes a proper read lock and resolves the WAL
-        # itself, so the result is ONE self-contained file and the ordering constraint is gone.
-        #
-        # The stop stays anyway. It costs nothing here, and everything after it already depends on it.
-        #
-        # A server-side helper rather than `sudo rsync` — see the key ring step and #254 for why the
-        # `/usr/bin/rsync *` sudoers rule this replaced was root-equivalent. The helper still owns
-        # the "no database yet" case: on a brand-new server the .db does not exist until a service
-        # first runs Database.Migrate(), and an unconditional snapshot made the very FIRST deploy to
-        # any box fail here (found 2026-08-04). Guarding with `test -f` from this side was never an
-        # option in either form — `sudo test` is not allowlisted, and an unprivileged `test -f`
-        # cannot read /var/lib/vesessionmanager at all, so it would report "missing" forever once the
-        # database existed. Inside the helper, running as root, it is just an `if`.
-        #
-        # The helper lives on the box in gitignored ops/, so a change to it is NOT carried by this
-        # workflow or by any PR — it has to be copied to the server by hand. Same constraint as #254.
-        #
-        # NOTE: this is a rollback snapshot, not a backup. It lives on the same disk as the thing it
-        # protects. The off-box backup is a separate job (#256, built 2026-08-14).
-        run: |
-          ssh -i ~/.ssh/deploy_key "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" \
-            "sudo /usr/local/sbin/vesessionmanager-backup-db"
-
-      - name: Sync Worker files
-        run: |
-          # No sudo here at all (#254). $DEPLOY_PATH is owned by the deploy user with the
-          # vesessionmanager group and setgid directories, so deploy can write, delete and replace
-          # these files as itself while the service account reads them through the group. That is
-          # what let `--rsync-path="sudo rsync"` go, and with it the `/usr/bin/rsync *` sudoers rule
-          # that made every other rule on the box decorative.
-          #
-          # --chown went with it: setting ownership needs root, and is no longer wanted — the files
-          # SHOULD be owned by deploy. The service only ever reads them. The one thing it writes
-          # under this tree is Serilog's relative "logs/" path, which is owned by the service account
-          # and excluded below.
-          #
-          # *.db* is excluded defensively even though the DB actually lives outside this tree
-          # entirely, at $DB_PATH.
-          #
-          # 'logs' is NOT defensive — Serilog writes to a relative "logs/" path, so it resolves under
-          # WorkingDirectory, i.e. inside this tree. Without the exclude, --delete removed the entire
-          # log history on every deploy: the change window is exactly when it is most wanted, and a
-          # bad release or a compromise noticed afterwards had no application-side evidence left
-          # (#267). journalctl retains the console sink, which softened it but does not replace it.
-          rsync -avz --delete \
-            --exclude '*.db' \
-            --exclude '*.db-shm' \
-            --exclude '*.db-wal' \
-            --exclude '*.bak-*' \
-            --exclude 'logs' \
-            -e "ssh -i ~/.ssh/deploy_key" \
-            publish/worker/ "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:$DEPLOY_PATH/worker/"
-
-      - name: Sync Web files
-        run: |
-          rsync -avz --delete \
-            --exclude '*.db' \
-            --exclude '*.db-shm' \
-            --exclude '*.db-wal' \
-            --exclude '*.bak-*' \
-            --exclude 'logs' \
-            -e "ssh -i ~/.ssh/deploy_key" \
-            publish/web/ "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:$DEPLOY_PATH/web/"
-
-      - name: Start Worker, confirm it's healthy before starting Web
-        run: |
-          # Worker and Web both call dbContext.Database.Migrate() on startup (see Program.cs in
-          # each project) -- starting them serially and confirming Worker is actually up first
-          # avoids both processes racing to apply the same SQLite migration concurrently.
-          #
-          # NO LONGER LOAD-BEARING as of #443: MigrationLock takes an exclusive file lock beside the
-          # database, so the hosts serialize themselves. This ordering stays as belt-and-braces, and
-          # because the health gate is worth having anyway -- but it was never protection outside a
-          # deploy on this one box. A reboot starts both units together, the HRCC server runs no
-          # pipeline at all, and a self-hoster following docs/deployment.md's publish-and-copy
-          # install never had it.
-          ssh -i ~/.ssh/deploy_key "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" "
-            sudo systemctl start $WORKER_SERVICE
-            sleep 5
-            if ! systemctl is-active --quiet $WORKER_SERVICE; then
-              echo 'Worker failed to start (possibly a migration or startup error); recent logs:'
-              sudo journalctl -u $WORKER_SERVICE -n 50 --no-pager
-              exit 1
-            fi
-          "
-
-      - name: Start Web
-        run: |
-          ssh -i ~/.ssh/deploy_key "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" \
-            "sudo systemctl start $WEB_SERVICE"
-
-      - name: Health check
-        # Asserts on the status code, not merely on having received one.
-        #
-        # This used to accept anything other than curl's 000 ("no response at all"), so a 400, a 404
-        # or a 500 on every request all counted as a healthy deploy -- it proved the process was bound
-        # to the port and nothing more, and the release below was published on the strength of it.
-        #
-        # It was almost certainly passing on a 400 in practice: AllowedHosts is pinned in
-        # appsettings.Production.json, and a request to http://localhost:PORT/ carries Host: localhost,
-        # which host-filtering middleware rejects with 400 before the request ever reaches the app. So
-        # the reassuring "Web responded with HTTP 400" line was the check working as written.
-        #
-        # The Host header is taken from AllowedHosts itself rather than restated here, so the two
-        # cannot drift; AllowedHosts may be a semicolon-separated list, hence the cut. Requesting
-        # localhost with the right Host header tests the app directly, deliberately bypassing Apache
-        # and TLS -- proxy problems are a different failure with a different fix.
-        #
-        # 2xx and 3xx both pass: "/" is public today and returns 200, but a redirect to the login page
-        # would equally prove the app is processing requests, which is what this step is for. 4xx/5xx
-        # fail. A response that is merely absent keeps the loop waiting, since the service may still be
-        # starting.
-        run: |
-          PUBLIC_HOST=$(grep -oP '"AllowedHosts"\s*:\s*"\K[^"]+' \
-            src/VeOps.Web/appsettings.Production.json | cut -d';' -f1)
-          if [ -z "$PUBLIC_HOST" ]; then
-            echo "Could not read AllowedHosts from appsettings.Production.json — refusing to guess."
+          if [ -z "${{ secrets.DEPLOY_HOST_KEY }}" ]; then
+            echo "DEPLOY_HOST_KEY secret is not set. On any machine that can reach the box:"
+            echo "  ssh-keyscan -H <DEPLOY_HOST>"
+            echo "and store one of the lines it prints as the DEPLOY_HOST_KEY repo secret."
             exit 1
           fi
-          echo "Health-checking as Host: $PUBLIC_HOST"
-          ssh -i ~/.ssh/deploy_key "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" "
-            last=000
-            for i in \$(seq 1 30); do
-              last=\$(curl -s -o /dev/null -w '%{http_code}' -H 'Host: $PUBLIC_HOST' http://localhost:$WEB_PORT/)
-              case \"\$last\" in
-                2*|3*)
-                  echo \"Web healthy — HTTP \$last\"
-                  exit 0
-                  ;;
-              esac
-              sleep 3
-            done
-            if [ \"\$last\" = '000' ]; then
-              echo 'Web never responded within 90s.'
-            else
-              echo \"Web responded with HTTP \$last — the process is up but not serving successfully.\"
-            fi
-            echo 'Recent logs:'
-            sudo journalctl -u $WEB_SERVICE -n 50 --no-pager
-            exit 1
-          "
+          printf '%s\n' "${{ secrets.DEPLOY_HOST_KEY }}" > ~/.ssh/known_hosts
+          echo "SSH=ssh -i $HOME/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" >> "$GITHUB_ENV"
+
+      - name: Upload release beside the running one
+        # No sudo, no --chown (#254): releases/ is owned by the deploy user with the service
+        # account's group and setgid directories, so deploy writes as itself and the service reads
+        # through the group. The forced command on the far end only accepts a destination of the
+        # form releases/<tag>/{web,worker}/ -- never current/, never the running release -- so the
+        # services keep serving the old build untouched while this runs. --delete is a no-op into a
+        # fresh directory and stays so a re-run of the same tag replaces rather than merges.
+        #
+        # *.db* and *.bak-* are excluded defensively (the data lives under /var/lib, outside this
+        # tree entirely). 'logs' too: Serilog writes to /var/lib/vesessionmanager/logs now, but a
+        # relative logs/ would land inside a release and be pruned with it (#267), so the exclude
+        # stays as a guard against that ever being reintroduced.
+        run: |
+          for host in worker web; do
+            rsync -avz --delete \
+              --exclude '*.db' \
+              --exclude '*.db-shm' \
+              --exclude '*.db-wal' \
+              --exclude '*.bak-*' \
+              --exclude 'logs' \
+              -e "ssh -i ~/.ssh/deploy_key" \
+              publish/$host/ "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:$DEPLOY_PATH/releases/${{ github.ref_name }}/$host/"
+          done
+
+      - name: Snapshot data, switch release, start, health check (auto-rollback on failure)
+        # Every server-side ordering rule lives in ops/deploy-release, one reviewed script instead
+        # of eight ssh calls: key ring snapshot, Web stopped before Worker, database snapshot after
+        # the stop (WAL -- #255/#343), Worker started and confirmed active before Web, health
+        # checked with the Host header read from the release's own AllowedHosts (a 400 from host
+        # filtering used to pass as healthy), and the flip back to the previous release if any of
+        # that fails. sudo on the box is one exact rule per command, no wildcards (#254) -- the
+        # combined "systemctl stop a b" form matches nothing and is rejected as "a password is
+        # required", which is why it is one unit per call in there too.
+        run: $SSH "deploy ${{ github.ref_name }}"
+
+      - name: Prune old releases
+        # Newest 5 by version, never the one `current` points at. Enough to flip back several
+        # releases by hand without a rebuild; not so many that a build every few days fills the disk.
+        run: $SSH "prune"
 
       # Everything below runs only once the deploy is proven good. A release is a claim that this
       # version works somewhere, so publishing one for a failed deploy would be worse than
@@ -305,9 +156,9 @@ jobs:
           ls -lh artifacts
 
       # Notes come from the annotated tag message, which is where the release notes for this repo
-      # are already written -- see the v0.2.x tags. --verify-tag refuses to invent a release for a
-      # tag that does not exist, and the || branch makes a re-run of an already-released tag upload
-      # the assets again instead of failing the whole deploy after it has already succeeded.
+      # are already written. --verify-tag refuses to invent a release for a tag that does not exist,
+      # and the || branch makes a re-run of an already-released tag upload the assets again instead
+      # of failing the whole deploy after it has already succeeded.
       - name: Publish release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

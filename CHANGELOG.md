@@ -8,6 +8,24 @@ that window, or immediately if it's phase-numbered work already summarized in "C
 design rationale for any entry still lives in its linked `/docs/*.md` file, not here or in
 CLAUDE.md — this file, like CLAUDE.md's Change Log, is pointers only.
 
+- **A calendar invite, and a per-session VE summary email (#491, 2026-08-28).** See
+  `docs/trigger-points.md`'s two new sections. Per-rule opt-in (`MessageRule.IncludeCalendarInvite`),
+  not per-team — Mike: "The toggle I want is per email related to a session, not per team."
+  `IcsInviteBuilder` shipped in #502 and sat unwired for three reasons its own doc comment named; all
+  three landed here: `MessageSessionContext` gained `DurationMinutes`/`ZoomJoinUrl`,
+  `BeforeSessionStartScanner` now populates `Session` the same way `CandidateRegisteredScanner`
+  already did, and `EmailMessage` gained a real MimeKit `Attachment` (`IcsAttachment`), distinct from
+  `InlineLogo`'s `LinkedResource`. A new `MessageTriggerDefinition.CarriesSessionContext` flag gates
+  which triggers may turn the checkbox on — true only for `CandidateRegistered`/`BeforeSessionStart`
+  today. **Same day, asked directly: `MessageFanOut.PerSession` (Discord-only until now) now works on
+  email too** — a VE addressed as `SessionLead` used to get one email per candidate registered, with
+  no candidate-count token available outside Discord's digest; `DispatchEmailPerSessionAsync` groups by
+  session and renders the same `{{Count}}`/`{{SessionTitle}}`/`{{RegisteredCount}}` tokens Discord's
+  `PerSession` posts already use. Refused only when addressed to `Candidate` — the one recipient a
+  batched message has no single address for (`SingleDigest`, a batch spanning *every* session, stays
+  Discord-only for the same underlying reason). A true VEC-the-organization notification is still a
+  different, unbuilt thing — see the doc's "Still to come."
+
 - **TeamLead can run the two day-of session actions (2026-08-27).** See `docs/admin-auth.md`'s
   "second exception" section. Mike, during role-access testing: *"These are a key part of running a
   test session. The SM might not be available to do that for them."*

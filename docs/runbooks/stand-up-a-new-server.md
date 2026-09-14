@@ -8,15 +8,18 @@
 
 ## 1. Bootstrap the box
 
-`ops/setup-server.sh` (gitignored — the copy in this working tree is the source, hand-copied to the
-box) creates:
+`ops/setup-server.sh` (copy the whole `ops/` directory to the box, then `sudo bash setup-server.sh`)
+creates:
 
 - the `vesessionmanager` **system account** — no shell, no home, nothing logs in as it,
-- `/opt/vesessionmanager/{worker,web}/` — the app path, `rsync --delete`d on every deploy,
+- `/opt/vesessionmanager/releases/` — one directory per deployed tag, `current` linked to the live one,
+- `/var/lib/vesessionmanager/logs/` — Serilog's absolute log path, outside every release,
 - `/var/lib/vesessionmanager/` — the **database**, deliberately outside the app path,
 - `/var/lib/vesessionmanager-keys/` at **0700** — the key ring, a *sibling* not a child,
 - `/etc/sudoers.d/vesessionmanager-deploy` — **one exact rule per unit**, no wildcards,
-- both systemd units, **enabled but not started** (nothing is published yet).
+- both systemd units through `current`, **enabled but not started** (nothing is published yet),
+- this app's deploy keypair with its forced command — the private half goes into the repo's
+  `SSH_PRIVATE_KEY` secret, with `DEPLOY_HOST_KEY` from `ssh-keyscan -H <host>`.
 
 Two things that will silently bite:
 
@@ -24,7 +27,7 @@ Two things that will silently bite:
   your umask, and sudo **silently ignores** a file with any other mode — every sudo call then
   demands a password, which reads like a broken SSH key.
 - The units set `WorkingDirectory`, because the content root is the current directory. Any by-hand
-  invocation needs `sh -c 'cd /opt/vesessionmanager/worker && exec dotnet ./VeOps.Worker.dll <switch>'`.
+  invocation needs `sh -c 'cd /opt/vesessionmanager/current/worker && exec dotnet ./VeOps.Worker.dll <switch>'`.
 
 ## 2. Create the archive directory (ARRL filing)
 
@@ -69,7 +72,7 @@ A Production database starts with **no account anyone can sign into**. `DevAuthS
 Development, and every route that could create a user is itself `[Authorize]`d.
 
 ```bash
-dotnet /opt/vesessionmanager/web/VeOps.Web.dll --create-admin \
+dotnet /opt/vesessionmanager/current/web/VeOps.Web.dll --create-admin \
   --email you@example.org --name "Your Name" [--callsign WX0MIK]
 ```
 

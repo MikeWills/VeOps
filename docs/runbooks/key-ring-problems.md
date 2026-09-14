@@ -56,7 +56,7 @@ Same cause, one layer quieter — a credential is being sent as an undecryptable
 read-only:
 
 ```bash
-sudo -u vesessionmanager sh -c 'cd /opt/vesessionmanager/worker && exec dotnet ./VeOps.Worker.dll --verify-keyring'
+sudo -u vesessionmanager sh -c 'cd /opt/vesessionmanager/current/worker && exec dotnet ./VeOps.Worker.dll --verify-keyring'
 ```
 
 Run it from the app directory — the content root is the current directory, not the DLL's. Elsewhere
@@ -78,7 +78,7 @@ It is **not** a recovery tool for a lost key ring.
 destroy the originals. If the guard is refusing, that refusal is protecting you — resolve it first.
 
 ```bash
-sudo -u vesessionmanager sh -c 'cd /opt/vesessionmanager/worker && exec dotnet ./VeOps.Worker.dll --migrate-team-secrets'
+sudo -u vesessionmanager sh -c 'cd /opt/vesessionmanager/current/worker && exec dotnet ./VeOps.Worker.dll --migrate-team-secrets'
 ```
 
 ## Moving the key ring to a new path
