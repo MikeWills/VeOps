@@ -19,7 +19,8 @@
 #                         forced command (ops/ssh-deploy-command) that only accepts an rsync into
 #                         releases/, "deploy <tag>" and "prune"
 #   DEPLOY_HOST         - server's Tailscale hostname/IP (e.g. myserver.tailXXXX.ts.net)
-#   DEPLOY_HOST_KEY     - one line of `ssh-keyscan -H <DEPLOY_HOST>` -- the pinned host key
+#   DEPLOY_HOST_KEY     - the server's host key (`ssh-keyscan -t ed25519 <host> | cut -d' ' -f2-`);
+#                         paired with DEPLOY_HOST by the workflow, so the name in it does not matter
 #   DEPLOY_USER         - deploy
 
 name: Deploy
@@ -96,12 +97,19 @@ jobs:
           printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           if [ -z "${{ secrets.DEPLOY_HOST_KEY }}" ]; then
-            echo "DEPLOY_HOST_KEY secret is not set. On any machine that can reach the box:"
-            echo "  ssh-keyscan -H <DEPLOY_HOST>"
-            echo "and store one of the lines it prints as the DEPLOY_HOST_KEY repo secret."
+            echo "DEPLOY_HOST_KEY secret is not set. On the box itself:"
+            echo "  ssh-keyscan -t ed25519 localhost 2>/dev/null | cut -d' ' -f2-"
+            echo "and store the line it prints (ssh-ed25519 AAAA...) as the DEPLOY_HOST_KEY repo secret."
             exit 1
           fi
-          printf '%s\n' "${{ secrets.DEPLOY_HOST_KEY }}" > ~/.ssh/known_hosts
+          # known_hosts is keyed by the exact name ssh connects to, so the entry is built here from
+          # DEPLOY_HOST itself rather than trusting the secret to name the host the same way. The
+          # secret may be just the key ("ssh-ed25519 AAAA...") or a full keyscan line; either way
+          # the key is the last two fields, and the first field is replaced with DEPLOY_HOST.
+          # Three re-runs failed on 2026-09-14 with "Host key verification failed" because the
+          # names in the secret did not match the name in DEPLOY_HOST -- this makes that impossible.
+          KEY_PART=$(printf '%s\n' "${{ secrets.DEPLOY_HOST_KEY }}" | head -n1 | awk '{print $(NF-1), $NF}')
+          printf '%s %s\n' "${{ secrets.DEPLOY_HOST }}" "$KEY_PART" > ~/.ssh/known_hosts
           echo "SSH=ssh -i $HOME/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" >> "$GITHUB_ENV"
 
       - name: Upload release beside the running one

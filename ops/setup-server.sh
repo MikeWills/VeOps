@@ -303,7 +303,7 @@ Server bootstrap complete. Remaining steps (not done by this script):
        SSH_PRIVATE_KEY      THIS app's key -- the contents of ${KEY}
                             (then remove it from the box: shred -u ${KEY})
        DEPLOY_HOST          this server's Tailscale hostname
-       DEPLOY_HOST_KEY      one line of:  ssh-keyscan -H <that hostname>
+       DEPLOY_HOST_KEY      output of:  ssh-keyscan -t ed25519 localhost 2>/dev/null | cut -d" " -f2-
        DEPLOY_USER          ${DEPLOY_USER}
   2. Push a tag to trigger the first deploy on the new layout:
        git tag -a 2026.09.1 -m "..." && git push --tags

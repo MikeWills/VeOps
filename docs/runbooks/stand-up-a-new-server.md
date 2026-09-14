@@ -19,7 +19,7 @@ creates:
 - `/etc/sudoers.d/vesessionmanager-deploy` — **one exact rule per unit**, no wildcards,
 - both systemd units through `current`, **enabled but not started** (nothing is published yet),
 - this app's deploy keypair with its forced command — the private half goes into the repo's
-  `SSH_PRIVATE_KEY` secret, with `DEPLOY_HOST_KEY` from `ssh-keyscan -H <host>`.
+  `SSH_PRIVATE_KEY` secret, with `DEPLOY_HOST_KEY` from `ssh-keyscan -t ed25519 localhost | cut -d' ' -f2-`.
 
 Two things that will silently bite:
 
