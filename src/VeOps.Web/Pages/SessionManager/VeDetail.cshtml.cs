@@ -54,7 +54,7 @@ public class VeDetailModel(
     public string? Search { get; set; }
 
     [BindProperty(SupportsGet = true)]
-    public string? TagName { get; set; }
+    public string[] TagNames { get; set; } = [];
 
     [BindProperty(SupportsGet = true)]
     public bool IncludeInactive { get; set; }
@@ -73,7 +73,7 @@ public class VeDetailModel(
 
     /// <summary>The directory's filters, for the link back. Same builder the directory itself uses, so the two cannot disagree about which filters exist.</summary>
     public Dictionary<string, string?> FilterRoute => VeDirectoryFilterRoute.Build(
-        TeamId, Search, TagName, IncludeInactive, LicenseStatus, Worked, WorkedFrom, WorkedTo);
+        TeamId, Search, TagNames, IncludeInactive, LicenseStatus, Worked, WorkedFrom, WorkedTo);
 
     /// <summary>
     /// Route values for a redirect back to <i>this</i> page that keep the directory's filters.

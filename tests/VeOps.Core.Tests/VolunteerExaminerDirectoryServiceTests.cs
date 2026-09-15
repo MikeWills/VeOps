@@ -203,7 +203,7 @@ public class VolunteerExaminerDirectoryServiceTests
         await management.SetTagsAsync(onB.Id, [tagOnB!.Id], 1, CancellationToken.None);
 
         var rows = await new VolunteerExaminerDirectoryService(dbContext)
-            .GetDirectoryAsync(null, new VeDirectoryFilter { TagName = "Member" }, Now, CancellationToken.None);
+            .GetDirectoryAsync(null, new VeDirectoryFilter { TagNames = ["Member"] }, Now, CancellationToken.None);
 
         // Both, not just whichever team's tag happened to be picked from the menu.
         Assert.Equal(2, rows.Count);
@@ -228,7 +228,7 @@ public class VolunteerExaminerDirectoryServiceTests
         await management.SetTagsAsync(tagged.Id, [tag!.Id], 1, CancellationToken.None);
 
         var rows = await new VolunteerExaminerDirectoryService(dbContext).GetDirectoryAsync(
-            null, new VeDirectoryFilter { TagName = VolunteerExaminerDirectoryService.GuestTagFilter },
+            null, new VeDirectoryFilter { TagNames = [VolunteerExaminerDirectoryService.GuestTagFilter] },
             Now, CancellationToken.None);
 
         Assert.Equal("K4ZZZ", Assert.Single(rows).VolunteerExaminer.CallSign);
@@ -259,7 +259,7 @@ public class VolunteerExaminerDirectoryServiceTests
         await management.SetTagsAsync(onA.Id, [tag!.Id], 1, CancellationToken.None);
 
         var acrossBothTeams = await new VolunteerExaminerDirectoryService(dbContext).GetDirectoryAsync(
-            null, new VeDirectoryFilter { TagName = VolunteerExaminerDirectoryService.GuestTagFilter },
+            null, new VeDirectoryFilter { TagNames = [VolunteerExaminerDirectoryService.GuestTagFilter] },
             Now, CancellationToken.None);
 
         Assert.Empty(acrossBothTeams);
@@ -268,7 +268,7 @@ public class VolunteerExaminerDirectoryServiceTests
         // that team, so the answer narrows with it. That is the collapse being scope-relative, not
         // a contradiction.
         var scopedToTeamB = await new VolunteerExaminerDirectoryService(dbContext).GetDirectoryAsync(
-            [teamB.Id], new VeDirectoryFilter { TagName = VolunteerExaminerDirectoryService.GuestTagFilter },
+            [teamB.Id], new VeDirectoryFilter { TagNames = [VolunteerExaminerDirectoryService.GuestTagFilter] },
             Now, CancellationToken.None);
 
         Assert.Single(scopedToTeamB);
@@ -287,9 +287,68 @@ public class VolunteerExaminerDirectoryServiceTests
         await management.SetTagsAsync(membership.Id, [tag!.Id], 1, CancellationToken.None);
 
         var rows = await new VolunteerExaminerDirectoryService(dbContext)
-            .GetDirectoryAsync(null, new VeDirectoryFilter { TagName = "  MEMBER  " }, Now, CancellationToken.None);
+            .GetDirectoryAsync(null, new VeDirectoryFilter { TagNames = ["  MEMBER  "] }, Now, CancellationToken.None);
 
         Assert.Single(rows);
+    }
+
+    /// <summary>
+    /// Several tags at once are ORed, the way Email VEs already treats them: picking "Member" and
+    /// "Liaison" widens the list to anyone holding either, so one filter can address two groups.
+    /// </summary>
+    [Fact]
+    public async Task FilteringBySeveralTagNames_ReturnsAnyoneHoldingAnyOfThem()
+    {
+        await using var dbContext = CreateContext();
+        var team = await SeedTeamAsync(dbContext, "TEAM-A");
+        var (_, member) = await SeedVeAsync(dbContext, team, "N2SPG", "Sam Granger");
+        var (_, liaison) = await SeedVeAsync(dbContext, team, "W7QQQ", "Dana Reeve");
+        var (_, mentor) = await SeedVeAsync(dbContext, team, "K4ZZZ", "Lee Marsh");
+
+        var management = CreateManagement(dbContext);
+        var (_, memberTag) = await management.CreateTagAsync(team.Id, "Member", 0, null, null, null, 1, CancellationToken.None);
+        var (_, liaisonTag) = await management.CreateTagAsync(team.Id, "Liaison", 0, null, null, null, 1, CancellationToken.None);
+        var (_, mentorTag) = await management.CreateTagAsync(team.Id, "Mentor", 0, null, null, null, 1, CancellationToken.None);
+        await management.SetTagsAsync(member.Id, [memberTag!.Id], 1, CancellationToken.None);
+        await management.SetTagsAsync(liaison.Id, [liaisonTag!.Id], 1, CancellationToken.None);
+        await management.SetTagsAsync(mentor.Id, [mentorTag!.Id], 1, CancellationToken.None);
+
+        var rows = await new VolunteerExaminerDirectoryService(dbContext)
+            .GetDirectoryAsync(null, new VeDirectoryFilter { TagNames = ["Member", "Liaison"] }, Now, CancellationToken.None);
+
+        Assert.Equal(2, rows.Count);
+        Assert.Contains(rows, r => r.VolunteerExaminer.CallSign == "N2SPG");
+        Assert.Contains(rows, r => r.VolunteerExaminer.CallSign == "W7QQQ");
+        Assert.DoesNotContain(rows, r => r.VolunteerExaminer.CallSign == "K4ZZZ");
+    }
+
+    /// <summary>
+    /// The case the feature was asked for: "regular guests" and "VEs" in one list, so both can be
+    /// emailed together. The guest sentinel is one more OR branch, not a mode that excludes the tags.
+    /// </summary>
+    [Fact]
+    public async Task FilteringByATagAndTheGuestSentinel_ReturnsBothGroups()
+    {
+        await using var dbContext = CreateContext();
+        var team = await SeedTeamAsync(dbContext, "TEAM-A");
+        var (_, member) = await SeedVeAsync(dbContext, team, "N2SPG", "Sam Granger");
+        var (_, mentor) = await SeedVeAsync(dbContext, team, "W7QQQ", "Dana Reeve");
+        await SeedVeAsync(dbContext, team, "K4ZZZ", "Untagged Person");
+
+        var management = CreateManagement(dbContext);
+        var (_, memberTag) = await management.CreateTagAsync(team.Id, "Member", 0, null, null, null, 1, CancellationToken.None);
+        var (_, mentorTag) = await management.CreateTagAsync(team.Id, "Mentor", 0, null, null, null, 1, CancellationToken.None);
+        await management.SetTagsAsync(member.Id, [memberTag!.Id], 1, CancellationToken.None);
+        await management.SetTagsAsync(mentor.Id, [mentorTag!.Id], 1, CancellationToken.None);
+
+        var rows = await new VolunteerExaminerDirectoryService(dbContext).GetDirectoryAsync(
+            null, new VeDirectoryFilter { TagNames = ["Member", VolunteerExaminerDirectoryService.GuestTagFilter] },
+            Now, CancellationToken.None);
+
+        Assert.Equal(2, rows.Count);
+        Assert.Contains(rows, r => r.VolunteerExaminer.CallSign == "N2SPG");
+        Assert.Contains(rows, r => r.VolunteerExaminer.CallSign == "K4ZZZ");
+        Assert.DoesNotContain(rows, r => r.VolunteerExaminer.CallSign == "W7QQQ");
     }
 
     /// <summary>Tags are a team's private vocabulary; an id from another team must be rejected rather than quietly applied.</summary>

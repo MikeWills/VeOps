@@ -195,9 +195,24 @@ every tag row, so two teams each defining "Member" produced **two identical, unl
 buttons** — and picking either one silently excluded the other team's people. The rows had always
 collapsed same-named tags into one chip, so the filter disagreed with the column it filtered.
 
-The filter is now keyed on the tag **name** (`?tagName=`, previously `?tagId=`), one entry per
+The filter is now keyed on the tag **name** (`?tagNames=`, previously `?tagId=`), one entry per
 distinct name, carrying the same color the chips use. Matching is case-insensitive on both sides
 because SQLite's `=` on TEXT is not, and the row-level dedupe was already `OrdinalIgnoreCase`.
+
+### Several tags at once (2026-09-14)
+
+Mike: *"can you allow me to select multiple tags? Then I can email 'regular guests' and 'VE's."*
+The radio buttons became checkboxes, **ORed** — the reading Email VEs' own tag checkboxes already
+had — so "Member" plus "Guests" is both groups in one list, and one CSV or one Email VEs pass reaches
+them together. The guest sentinel is just one more branch of that OR, not a mode that excludes the
+named tags; `VeDirectoryFilter.TagNames` carries all of them and the query is a single predicate so
+EF can translate the OR.
+
+Two URL shapes bind to the same `string[]`: the form's repeated `tagNames=a&tagNames=b`, and the
+indexed `tagNames[0]=a&tagNames[1]=b` that `VeDirectoryFilterRoute` emits for row links and
+redirects, because a route dictionary cannot repeat a key. `VeDirectoryTagFilterTests` pins both.
+Nothing ticked means "any tag"; the search box always submits, so an all-clear still reaches the
+filter memory (see `RememberFiltersPageFilter`'s note on checkbox-only forms).
 
 ### Filtering to guests
 

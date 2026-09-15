@@ -27,14 +27,22 @@ public static class VeDirectoryFilterRoute
     public const string Custom = "custom";
 
     public static Dictionary<string, string?> Build(
-        int? teamId, string? search, string? tagName, bool includeInactive,
+        int? teamId, string? search, IReadOnlyList<string> tagNames, bool includeInactive,
         WatchedLicenseStatus? licenseStatus, string? worked, DateTime? workedFrom, DateTime? workedTo)
     {
         var values = new Dictionary<string, string?>();
 
         if (teamId is { } team) values["teamId"] = team.ToString(CultureInfo.InvariantCulture);
         if (!string.IsNullOrWhiteSpace(search)) values["search"] = search;
-        if (!string.IsNullOrWhiteSpace(tagName)) values["tagName"] = tagName;
+        // Indexed keys, because a route dictionary cannot repeat a key. Model binding reads
+        // `tagNames[0]=a&tagNames[1]=b` into the same string[] the filter form's plain
+        // `tagNames=a&tagNames=b` lands in, so either shape of URL binds identically.
+        var index = 0;
+        foreach (var tagName in tagNames.Where(t => !string.IsNullOrWhiteSpace(t)))
+        {
+            values[$"tagNames[{index++}]"] = tagName;
+        }
+
         if (includeInactive) values["includeInactive"] = "true";
         if (licenseStatus is { } status) values["licenseStatus"] = status.ToString();
         if (!string.IsNullOrWhiteSpace(worked)) values["worked"] = worked;
