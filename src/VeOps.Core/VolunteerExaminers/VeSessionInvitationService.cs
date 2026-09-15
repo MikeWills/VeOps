@@ -5,6 +5,7 @@ using VeOps.Core.Data;
 using VeOps.Core.Email;
 using VeOps.Core.Entities;
 using VeOps.Core.Integrations;
+using VeOps.Core.Notifications;
 
 namespace VeOps.Core.VolunteerExaminers;
 
@@ -34,7 +35,7 @@ public class VeSessionInvitationService(
 {
     /// <summary>What the compose screen offers as insertable chips, and the only tokens substituted below.</summary>
     public static readonly IReadOnlyList<string> Placeholders =
-        ["VeName", "CallSign", "SessionTitle", "SessionDate", "ZoomJoinUrl", "TeamName"];
+        ["VeName", "CallSign", "SessionTitle", "SessionDate", "ZoomJoinUrl", "RegisteredCount", "TeamName"];
 
     /// <summary>
     /// Who could be invited: every VE with an active membership on the session's team, annotated with
@@ -155,6 +156,11 @@ public class VeSessionInvitationService(
         var credentials = session.Team.ToEmailCredentials();
         var now = timeProvider.GetUtcNow().UtcDateTime;
 
+        // Everyone registered on the session — the same number a per-session digest's
+        // {{RegisteredCount}} gives (BeforeSessionStartScanner), not how many VEs this is going to.
+        // "I currently have N candidates registered" is the sentence a reminder to VEs is built on.
+        var registeredCount = await dbContext.Candidates.CountAsync(c => c.SessionId == session.Id, cancellationToken);
+
         // Composed first, sent second (#293). This used to call SendAsync per recipient, and
         // SmtpEmailSender does a full connect + TLS + AUTH + disconnect per message — so a 30-VE
         // roster meant 30 SMTP handshakes inside one POST, with the sender watching a spinner.
@@ -197,8 +203,8 @@ public class VeSessionInvitationService(
                 FromAddress: emailSettings.FromAddress,
                 FromDisplayName: emailSettings.FromDisplayName,
                 ReplyToAddress: emailSettings.ReplyToAddress,
-                Subject: Render(subject, recipient, session, encodeHtml: false),
-                HtmlBody: Render(body, recipient, session, encodeHtml: true)));
+                Subject: Render(subject, recipient, session, registeredCount, encodeHtml: false),
+                HtmlBody: Render(body, recipient, session, registeredCount, encodeHtml: true)));
         }
 
         // Outcomes come back in the order the messages went in, which is what lets a failure still be
@@ -233,7 +239,7 @@ public class VeSessionInvitationService(
     /// the same choice EmailTemplateRenderer makes, and for the same reason: a visible "{{Typo}}" in
     /// a draft is a bug someone fixes, where a silently empty gap is one nobody notices.
     /// </summary>
-    private static string Render(string text, VolunteerExaminer recipient, Session session, bool encodeHtml)
+    private static string Render(string text, VolunteerExaminer recipient, Session session, int registeredCount, bool encodeHtml)
     {
         // HTML-encoded for the body, left alone for the subject — the same rule
         // EmailTemplateRenderer applies, and for the same stated reason: several of these values
@@ -252,11 +258,15 @@ public class VeSessionInvitationService(
             .Replace("{{VeName}}", E(recipient.Name))
             .Replace("{{CallSign}}", E(recipient.CallSign ?? ""))
             .Replace("{{SessionTitle}}", E(session.Title))
-            .Replace("{{SessionDate}}", E(session.ScheduledStartUtc.ToString("dddd d MMMM yyyy 'at' HH:mm 'UTC'")))
+            // ForCandidate, not a UTC format string: a VE reads this in Eastern like every screen
+            // does, and this rendered "at HH:mm UTC" until 2026-09-14 — the same drift #205 fixed
+            // for candidates. (The name says candidate; it is the one Eastern formatter in Core.)
+            .Replace("{{SessionDate}}", E(SessionTimeFormatter.ForCandidate(session.ScheduledStartUtc)))
             // Lands in href="…" in every real template, so it needs attribute-safe encoding rather
             // than element-safe. HtmlEncode escapes the quote that would break out of the attribute;
             // a URL that survives that is still a URL.
             .Replace("{{ZoomJoinUrl}}", E(session.ZoomJoinUrl ?? ""))
+            .Replace("{{RegisteredCount}}", registeredCount.ToString(System.Globalization.CultureInfo.InvariantCulture))
             .Replace("{{TeamName}}", E(session.Team.Name));
     }
 

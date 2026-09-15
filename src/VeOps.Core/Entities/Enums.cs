@@ -331,6 +331,17 @@ public enum MessageTrigger
     PaymentUnpaidBeforeSession = 11,
 
     /// <summary>
+    /// A person composing an invitation or reminder to VEs from one session's page (2026-09-14).
+    ///
+    /// <para>Its own trigger rather than <see cref="ManualToVe"/> because the two screens answer
+    /// different tokens: this one is opened from a session and can name it — its date, its Zoom link,
+    /// how many candidates are registered — where the directory's message has no session to resolve
+    /// those against. A message written for one would render blanks on the other, which is exactly
+    /// the class of mistake a trigger's placeholder list exists to prevent.</para>
+    /// </summary>
+    ManualVeSessionInvite = 12,
+
+    /// <summary>
     /// Not a trigger point — a note on a run saying a person pressed a button (#417).
     ///
     /// <para>A hand-send has no moment to scan for, but <c>MessageRuleRun.Trigger</c> is not nullable

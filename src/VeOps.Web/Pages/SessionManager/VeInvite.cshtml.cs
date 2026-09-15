@@ -28,6 +28,13 @@ public class VeInviteModel(
     [BindProperty(SupportsGet = true)]
     public int Id { get; set; }
 
+    /// <summary>The saved message to start from (2026-09-14); zero is the built-in starter draft. Bound as "message", the name the Email screens use.</summary>
+    [BindProperty(SupportsGet = true, Name = "message")]
+    public int SelectedMessageId { get; set; }
+
+    /// <summary>The team's messages on the invite trigger — the only ones whose tokens all resolve here.</summary>
+    public IReadOnlyList<ComposableMessages.Choice> Templates { get; private set; } = [];
+
     [BindProperty]
     public string Subject { get; set; } = "";
 
@@ -52,6 +59,21 @@ public class VeInviteModel(
     {
         var loaded = await LoadAsync();
         if (loaded is not null) return loaded;
+
+        // A saved message replaces the starter text wholesale. Scoped to the session's team and the
+        // invite trigger, so a message id from another team or another screen is simply not found.
+        var message = SelectedMessageId == 0
+            ? null
+            : await dbContext.MessageRules
+                .AsNoTracking()
+                .FirstOrDefaultAsync(r => r.TeamId == Session.TeamId && r.Id == SelectedMessageId
+                    && r.Trigger == MessageTrigger.ManualVeSessionInvite, HttpContext.RequestAborted);
+        if (message is not null)
+        {
+            Subject = message.Subject;
+            Body = message.Body;
+            return Page();
+        }
 
         Subject = $"Can you work {Session.Title}?";
         Body =
@@ -122,6 +144,7 @@ public class VeInviteModel(
         }
 
         Session = session;
+        Templates = await ComposableMessages.LoadAsync(dbContext, session.TeamId, MessageTrigger.ManualVeSessionInvite, HttpContext.RequestAborted);
         Candidates = await invitationService.GetCandidatesAsync(Id, HttpContext.RequestAborted);
         TagNames = [.. Candidates.SelectMany(c => c.Tags).Distinct().OrderBy(n => n)];
         return null;

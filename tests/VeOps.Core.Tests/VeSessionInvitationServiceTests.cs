@@ -246,6 +246,56 @@ public class VeSessionInvitationServiceTests
         Assert.DoesNotContain("{{", sent.HtmlBody);
     }
 
+    /// <summary>
+    /// The reminder Mike actually writes: "I currently have N candidates registered". The count is
+    /// everyone registered on the session, the same number {{RegisteredCount}} gives a per-session
+    /// digest — not the number of VEs being written to.
+    /// </summary>
+    [Fact]
+    public async Task RegisteredCountIsTheSessionsCandidateCount()
+    {
+        await using var dbContext = CreateContext();
+        var (team, session) = await SeedSessionAsync(dbContext);
+        var person = await SeedVeAsync(dbContext, team, "N2SPG", "a@example.com");
+        for (var i = 0; i < 3; i++)
+        {
+            dbContext.Candidates.Add(new Candidate
+            {
+                ExamToolsApplicantId = $"applicant-{i}", SessionId = session.Id, Name = $"Candidate {i}",
+                Email = $"c{i}@example.com", DateRegisteredUtc = Now.AddDays(-1)
+            });
+        }
+        await dbContext.SaveChangesAsync();
+        var (service, email) = Create(dbContext);
+
+        await service.SendAsync(session.Id, [person.Id], "{{RegisteredCount}} registered",
+            "<p>I have {{RegisteredCount}} candidates registered.</p>", 1, CancellationToken.None);
+
+        var sent = Assert.Single(email.Sent);
+        Assert.Equal("3 registered", sent.Subject);
+        Assert.Contains("I have 3 candidates registered.", sent.HtmlBody);
+    }
+
+    /// <summary>
+    /// Eastern, like every screen and every candidate email — this rendered "at HH:mm UTC" until
+    /// 2026-09-14, the same drift #205 fixed for candidates. Same formatter, same two-zone form.
+    /// </summary>
+    [Fact]
+    public async Task SessionDateRendersInEasternTime_NotUtc()
+    {
+        await using var dbContext = CreateContext();
+        var (team, session) = await SeedSessionAsync(dbContext);
+        var person = await SeedVeAsync(dbContext, team, "N2SPG", "a@example.com");
+        var (service, email) = Create(dbContext);
+
+        await service.SendAsync(session.Id, [person.Id], "On {{SessionDate}}", "<p>{{SessionDate}}</p>", 1, CancellationToken.None);
+
+        // Now + 14 days = 2026-08-21 12:00 UTC = 8:00 AM EDT / 5:00 AM PDT.
+        var sent = Assert.Single(email.Sent);
+        Assert.Equal("On Friday, August 21, 2026 at 8:00 AM ET / 5:00 AM PT", sent.Subject);
+        Assert.DoesNotContain("UTC", sent.HtmlBody);
+    }
+
     /// <summary>Counted rather than silently dropped — "8 of 10" with no explanation is worse than a number someone can act on.</summary>
     [Fact]
     public async Task VeWithNoEmail_IsCountedNotSkippedSilently()

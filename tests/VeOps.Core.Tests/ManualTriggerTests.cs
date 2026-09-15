@@ -1,6 +1,7 @@
 using VeOps.Core.Email;
 using VeOps.Core.Entities;
 using VeOps.Core.Messaging;
+using VeOps.Core.VolunteerExaminers;
 
 namespace VeOps.Core.Tests;
 
@@ -23,6 +24,7 @@ public class ManualTriggerTests
     [Theory]
     [InlineData(MessageTrigger.ManualToCandidate)]
     [InlineData(MessageTrigger.ManualToVe)]
+    [InlineData(MessageTrigger.ManualVeSessionInvite)]
     public void AManualTrigger_HasTheManualMechanism(MessageTrigger trigger)
         => Assert.Equal(MessageTriggerMechanism.Manual, MessageTriggerDefinitions.For(trigger).Mechanism);
 
@@ -34,6 +36,7 @@ public class ManualTriggerTests
     [Theory]
     [InlineData(MessageTrigger.ManualToCandidate)]
     [InlineData(MessageTrigger.ManualToVe)]
+    [InlineData(MessageTrigger.ManualVeSessionInvite)]
     public void AManualTrigger_TakesNoDelay(MessageTrigger trigger)
         => Assert.Null(MessageTriggerDefinitions.For(trigger).DefaultParameterHours);
 
@@ -54,6 +57,16 @@ public class ManualTriggerTests
             VolunteerExaminerPlaceholderValues.Names,
             MessageTriggerDefinitions.For(MessageTrigger.ManualToVe).Placeholders);
 
+    /// <summary>The invite screen is opened from a session, so its message may name one — the count included, since 2026-09-14.</summary>
+    [Fact]
+    public void ManualVeSessionInvite_OffersExactlyWhatTheInviteScreenSupplies()
+    {
+        Assert.Equal(
+            VeSessionInvitationService.Placeholders,
+            MessageTriggerDefinitions.For(MessageTrigger.ManualVeSessionInvite).Placeholders);
+        Assert.Contains("RegisteredCount", MessageTriggerDefinitions.For(MessageTrigger.ManualVeSessionInvite).Placeholders);
+    }
+
     /// <summary>
     /// A manual message is addressed at send time — you pick the people on the screen — so the rule
     /// carries no recipient to choose. Distinct from an empty list meaning "nobody may receive this".
@@ -61,6 +74,7 @@ public class ManualTriggerTests
     [Theory]
     [InlineData(MessageTrigger.ManualToCandidate)]
     [InlineData(MessageTrigger.ManualToVe)]
+    [InlineData(MessageTrigger.ManualVeSessionInvite)]
     public void AManualTrigger_HasNoRecipientToChoose(MessageTrigger trigger)
         => Assert.Empty(MessageTriggerDefinitions.For(trigger).LegalRecipients);
 

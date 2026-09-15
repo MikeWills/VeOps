@@ -112,6 +112,7 @@ public class ManualMessageScanTests
     [Theory]
     [InlineData(MessageTrigger.ManualToCandidate)]
     [InlineData(MessageTrigger.ManualToVe)]
+    [InlineData(MessageTrigger.ManualVeSessionInvite)]
     [InlineData(MessageTrigger.ManualFelonyDisclosureInstructions)]
     [InlineData(MessageTrigger.ManualYouthProgramInstructions)]
     public async Task AnEnabledManualMessage_IsSkippedSilently(MessageTrigger trigger)

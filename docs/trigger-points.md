@@ -757,6 +757,29 @@ A manual trigger has **no delay and no recipient**: a person chose the moment an
 send time. `LegalRecipients` is empty for them, and that means "addressed at send time", not "nobody
 may receive this".
 
+### A session's VE invitation is a trigger point too (2026-09-14)
+
+Mike, writing a "Reminder of VE Session" on *When you email VEs by hand* with `{date}`, `{zoom}` and
+`#` in it: *"Is there a better way to email VEs with this information pre-filled."* There was not —
+that screen is opened from the VE Directory and has no session to fill those from, which is exactly
+why `VolunteerExaminerPlaceholderValues` offers no session tokens. But the **Invite VEs** screen on
+Session Detail always could name its session; it just started from a hardcoded draft and had no
+`{{RegisteredCount}}`.
+
+So it has its own trigger, `ManualVeSessionInvite` — *When you invite VEs to a session* — and a
+**Start from** picker over messages saved on it, the same `ComposableMessages` control Email VEs
+uses. Its placeholder list *is* `VeSessionInvitationService.Placeholders` (now including
+`RegisteredCount`, the session's candidate count — the same number a `PerSession` digest gives, not
+how many VEs are being written to), so the editor offers exactly what the send path substitutes.
+
+**Not merged into `ManualToVe`**, deliberately. The two screens answer different tokens; one trigger
+for both would offer session tags that render blank from the directory, which is the class of mistake
+the whole trigger split exists to remove. The blurbs on each say which button it belongs to.
+
+Fixed alongside, because the test for the count sat next to it: `{{SessionDate}}` on this screen
+rendered `dddd d MMMM yyyy 'at' HH:mm 'UTC'` — the #205 drift, in the one VE-facing path — and now
+goes through `SessionTimeFormatter.ForCandidate` like everything else.
+
 ### Tags are clickable
 
 The editor lists the trigger's tags as chips that insert at the cursor. A hand-typed

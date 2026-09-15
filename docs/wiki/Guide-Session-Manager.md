@@ -31,7 +31,8 @@ What you actually do:
 
 - Check the session's detail page a day or two out. Registered count, everyone paid, the Zoom link
   present.
-- **Invite VEs** to the session if your team uses invitations.
+- **[Invite VEs](Invite-VEs-to-a-session.md)** to the session, or remind the ones already coming —
+  a saved message can carry the date, the Zoom link and the registered count.
 - Chase anyone the payment reminders have not moved.
 
 ## On the day

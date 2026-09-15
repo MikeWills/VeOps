@@ -190,6 +190,16 @@ public static class MessageTriggerDefinitions
             LegalRecipients: [],
             Placeholders: VolunteerExaminerPlaceholderValues.Names),
 
+        // Opened from one session, so it is the one VE-facing message that can name it. The tokens
+        // are the invitation service's own list, not restated here, for the same reason the two
+        // above are not.
+        new(MessageTrigger.ManualVeSessionInvite,
+            MessageTriggerMechanism.Manual,
+            MessageSubjectType.Candidate,
+            DefaultParameterHours: null,
+            LegalRecipients: [],
+            Placeholders: VolunteerExaminers.VeSessionInvitationService.Placeholders),
+
         // The two per-candidate buttons. Each is its own trigger point rather than sharing one,
         // because a button that sends one particular message is a moment — and its own trigger is
         // what lets the editor show the tags that apply to it, which is the whole reason any of this

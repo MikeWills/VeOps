@@ -23,6 +23,24 @@
     </div>
 }
 
+@if (Model.Templates.Count > 0)
+{
+    @* Same control as Email VEs. GET, so choosing one reloads the draft; nothing is saved back. *@
+    <form method="get" class="filters" style="margin-bottom:18px;">
+        <label class="ve-search" style="max-width:320px;">
+            <span class="visually-hidden">Start from</span>
+            <select name="message" data-autosubmit class="filter-select" aria-label="Start from a message">
+                <option value="">(no saved message) — write your own</option>
+                @foreach (var choice in Model.Templates)
+                {
+                    <option value="@choice.Id" selected="@(choice.Id == Model.SelectedMessageId)">@choice.Label</option>
+                }
+            </select>
+        </label>
+        <span class="session-sub">Choosing a message replaces the draft below. Nothing is saved back to it.</span>
+    </form>
+}
+
 <form method="post">
     <div class="ve-panel">
         <h2>Message</h2>

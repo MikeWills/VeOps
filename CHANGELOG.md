@@ -8,6 +8,14 @@ that window, or immediately if it's phase-numbered work already summarized in "C
 design rationale for any entry still lives in its linked `/docs/*.md` file, not here or in
 CLAUDE.md — this file, like CLAUDE.md's Change Log, is pointers only.
 
+- **A Discord channel is picked from a dropdown now, not typed by hand (#503, 2026-08-29).** See
+  `docs/trigger-points.md`'s new section. New `IDiscordChannelMessageClient.ListTextChannelsAsync`
+  backs a `<select>` on both `MessageRuleNew`/`MessageRuleEdit`; falls back to the old manual-id input
+  whenever the list comes back empty — no `DiscordGuildId`, bot unconfigured, or the guild lookup
+  failing all collapse to the same fallback rather than erroring the page. Fetched on `OnGetAsync`
+  only, not from the shared `LoadAsync` both verbs call — a failed POST already redirects to a fresh
+  GET, so fetching it there too would be a wasted Discord round trip on every validation failure.
+
 - **A calendar invite, and a per-session VE summary email (#491, 2026-08-28).** See
   `docs/trigger-points.md`'s two new sections. Per-rule opt-in (`MessageRule.IncludeCalendarInvite`),
   not per-team — Mike: "The toggle I want is per email related to a session, not per team."
