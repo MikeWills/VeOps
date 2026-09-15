@@ -27,6 +27,7 @@ public static class MessageTriggerLabels
         MessageTrigger.FelonyDisclosureDeclared => "When a felony disclosure is declared",
         MessageTrigger.ManualToCandidate => "When you email candidates by hand",
         MessageTrigger.ManualToVe => "When you email VEs by hand",
+        MessageTrigger.ManualVeSessionInvite => "When you invite VEs to a session",
         MessageTrigger.ManualFelonyDisclosureInstructions => "When you send felony disclosure instructions",
         MessageTrigger.ManualYouthProgramInstructions => "When you send youth program instructions",
         _ => trigger.ToString()
@@ -58,7 +59,11 @@ public static class MessageTriggerLabels
         MessageTrigger.ManualToCandidate =>
             "Offered when you pick candidates on a session and write to them. Nothing sends it on its own — you choose the moment and the people.",
         MessageTrigger.ManualToVe =>
-            "Offered when you write to VEs from the VE Directory. Nothing sends it on its own — you choose the moment and the people.",
+            "Offered when you write to VEs from the VE Directory. Nothing sends it on its own — you choose the moment and the people. "
+            + "It is not about a session, so it cannot name one — for the date, Zoom link or candidate count use \"When you invite VEs to a session\".",
+        MessageTrigger.ManualVeSessionInvite =>
+            "Offered when you press Invite VEs on a session. Nothing sends it on its own — you choose the moment and the people. "
+            + "The only VE message that can name the session: its date, its Zoom link and how many candidates are registered.",
         MessageTrigger.ManualFelonyDisclosureInstructions =>
             "Offered on a candidate who declared a felony conviction. You send it; it can be sent more than once.",
         MessageTrigger.ManualYouthProgramInstructions =>

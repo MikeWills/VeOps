@@ -18,7 +18,7 @@ The [role guides](README.md) say *what you do and in what order*; these say *how
 | File a session with the VEC | Team Lead | *planned* |
 | Match an unmatched payment | Session Manager | *planned* |
 | Email one candidate, or all pending applicants | Session Manager | *planned* |
-| Invite VEs to a session | Session Manager | *planned* |
+| [Invite VEs to a session](Invite-VEs-to-a-session.md) | Session Manager | written |
 
 ## Configuring a team
 

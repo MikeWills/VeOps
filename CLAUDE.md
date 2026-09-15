@@ -127,6 +127,16 @@ which is "here's what was built and why, mostly historical.")
 One-line-or-two pointer per feature, newest first — full design rationale lives in the linked
 `/docs/*.md` file, not here. See "Documentation Structure" below for the policy this follows.
 
+- **Invite VEs starts from a saved message, and can say how many are registered (2026-09-14).** See
+  `docs/trigger-points.md`'s "A session's VE invitation is a trigger point too". Mike, writing a VE
+  reminder with `{date}`/`{zoom}`/`#` under *When you email VEs by hand*: *"Is there a better way to
+  email VEs with this information pre-filled."* That screen has no session; **Invite VEs** on Session
+  Detail always did, so it gained its own trigger (`ManualVeSessionInvite`, *When you invite VEs to a
+  session*), a **Start from** picker, and `{{RegisteredCount}}`. **Deliberately not merged into
+  `ManualToVe`** — the two screens answer different tokens, and one trigger would offer session tags
+  that render blank from the directory. Also fixed there: `{{SessionDate}}` was the last VE-facing
+  path still rendering UTC (the #205 drift), now `SessionTimeFormatter.ForCandidate`.
+
 - **Deploys land beside the running release and roll back by themselves (2026-09-13).** See
   `docs/deployment.md`'s "Releases and rollback". The box is on the on-prem standard now:
   `/opt/vesessionmanager/releases/<tag>/` + a `current` symlink the units run through, one
@@ -260,14 +270,6 @@ One-line-or-two pointer per feature, newest first — full design rationale live
   lists candidates via two combinable, imperfect signals (an exact-but-incomplete `AuditLog` trail,
   and a `CreatedUtc`-vs-`ScheduledStartUtc` gap heuristic) for review before any backfill writes
   anything — the backfill-apply step itself is not built by this pass.
-
-- **A Discord channel is picked from a dropdown now, not typed by hand (#503, 2026-08-29).** See
-  `docs/trigger-points.md`'s new section. New `IDiscordChannelMessageClient.ListTextChannelsAsync`
-  backs a `<select>` on both `MessageRuleNew`/`MessageRuleEdit`; falls back to the old manual-id input
-  whenever the list comes back empty — no `DiscordGuildId`, bot unconfigured, or the guild lookup
-  failing all collapse to the same fallback rather than erroring the page. Fetched on `OnGetAsync`
-  only, not from the shared `LoadAsync` both verbs call — a failed POST already redirects to a fresh
-  GET, so fetching it there too would be a wasted Discord round trip on every validation failure.
 
 **Kept here vs. `CHANGELOG.md`:** this section is a bounded, recent-only window (rule of thumb: cap
 around 10 entries), since CLAUDE.md is read in full on every conversation turn and this is the one
