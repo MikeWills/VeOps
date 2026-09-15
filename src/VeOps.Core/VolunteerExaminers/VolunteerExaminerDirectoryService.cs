@@ -22,7 +22,7 @@ namespace VeOps.Core.VolunteerExaminers;
 public class VolunteerExaminerDirectoryService(AppDbContext dbContext)
 {
     /// <summary>
-    /// Pass as <c>tagName</c> to filter to <b>guests</b> — people carrying no tag at all on any team
+    /// Include in <c>TagNames</c> to filter to <b>guests</b> — people carrying no tag at all on any team
     /// in scope. "Guest" is derived rather than stored (a stored guest tag would need adding and
     /// removing in step with every other tag change, and would be wrong in between), so it cannot be
     /// selected the way a real tag name is, and needs a sentinel.
@@ -125,8 +125,6 @@ public class VolunteerExaminerDirectoryService(AppDbContext dbContext)
         IReadOnlyList<int>? teamIds, VeDirectoryFilter filter, DateTime nowUtc)
     {
         var includeInactive = filter.IncludeInactive;
-        var guestsOnly = string.Equals(filter.TagName, GuestTagFilter, StringComparison.Ordinal);
-
         var people = dbContext.VolunteerExaminers.AsQueryable();
 
         // The base scope, and the reason this is a query over people at all: someone with no
@@ -136,30 +134,41 @@ public class VolunteerExaminerDirectoryService(AppDbContext dbContext)
             && (teamIds == null || teamIds.Contains(m.TeamId))
             && (includeInactive || m.IsActive)));
 
-        if (!guestsOnly && !string.IsNullOrWhiteSpace(filter.TagName))
-        {
-            // Lower-cased on both sides rather than StringComparison, which EF cannot translate, and
-            // matching the OrdinalIgnoreCase grouping the rows use — SQLite's `=` on TEXT is
-            // case-sensitive, so "Member" and "member" would otherwise be different filters.
-            var tag = filter.TagName.Trim().ToLower();
-            people = people.Where(v => dbContext.VeTeamMemberships.Any(m =>
-                m.VolunteerExaminerId == v.Id
-                && (teamIds == null || teamIds.Contains(m.TeamId))
-                && (includeInactive || m.IsActive)
-                && m.TagAssignments.Any(a => a.VeTag.Name.ToLower() == tag)));
-        }
+        // Several tags are ORed, the same reading Email VEs gives its checkboxes: "Member" and
+        // "Liaison" means anyone holding either. The guest sentinel is one more branch of that OR, so
+        // "Guests" plus "Member" is the two groups together — which is the whole point of picking
+        // more than one (one email to the regulars and the guests at once).
+        //
+        // Lower-cased on both sides rather than StringComparison, which EF cannot translate, and
+        // matching the OrdinalIgnoreCase grouping the rows use — SQLite's `=` on TEXT is
+        // case-sensitive, so "Member" and "member" would otherwise be different filters.
+        var includeGuests = filter.TagNames.Contains(GuestTagFilter, StringComparer.Ordinal);
+        var tagNames = filter.TagNames
+            .Where(t => !string.Equals(t, GuestTagFilter, StringComparison.Ordinal) && !string.IsNullOrWhiteSpace(t))
+            .Select(t => t.Trim().ToLower())
+            .Distinct()
+            .ToList();
 
-        if (guestsOnly)
+        if (tagNames.Count > 0 || includeGuests)
         {
+            // Both halves are written out in one predicate rather than composed, because EF has to
+            // see a single expression tree to translate the OR.
+            //
             // "Guest" is no tag on ANY team in scope, which is why it could never be a per-membership
             // filter: matching untagged memberships would also match the untagged half of someone who
             // IS tagged elsewhere, and that row then renders with tags and no Guest chip — a result
             // contradicting itself. As a NOT EXISTS over the person it says exactly what it means.
-            people = people.Where(v => !dbContext.VeTeamMemberships.Any(m =>
-                m.VolunteerExaminerId == v.Id
-                && (teamIds == null || teamIds.Contains(m.TeamId))
-                && (includeInactive || m.IsActive)
-                && m.TagAssignments.Any()));
+            people = people.Where(v =>
+                (tagNames.Count > 0 && dbContext.VeTeamMemberships.Any(m =>
+                    m.VolunteerExaminerId == v.Id
+                    && (teamIds == null || teamIds.Contains(m.TeamId))
+                    && (includeInactive || m.IsActive)
+                    && m.TagAssignments.Any(a => tagNames.Contains(a.VeTag.Name.ToLower()))))
+                || (includeGuests && !dbContext.VeTeamMemberships.Any(m =>
+                    m.VolunteerExaminerId == v.Id
+                    && (teamIds == null || teamIds.Contains(m.TeamId))
+                    && (includeInactive || m.IsActive)
+                    && m.TagAssignments.Any())));
         }
 
         // Dates resolved in C#, classification in SQL — see VeLicenseStatusFilter.
@@ -419,8 +428,12 @@ public record VeDirectoryFilter
     /// <summary>Call sign, name or email, case-insensitive.</summary>
     public string? Search { get; init; }
 
-    /// <summary>A tag name, or <see cref="VolunteerExaminerDirectoryService.GuestTagFilter"/> for "no tags at all".</summary>
-    public string? TagName { get; init; }
+    /// <summary>
+    /// Tag names to match, ORed — a person holding any of them is in. May include
+    /// <see cref="VolunteerExaminerDirectoryService.GuestTagFilter"/> for "no tags at all", which ORs
+    /// in the guests alongside whatever tags are named. Empty means no tag filter.
+    /// </summary>
+    public IReadOnlyList<string> TagNames { get; init; } = [];
 
     /// <summary>Retired memberships are hidden by default: the directory answers "who can we call on".</summary>
     public bool IncludeInactive { get; init; }

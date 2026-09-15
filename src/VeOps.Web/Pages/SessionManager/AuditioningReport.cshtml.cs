@@ -76,7 +76,7 @@ public class AuditioningReportModel(
 
         Rows = [.. (await directoryService.GetDirectoryAsync(
                 teamIds,
-                new VeDirectoryFilter { TagName = AuditioningTag },
+                new VeDirectoryFilter { TagNames = [AuditioningTag] },
                 UtcNow,
                 HttpContext.RequestAborted))
             // Most-progressed first; name breaks ties so the order is stable between renders rather

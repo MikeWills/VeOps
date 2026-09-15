@@ -4,7 +4,7 @@
 @using VeOps.Core.VolunteerExaminers
 @* Every POST here routes through Url.Page with SelfRouteValues, not asp-page-handler (#276).
    asp-page-handler builds its action from the route alone and DROPS the query string, and this
-   page's filters — TeamId, Search, TagName, IncludeInactive, LicenseStatus, Worked, WorkedFrom,
+   page's filters — TeamId, Search, TagNames, IncludeInactive, LicenseStatus, Worked, WorkedFrom,
    WorkedTo — all live there. So on POST those bound properties were null and SelfRoute() rebuilt an
    empty filter set: the user's filters vanished silently, and only after a save.
 

@@ -156,7 +156,7 @@ public class VeDirectoryPagingSqliteTests : IDisposable
 
         var page = await Service(dbContext).GetDirectoryPageAsync(
             null,
-            new VeDirectoryFilter { TagName = VolunteerExaminerDirectoryService.GuestTagFilter },
+            new VeDirectoryFilter { TagNames = [VolunteerExaminerDirectoryService.GuestTagFilter] },
             Now, pageNumber: 1, pageSize: 25, CancellationToken.None);
 
         Assert.Equal(25, page.Rows.Count);

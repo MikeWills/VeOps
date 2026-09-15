@@ -72,16 +72,16 @@
 
     @if (Model.AvailableTags.Count > 0)
     {
-        var activeTag = Model.AvailableTags.FirstOrDefault(t => string.Equals(t.Name, Model.TagName, StringComparison.OrdinalIgnoreCase));
-        var tagLabel = Model.IsGuestFilter ? "Guests" : activeTag?.Name ?? "Any";
         <div class="filter-dropdown">
-            <button type="button" class="kebab @(Model.TagName is not null ? "active" : "")">Tag: @tagLabel <i class="bi bi-caret-down-fill" aria-hidden="true"></i></button>
+            <button type="button" class="kebab @(Model.TagNames.Length > 0 ? "active" : "")">Tags: @Model.TagFilterLabel <i class="bi bi-caret-down-fill" aria-hidden="true"></i></button>
             <div class="menu">
-                <label class="item"><input type="radio" name="tagName" value="" @(Model.TagName is null ? "checked" : "") /> Any tag</label>
+                @* Checkboxes, ORed: ticking "Member" and "Guests" lists both groups, so one Email VEs
+                   pass can reach the regulars and the guests together. Nothing ticked means any tag —
+                   the search box always submits, so an all-clear still reaches RemembersFilters. *@
                 @* Guests are people with no tag at all, which is derived rather than stored — so it
                    cannot be one of the names below and takes a sentinel value instead. *@
                 <label class="item">
-                    <input type="radio" name="tagName" value="@VolunteerExaminerDirectoryService.GuestTagFilter"
+                    <input type="checkbox" name="tagNames" value="@VolunteerExaminerDirectoryService.GuestTagFilter"
                            @(Model.IsGuestFilter ? "checked" : "") />
                     Guests (no tags)
                 </label>
@@ -91,7 +91,7 @@
                 {
                     var optionColor = VeTagColor.ForStyle(tag.Color);
                     <label class="item">
-                        <input type="radio" name="tagName" value="@tag.Name" @(string.Equals(tag.Name, Model.TagName, StringComparison.OrdinalIgnoreCase) ? "checked" : "") />
+                        <input type="checkbox" name="tagNames" value="@tag.Name" @(Model.HasTag(tag.Name) ? "checked" : "") />
                         <span class="tag-label @(optionColor is null ? null : "has-color")"
                               style="@(optionColor is null ? null : $"--tag-color: {optionColor};")">@tag.Name</span>
                     </label>

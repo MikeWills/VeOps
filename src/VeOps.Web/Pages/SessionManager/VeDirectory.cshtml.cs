@@ -41,12 +41,37 @@ public class VeDirectoryModel(
     [BindProperty(SupportsGet = true)]
     public string? Search { get; set; }
 
-    /// <summary>The tag NAME being filtered on — see AvailableTags for why this is not an id. Also carries the guest sentinel.</summary>
+    /// <summary>
+    /// The tag NAMES being filtered on, ORed — see AvailableTags for why these are not ids. May carry
+    /// the guest sentinel alongside real names, which is how "the regulars and the guests" becomes
+    /// one list and one email.
+    /// </summary>
     [BindProperty(SupportsGet = true)]
-    public string? TagName { get; set; }
+    public string[] TagNames { get; set; } = [];
 
-    /// <summary>Whether the tag filter is currently the "no tags at all" sentinel rather than a real tag name.</summary>
-    public bool IsGuestFilter => string.Equals(TagName, VolunteerExaminerDirectoryService.GuestTagFilter, StringComparison.Ordinal);
+    /// <summary>Whether the "no tags at all" sentinel is among the chosen tags.</summary>
+    public bool IsGuestFilter => TagNames.Contains(VolunteerExaminerDirectoryService.GuestTagFilter, StringComparer.Ordinal);
+
+    /// <summary>Whether a real tag name (as opposed to the guest sentinel) is currently ticked.</summary>
+    public bool HasTag(string name) => TagNames.Contains(name, StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// What the closed dropdown says. One choice is named outright; several are counted, the way
+    /// Email VEs does it, because the menu is shut and the trigger is the only place the state shows.
+    /// </summary>
+    public string TagFilterLabel
+    {
+        get
+        {
+            var chosen = TagNames.Where(t => !string.IsNullOrWhiteSpace(t)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            return chosen.Count switch
+            {
+                0 => "Any",
+                1 => IsGuestFilter ? "Guests" : chosen[0],
+                _ => $"{chosen.Count} selected"
+            };
+        }
+    }
 
     [BindProperty(SupportsGet = true)]
     public bool IncludeInactive { get; set; }
@@ -71,7 +96,7 @@ public class VeDirectoryModel(
     /// filter nobody remembered.
     /// </summary>
     public Dictionary<string, string?> FilterRoute => VeDirectoryFilterRoute.Build(
-        TeamId, Search, TagName, IncludeInactive, LicenseStatus, Worked, WorkedFrom, WorkedTo);
+        TeamId, Search, TagNames, IncludeInactive, LicenseStatus, Worked, WorkedFrom, WorkedTo);
 
     /// <summary>
     /// The filters <b>plus</b> the VE being linked to — one dictionary, because
@@ -312,7 +337,7 @@ public class VeDirectoryModel(
         return (teamIds, new VeDirectoryFilter
         {
             Search = Search,
-            TagName = TagName,
+            TagNames = TagNames,
             IncludeInactive = IncludeInactive,
             LicenseStatus = LicenseStatus,
             WorkedFromUtc = workedFromUtc,
