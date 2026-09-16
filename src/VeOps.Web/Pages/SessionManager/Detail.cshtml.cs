@@ -460,7 +460,9 @@ public class DetailModel(
         var ruleSends = await CandidateRuleSends.LoadAsync(
             dbContext, [.. session.Candidates.Select(c => c.Id)], HttpContext.RequestAborted);
 
-        var rows = session.Candidates.OrderBy(c => c.Name)
+        // Registration order, oldest first (2026-09-15): the roster used to be alphabetical, which
+        // answers no question anyone has on the day. Name breaks ties only.
+        var rows = session.Candidates.OrderBy(c => c.DateRegisteredUtc).ThenBy(c => c.Name)
             .Select(c => ToRow(c, session.Vec.SupportsYouthProgram, CandidateRuleSends.For(ruleSends, c.Id))).ToList();
         Candidates = [.. rows.Where(r => !r.IsWithdrawn)];
         WithdrawnCandidates = [.. rows.Where(r => r.IsWithdrawn)];
@@ -528,6 +530,8 @@ public class DetailModel(
             CandidatePresentation.DisplayName(candidate),
             isWithdrawn ? "—" : candidate.CallSign ?? "—",
             cityStateLine,
+            EasternTimeFormatter.Format(candidate.DateRegisteredUtc, "MMM d, h:mm tt"),
+            candidate.DateRegisteredUtc.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", System.Globalization.CultureInfo.InvariantCulture),
             frnLine,
             meterSegments,
             statusLabel,
@@ -601,6 +605,10 @@ public class DetailModel(
         string CallSignOrDash,
         /// <summary>"City, ST", or whichever half is on file, or "—" — #463, "who's local." Blank/"—" for a withdrawn candidate, whose City/State were cleared with the rest of their PII.</summary>
         string CityStateLine,
+        /// <summary>When the candidate registered in ExamTools, in ET — the roster's default order.</summary>
+        string RegisteredLine,
+        /// <summary>ISO-8601 form of the same instant, so the column sorts as time rather than as text.</summary>
+        string RegisteredSortValue,
         string FrnLine,
         string[] MeterSegments,
         string StatusLabel,

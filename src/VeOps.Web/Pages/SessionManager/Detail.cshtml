@@ -97,12 +97,19 @@
                            records that somebody did it out of band. *@
                         @if (Model.Session.IsArrlSession)
                         {
-                            <a asp-page="SubmitToVec" asp-route-id="@Model.Session.Id" class="btn-secondary btn-sm">Submit to ARRL&hellip;</a>
+                            @* Glyphs, not labelled buttons, for the same reason as the Remit pencil above:
+                               "Submit to ARRL…" beside the chip wrapped onto its own line in this cell. *@
+                            <a asp-page="SubmitToVec" asp-route-id="@Model.Session.Id" class="icon-action"
+                               title="Submit to ARRL…" aria-label="Submit to ARRL…">
+                                <i class="bi bi-send" aria-hidden="true"></i>
+                            </a>
                         }
                         else
                         {
                             <form method="post" asp-page-handler="ToggleVecSubmission" style="display:inline">
-                                <button type="submit" class="btn-secondary btn-sm">Mark submitted</button>
+                                <button type="submit" class="icon-action" title="Mark submitted" aria-label="Mark submitted">
+                                    <i class="bi bi-check2-square" aria-hidden="true"></i>
+                                </button>
                             </form>
                         }
                     }
@@ -112,7 +119,10 @@
                            the moment a session is submitted, which is precisely when the archive
                            starts being worth reading, and it is gated on CanEdit while the filing
                            page itself is readable by anyone who can view the session. *@
-                        <a asp-page="SubmitToVec" asp-route-id="@Model.Session.Id" class="btn-secondary btn-sm">View filing</a>
+                        <a asp-page="SubmitToVec" asp-route-id="@Model.Session.Id" class="icon-action"
+                           title="View filing" aria-label="View filing">
+                            <i class="bi bi-file-earmark-text" aria-hidden="true"></i>
+                        </a>
                     }
                 </span>
             </div>
@@ -188,6 +198,7 @@
                call sign/FRN sub-line: that sub-line is identity data, this is a filter/scan
                question someone answers by scanning the column, not by opening a row. *@
             <th>City</th>
+            <th>Registered</th>
             <th>Application status</th>
             <th>Payment</th>
             <th>Tested</th>
@@ -197,7 +208,7 @@
     <tbody>
         @if (Model.Candidates.Count == 0)
         {
-            <tr><td colspan="6">No candidates registered for this session yet.</td></tr>
+            <tr><td colspan="7">No candidates registered for this session yet.</td></tr>
         }
         @foreach (var candidate in Model.Candidates)
         {
@@ -252,6 +263,7 @@
                     }
                 </td>
                 <td data-sort-value="@candidate.CityStateLine">@candidate.CityStateLine</td>
+                <td class="mono" data-sort-value="@candidate.RegisteredSortValue">@candidate.RegisteredLine</td>
                 <td>
                     <div class="status-row">
                         <div class="meter">
