@@ -38,7 +38,20 @@
             </div>
             @if (!c.IsWithdrawn)
             {
-                <div class="meta-item"><span class="k">Email</span><span class="v">@(c.Email ?? "—")</span></div>
+                <div class="meta-item">
+                    <span class="k">Email</span>
+                    <span class="v">
+                        @if (c.Email is null)
+                        {
+                            <text>—</text>
+                        }
+                        else
+                        {
+                            <a href="mailto:@c.Email">@c.Email</a>
+                            <partial name="_CopyButton" model='new VeOps.Web.CopyButton(c.Email, "email")' />
+                        }
+                    </span>
+                </div>
                 <div class="meta-item">
                     <span class="k">Felony disclosure</span>
                     <span class="v">
