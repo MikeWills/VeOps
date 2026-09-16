@@ -188,6 +188,7 @@
                call sign/FRN sub-line: that sub-line is identity data, this is a filter/scan
                question someone answers by scanning the column, not by opening a row. *@
             <th>City</th>
+            <th>Registered</th>
             <th>Application status</th>
             <th>Payment</th>
             <th>Tested</th>
@@ -197,7 +198,7 @@
     <tbody>
         @if (Model.Candidates.Count == 0)
         {
-            <tr><td colspan="6">No candidates registered for this session yet.</td></tr>
+            <tr><td colspan="7">No candidates registered for this session yet.</td></tr>
         }
         @foreach (var candidate in Model.Candidates)
         {
@@ -252,6 +253,7 @@
                     }
                 </td>
                 <td data-sort-value="@candidate.CityStateLine">@candidate.CityStateLine</td>
+                <td class="mono" data-sort-value="@candidate.RegisteredSortValue">@candidate.RegisteredLine</td>
                 <td>
                     <div class="status-row">
                         <div class="meter">
