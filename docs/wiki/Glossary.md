@@ -8,7 +8,7 @@ Amateur radio and FCC terms first, then words this app invented.
 |---|---|
 | **VE** | Volunteer Examiner. An accredited licensee who administers exams. |
 | **VE team** | The group of VEs who run sessions together. In VE Ops, a **Team** — it owns its own credentials, settings and roster. |
-| **VEC** | Volunteer Examiner Coordinator. The FCC-recognised organisation that accredits VEs and files results — ARRL, W5YI and others. A **shared** record in VE Ops: one "ARRL" for the whole deployment, not one per team. |
+| **VEC** | Volunteer Examiner Coordinator. The FCC-recognized organization that accredits VEs and files results — ARRL, W5YI and others. A **shared** record in VE Ops: one "ARRL" for the whole deployment, not one per team. |
 | **Session** | One sitting at which exams are administered. |
 | **Element** | One exam: Technician (2), General (3), Extra (4). |
 | **CSCE** | Certificate of Successful Completion of Examination — proof a candidate passed an element. |

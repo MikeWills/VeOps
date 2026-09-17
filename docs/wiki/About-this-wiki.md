@@ -25,7 +25,7 @@ The rule of thumb: **if it stops being true when the code changes, it goes next 
 page here that restates a design decision will drift out of date on its own, so it links to that
 decision instead of repeating it.
 
-## How the pages are organised
+## How the pages are organized
 
 - **One page per role**, and each is deliberately short. It says what the role can do, in the order
   they will do it, and links onward.
