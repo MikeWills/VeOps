@@ -10,7 +10,7 @@ picker at the top of the page carries your choice across every screen.
 
 Nothing in VE Ops is triggered by you clicking a button. Every automatic thing is a **scan**: a
 background job wakes up, compares what it has against ExamTools and the FCC, and acts on the
-difference. That has one consequence worth internalising —
+difference. That has one consequence worth internalizing —
 
 **ExamTools is the source of truth for people.** Register a walk-in in ExamTools, move a candidate
 between sessions in ExamTools, fix a spelling in ExamTools. VE Ops will pick it up on the next pass.

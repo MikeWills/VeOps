@@ -12,6 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Markdig" Version="1.3.2" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="10.0.10" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" Version="10.0.10" />
     <PackageReference Include="QRCoder" Version="1.8.0" />
@@ -34,5 +35,13 @@
        Square/ExamTools cannot drift between them again (see src/Shared/appsettings.Shared.json). -->
   <ItemGroup>
     <Content Include="../Shared/appsettings.Shared*.json" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- The user manual (docs/wiki) ships inside the app and is rendered at /Help by HelpPages.
+       Copied into the build output as content so there is still exactly one master copy — the
+       same files the GitHub wiki is built from. images/README.md is authoring guidance, not a page. -->
+  <ItemGroup>
+    <Content Include="../../docs/wiki/**/*" Exclude="../../docs/wiki/images/README.md"
+             LinkBase="Help" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

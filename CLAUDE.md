@@ -127,6 +127,14 @@ which is "here's what was built and why, mostly historical.")
 One-line-or-two pointer per feature, newest first — full design rationale lives in the linked
 `/docs/*.md` file, not here. See "Documentation Structure" below for the policy this follows.
 
+- **The user manual is served inside the app at `/Help` (2026-09-17).** See `docs/in-app-help.md`.
+  *Help → Documentation* was a disabled "Coming soon" button; it now opens the same `docs/wiki`
+  pages the GitHub wiki is built from, copied into the build output and rendered by `HelpPages`
+  with Markdig (raw HTML off) and the wiki build's link rules. Public, like the wiki. **Two things
+  to carry:** the sidebar order/titles are duplicated between `scripts/build_wiki.py` and
+  `HelpPages.cs` on purpose, and a Razor Pages route template must not name a parameter `page` —
+  it is the framework's own key and the route silently never matches.
+
 - **Invite VEs starts from a saved message, and can say how many are registered (2026-09-14).** See
   `docs/trigger-points.md`'s "A session's VE invitation is a trigger point too". Mike, writing a VE
   reminder with `{date}`/`{zoom}`/`#` under *When you email VEs by hand*: *"Is there a better way to
@@ -252,24 +260,6 @@ One-line-or-two pointer per feature, newest first — full design rationale live
   path #116 needed it on. Added to both `PostDigestAsync` (Discord) and `DispatchEmailPerSessionAsync`
   (email) identically.
 
-- **Historical import gets a real provenance flag instead of date-window guesses (#88, 2026-08-29).**
-  See `docs/session-lifecycle-gate.md`. New `Session.ImportedHistoricallyUtc`, stamped only by
-  `SessionIngestionService.ImportHistoricalRangeAsync`, replaces `PaymentEligibilityWindow` (retired,
-  a 30-day guess from session age) in `PaymentGenerationService`/`FccFeeOutstandingScanner`, and adds
-  an explicit exclusion to `UlsWatcherService`, the shared `AwaitingFccGrant` predicate (covering
-  Applicant Status, its nav badge, and the bulk-email screen at once), `CandidateRegisteredScanner`
-  and `SessionEventSchedulingService`. **The correction, not just the replacement**: a date window
-  couldn't tell "backfilled" from "a real session that's simply old," so it wrongly excluded the
-  latter — every new test pins that a real old session (flag unset) is now correctly still eligible.
-  **Deliberately scoped out**: `ExamResultSyncService`'s 14-day window (a discovery window for
-  amendable results, not a "never touch this" guard — folding it in would be wrong) and
-  `VolunteerExaminerSyncService`'s `ignoreRetryWindow` (a working one-time-fetch mechanism; changing
-  it risked regressing real behavior for a mechanism this pass didn't need to touch). **Backfilling
-  existing HRCC/MARC sessions is a read-only report, not an automatic write** — Mike's call: a wrong
-  tag silently stops a real session's reminders/checks, so `--report-historical-imports` (Worker)
-  lists candidates via two combinable, imperfect signals (an exact-but-incomplete `AuditLog` trail,
-  and a `CreatedUtc`-vs-`ScheduledStartUtc` gap heuristic) for review before any backfill writes
-  anything — the backfill-apply step itself is not built by this pass.
 
 **Kept here vs. `CHANGELOG.md`:** this section is a bounded, recent-only window (rule of thumb: cap
 around 10 entries), since CLAUDE.md is read in full on every conversation turn and this is the one

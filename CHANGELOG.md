@@ -8,6 +8,25 @@ that window, or immediately if it's phase-numbered work already summarized in "C
 design rationale for any entry still lives in its linked `/docs/*.md` file, not here or in
 CLAUDE.md — this file, like CLAUDE.md's Change Log, is pointers only.
 
+- **Historical import gets a real provenance flag instead of date-window guesses (#88, 2026-08-29).**
+  See `docs/session-lifecycle-gate.md`. New `Session.ImportedHistoricallyUtc`, stamped only by
+  `SessionIngestionService.ImportHistoricalRangeAsync`, replaces `PaymentEligibilityWindow` (retired,
+  a 30-day guess from session age) in `PaymentGenerationService`/`FccFeeOutstandingScanner`, and adds
+  an explicit exclusion to `UlsWatcherService`, the shared `AwaitingFccGrant` predicate (covering
+  Applicant Status, its nav badge, and the bulk-email screen at once), `CandidateRegisteredScanner`
+  and `SessionEventSchedulingService`. **The correction, not just the replacement**: a date window
+  couldn't tell "backfilled" from "a real session that's simply old," so it wrongly excluded the
+  latter — every new test pins that a real old session (flag unset) is now correctly still eligible.
+  **Deliberately scoped out**: `ExamResultSyncService`'s 14-day window (a discovery window for
+  amendable results, not a "never touch this" guard — folding it in would be wrong) and
+  `VolunteerExaminerSyncService`'s `ignoreRetryWindow` (a working one-time-fetch mechanism; changing
+  it risked regressing real behavior for a mechanism this pass didn't need to touch). **Backfilling
+  existing HRCC/MARC sessions is a read-only report, not an automatic write** — Mike's call: a wrong
+  tag silently stops a real session's reminders/checks, so `--report-historical-imports` (Worker)
+  lists candidates via two combinable, imperfect signals (an exact-but-incomplete `AuditLog` trail,
+  and a `CreatedUtc`-vs-`ScheduledStartUtc` gap heuristic) for review before any backfill writes
+  anything — the backfill-apply step itself is not built by this pass.
+
 - **A Discord channel is picked from a dropdown now, not typed by hand (#503, 2026-08-29).** See
   `docs/trigger-points.md`'s new section. New `IDiscordChannelMessageClient.ListTextChannelsAsync`
   backs a `<select>` on both `MessageRuleNew`/`MessageRuleEdit`; falls back to the old manual-id input
