@@ -49,7 +49,10 @@ public class PageSmokeTests : IAsyncLifetime
         ["vecId"] = _factory.Seeded.VecId.ToString(),
         ["userId"] = _factory.Seeded.UserId.ToString(),
         // Any well-formed guid: the page should tell an unknown token it is unknown, not throw.
-        ["token"] = Guid.Empty.ToString()
+        ["token"] = Guid.Empty.ToString(),
+        // The in-app manual (/Help): a page name and a screenshot name that exist in docs/wiki.
+        ["name"] = "Glossary",
+        ["file"] = "session-detail.png"
     };
 
     private static readonly Regex RouteParameter = new(@"\{(?<name>[A-Za-z0-9_]+)(:[^}]+)?\??\}", RegexOptions.Compiled);

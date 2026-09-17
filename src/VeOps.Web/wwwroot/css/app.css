@@ -790,6 +790,36 @@ footer.roster { margin-top: 28px; background: var(--surface); border: 1px solid 
 .policy .policy-note { background: var(--chip-neutral-bg); border-radius: 8px; padding: 12px 16px; font-size: 13px; color: var(--ink-soft); }
 .modal .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
 
+/* In-app documentation (/Help): the wiki's Markdown rendered by HelpPages. A sidebar in the wiki's
+   running order beside the article; below the breakpoint the sidebar becomes a wrapped row of
+   links above it. The article gets the prose rules the policy page has, plus what a manual needs
+   and a policy does not — tables, code, images, h3. Two classes on the link rules, because
+   `.vesm a { color: inherit }` beats a single class (see the .icon-action comment). */
+.help { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 40px; align-items: start; }
+.help-nav { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 2px; }
+.help-nav-heading { font-size: 12px; color: var(--ink-soft); margin: 14px 0 4px; }
+.vesm .help-nav-item { font-size: 14px; color: var(--ink-soft); text-decoration: none; padding: 4px 8px; margin-left: -8px; border-radius: 6px; }
+.vesm .help-nav-item:hover { background: var(--ghost-hover); color: var(--ink); }
+.vesm .help-nav-item.current { color: var(--ink); font-weight: 600; box-shadow: inset 3px 0 0 var(--amber); border-radius: 0 6px 6px 0; }
+.help-body { max-width: 760px; }
+.help-body h1 { font-size: 24px; margin: 0 0 16px; letter-spacing: -.01em; }
+.help-body h2 { font-size: 17px; font-weight: 600; margin: 32px 0 10px; }
+.help-body h3 { font-size: 15px; font-weight: 600; margin: 24px 0 8px; }
+.help-body p, .help-body li { font-size: 14px; line-height: 1.6; }
+.help-body p { margin: 0 0 14px; }
+.help-body ul, .help-body ol { margin: 0 0 14px; padding-left: 22px; }
+.help-body li { margin-bottom: 4px; }
+.vesm .help-body a { color: var(--focus); }
+.help-body code { font-family: "JetBrains Mono", monospace; font-size: 13px; background: var(--chip-neutral-bg); padding: 1px 5px; border-radius: 4px; }
+.help-body pre { background: var(--chip-neutral-bg); padding: 12px 14px; border-radius: 8px; overflow-x: auto; margin: 0 0 14px; }
+.help-body pre code { background: none; padding: 0; }
+.help-body blockquote { margin: 0 0 14px; padding: 2px 0 2px 14px; border-left: 3px solid var(--line-strong); color: var(--ink-soft); }
+.help-body table { margin: 0 0 18px; }
+.help-body tbody td { padding: 9px 12px; vertical-align: top; }
+.help-body img { max-width: 100%; height: auto; border: 1px solid var(--line); border-radius: 8px; margin: 4px 0 14px; }
+.help-body hr { border: 0; border-top: 1px solid var(--rule); margin: 28px 0; }
+
+
 /* ============================================================================================
    Responsive layer
    ============================================================================================
@@ -809,6 +839,11 @@ footer.roster { margin-top: 28px; background: var(--surface); border: 1px solid 
 
 /* ---- 1. Card tables (below the breakpoint only) ------------------------------------------- */
 @media (max-width: 767.98px) {
+  .help { display: block; }
+  .help-nav { position: static; flex-direction: row; flex-wrap: wrap; gap: 4px 10px; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--rule); }
+  .help-nav-heading { flex-basis: 100%; margin: 8px 0 0; }
+  .vesm .help-nav-item { margin-left: 0; }
+  .vesm .help-nav-item.current { box-shadow: none; background: var(--ghost-hover); border-radius: 6px; }
   /* The <table> stops being a table: thead is dropped (its labels move onto each cell via
      data-label) and every row becomes a self-contained card. Cells keep their source order, so
      the card reads top-to-bottom in the same order the columns ran left-to-right. */

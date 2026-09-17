@@ -54,7 +54,8 @@ LINK = re.compile(r"(!?)\[([^\]]*)\]\(([^)\s]+)\)")
 CODE_SPAN = re.compile(r"(`+[^`]*`+)", re.S)
 
 # The running order of the sidebar: roles in the order somebody meets them,
-# reference after. Anything not listed is appended alphabetically rather than
+# reference after. ORDER, TITLES and HEADINGS are mirrored in src/VeOps.Web/HelpPages.cs,
+# which renders the same pages inside the app - change both. Anything not listed is appended alphabetically rather than
 # silently dropped, so a new page appears without this list being updated.
 ORDER = [
     "Home",

@@ -55,8 +55,11 @@ gets asked. [Tasks](Tasks.md) tracks which exist.
   [`images/README.md`](https://github.com/MikeWills/VeOps/blob/main/docs/wiki/images/README.md) —
   it has the one rule that matters, which is never to screenshot real candidate data.
 - **The sidebar and footer are generated**, not files here. Their running order lives in
-  `scripts/build_wiki.py`; a new page appears in the sidebar without touching it, just at the
-  bottom until it is given a place in the order.
+  `scripts/build_wiki.py` (and, for the in-app copy, `HelpPages.cs` — keep the two the same); a
+  new page appears in the sidebar without touching either, just at the bottom until it is given a
+  place in the order.
+- **These pages are also served inside the app** under *Help → Documentation*, rendered from the
+  same files with the same link rules. Anything that reads well here reads well there.
 - Anything a reader should not see does not go in this folder.
 
 ## The publishing mechanism

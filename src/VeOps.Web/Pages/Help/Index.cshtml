@@ -1,0 +1,27 @@
+@page "/Help/{name?}"
+@model VeOps.Web.Pages.Help.IndexModel
+@{
+    ViewData["Title"] = Model.Rendered.Title;
+    // The signed-in chassis when there is someone signed in, the public one otherwise — the same
+    // page is read from both sides of the login.
+    Layout = User.Identity?.IsAuthenticated == true ? "_AppLayout" : "_PublicLayout";
+    ViewData["MainMaxWidth"] = "1160px";
+}
+
+<div class="help">
+    <nav class="help-nav" aria-label="Documentation">
+        @foreach (var entry in Model.Rendered.Nav)
+        {
+            if (entry.HeadingBefore is not null)
+            {
+                <div class="help-nav-heading">@entry.HeadingBefore</div>
+            }
+            var href = entry.Page == VeOps.Web.HelpPages.Home ? Url.Content("~/Help") : Url.Content("~/Help/" + entry.Page);
+            <a class="help-nav-item @(entry.IsCurrent ? "current" : "")" href="@href"
+               aria-current="@(entry.IsCurrent ? "page" : null)">@entry.Title</a>
+        }
+    </nav>
+    <article class="help-body">
+        @Html.Raw(Model.Rendered.Html)
+    </article>
+</div>
