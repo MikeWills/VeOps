@@ -58,8 +58,8 @@ Two behaviors that surprise people:
 
 A message on **When a candidate passes** can include `{{FccNoticeExpectedBy}}` — the date by which
 the FCC's fee notice should have arrived, counted in business days from the session. How many is a
-property of the VEC (ARRL publishes 1-3), set by a System Admin on the VECs screen. Say "about":
-weekends are skipped, federal holidays are not.
+property of the VEC (ARRL publishes 1-3), set by a System Admin on the VECs screen. Weekends and
+federal holidays are skipped, but say "about" — the VEC's own extra closures are not known to the app.
 
 **FCC Status** is the manual switch for when the FCC itself is broken. When their processing stalls,
 flip the master switch (and the per-population sub-switches) to stop the app nagging candidates

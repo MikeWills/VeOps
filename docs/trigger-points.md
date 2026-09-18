@@ -1267,9 +1267,13 @@ business days for that.
   which would have rendered the session date itself.
 - **Counted on the Eastern date** (`UlsSchedule.ToEasternDate`, then `AddBusinessDays`). Most sessions
   here start after 8pm ET, which is tomorrow in UTC, so a raw `.Date` would lose a day for the
-  majority of them — the same trap as issue #248. Weekends are skipped; federal holidays are not, which
-  is why any message should say "about", and why the seeded default does not exist (a team writes its
-  own wording).
+  majority of them — the same trap as issue #248. Weekends are skipped, and since 2026-09-18 so are
+  the eleven observed federal holidays (`FederalHolidays`, computed from OPM's rules — fixed dates
+  shifted to Friday/Monday off a weekend, the four "Nth Monday" days, Thanksgiving — rather than a
+  table someone has to extend each year; `FederalHolidaysTests` pins 2026 against OPM's list). Still
+  "about": federal holidays are the FCC's closures and only an approximation of the VEC's (ARRL also
+  takes the Friday after Thanksgiving), and a one-off closure is not in any rule. That, and no seeded
+  default existing (a team writes its own wording), is why the message should never say "on".
 - **No FCC fee due date on this trigger.** Mike: *"we don't know for sure when it will be submitted,
   and if you plan on 13 days out and ARRL submits it the next day, now the expiration date is wrong."*
   The ten-day clock starts from the FCC's own entered date, which exists only once the application
