@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using VeOps.Core.Admin;
 using VeOps.Core.Data;
 using VeOps.Core.Entities;
@@ -40,7 +40,7 @@ public class VecManagementServiceTests
         await using var dbContext = CreateContext();
         var user = await SeedUserAsync(dbContext);
 
-        var (result, vec) = await CreateService(dbContext).CreateAsync("ARRL", null, true, "Notes", user.Id, CancellationToken.None);
+        var (result, vec) = await CreateService(dbContext).CreateAsync("ARRL", null, true, "Notes", 3, user.Id, CancellationToken.None);
 
         Assert.Equal(VecActionResult.Success, result);
         Assert.NotNull(vec);
@@ -58,9 +58,9 @@ public class VecManagementServiceTests
     {
         await using var dbContext = CreateContext();
         var user = await SeedUserAsync(dbContext);
-        await CreateService(dbContext).CreateAsync("ARRL", null, false, null, user.Id, CancellationToken.None);
+        await CreateService(dbContext).CreateAsync("ARRL", null, false, null, 3, user.Id, CancellationToken.None);
 
-        var (result, vec) = await CreateService(dbContext).CreateAsync("ARRL", null, false, null, user.Id, CancellationToken.None);
+        var (result, vec) = await CreateService(dbContext).CreateAsync("ARRL", null, false, null, 3, user.Id, CancellationToken.None);
 
         Assert.Equal(VecActionResult.DuplicateName, result);
         Assert.Null(vec);
@@ -76,7 +76,7 @@ public class VecManagementServiceTests
         dbContext.Vecs.Add(vec);
         await dbContext.SaveChangesAsync();
 
-        var result = await CreateService(dbContext).UpdateAsync(vec.Id, "ARRL Updated", null, true, "New notes", user.Id, CancellationToken.None);
+        var result = await CreateService(dbContext).UpdateAsync(vec.Id, "ARRL Updated", null, true, "New notes", 3, user.Id, CancellationToken.None);
 
         Assert.Equal(VecActionResult.Success, result);
         var updated = await dbContext.Vecs.SingleAsync();
@@ -92,7 +92,7 @@ public class VecManagementServiceTests
         await using var dbContext = CreateContext();
         var user = await SeedUserAsync(dbContext);
 
-        var result = await CreateService(dbContext).UpdateAsync(999, "Name", null, false, null, user.Id, CancellationToken.None);
+        var result = await CreateService(dbContext).UpdateAsync(999, "Name", null, false, null, 3, user.Id, CancellationToken.None);
 
         Assert.Equal(VecActionResult.NotFound, result);
     }
@@ -103,7 +103,7 @@ public class VecManagementServiceTests
         await using var dbContext = CreateContext();
         var user = await SeedUserAsync(dbContext);
 
-        var (result, vec) = await CreateService(dbContext).CreateAsync("GLAARG", "lagroup", false, null, user.Id, CancellationToken.None);
+        var (result, vec) = await CreateService(dbContext).CreateAsync("GLAARG", "lagroup", false, null, 3, user.Id, CancellationToken.None);
 
         Assert.Equal(VecActionResult.Success, result);
         Assert.Equal("GLAARG", vec!.Name);
@@ -120,7 +120,7 @@ public class VecManagementServiceTests
         await using var dbContext = CreateContext();
         var user = await SeedUserAsync(dbContext);
 
-        var (result, vec) = await CreateService(dbContext).CreateAsync("ARRL", code, false, null, user.Id, CancellationToken.None);
+        var (result, vec) = await CreateService(dbContext).CreateAsync("ARRL", code, false, null, 3, user.Id, CancellationToken.None);
 
         Assert.Equal(VecActionResult.Success, result);
         Assert.Null(vec!.ExamToolsCode);
@@ -141,7 +141,7 @@ public class VecManagementServiceTests
         await using var dbContext = CreateContext();
         var user = await SeedUserAsync(dbContext);
 
-        var (result, vec) = await CreateService(dbContext).CreateAsync("ARRL", code, false, null, user.Id, CancellationToken.None);
+        var (result, vec) = await CreateService(dbContext).CreateAsync("ARRL", code, false, null, 3, user.Id, CancellationToken.None);
 
         Assert.Equal(VecActionResult.Success, result);
         Assert.Equal(code, vec!.ExamToolsCode);
@@ -158,7 +158,7 @@ public class VecManagementServiceTests
         dbContext.Vecs.Add(new Vec { Name = "lagroup" });
         await dbContext.SaveChangesAsync();
 
-        var (result, vec) = await CreateService(dbContext).CreateAsync("GLAARG", "LAGROUP", false, null, user.Id, CancellationToken.None);
+        var (result, vec) = await CreateService(dbContext).CreateAsync("GLAARG", "LAGROUP", false, null, 3, user.Id, CancellationToken.None);
 
         Assert.Equal(VecActionResult.DuplicateExamToolsCode, result);
         Assert.Null(vec);
@@ -172,7 +172,7 @@ public class VecManagementServiceTests
         await using var dbContext = CreateContext();
         var user = await SeedUserAsync(dbContext);
 
-        var (result, _) = await CreateService(dbContext).CreateAsync("GLAARG", "lagroup", false, null, user.Id, CancellationToken.None);
+        var (result, _) = await CreateService(dbContext).CreateAsync("GLAARG", "lagroup", false, null, 3, user.Id, CancellationToken.None);
 
         Assert.Equal(VecActionResult.Success, result);
     }
@@ -186,7 +186,7 @@ public class VecManagementServiceTests
         dbContext.Vecs.Add(vec);
         await dbContext.SaveChangesAsync();
 
-        var result = await CreateService(dbContext).UpdateAsync(vec.Id, "GLAARG", "lagroup", true, null, user.Id, CancellationToken.None);
+        var result = await CreateService(dbContext).UpdateAsync(vec.Id, "GLAARG", "lagroup", true, null, 3, user.Id, CancellationToken.None);
 
         Assert.Equal(VecActionResult.Success, result);
         Assert.Equal("lagroup", (await dbContext.Vecs.SingleAsync()).ExamToolsCode);
@@ -201,7 +201,7 @@ public class VecManagementServiceTests
         dbContext.Vecs.Add(vec);
         await dbContext.SaveChangesAsync();
 
-        var result = await CreateService(dbContext).UpdateAsync(vec.Id, "GLAARG", "", false, null, user.Id, CancellationToken.None);
+        var result = await CreateService(dbContext).UpdateAsync(vec.Id, "GLAARG", "", false, null, 3, user.Id, CancellationToken.None);
 
         Assert.Equal(VecActionResult.Success, result);
         var updated = await dbContext.Vecs.SingleAsync();
@@ -230,7 +230,7 @@ public class VecManagementServiceTests
         await dbContext.SaveChangesAsync();
 
         var result = await CreateService(dbContext).UpdateAsync(
-            vec.Id, "ARRL VEC (Newington)", null, false, null, user.Id, CancellationToken.None);
+            vec.Id, "ARRL VEC (Newington)", null, false, null, 3, user.Id, CancellationToken.None);
 
         Assert.Equal(VecActionResult.Success, result);
         var updated = await dbContext.Vecs.SingleAsync();
@@ -254,7 +254,7 @@ public class VecManagementServiceTests
         await dbContext.SaveChangesAsync();
 
         var result = await CreateService(dbContext).UpdateAsync(
-            vec.Id, "GLAARG", "lagroup", false, null, user.Id, CancellationToken.None);
+            vec.Id, "GLAARG", "lagroup", false, null, 3, user.Id, CancellationToken.None);
 
         Assert.Equal(VecActionResult.Success, result);
         Assert.Equal("lagroup", (await dbContext.Vecs.SingleAsync()).ExamToolsCode);
@@ -274,7 +274,7 @@ public class VecManagementServiceTests
         await dbContext.SaveChangesAsync();
 
         var result = await CreateService(dbContext).UpdateAsync(
-            vec.Id, "lagroup", "", false, null, user.Id, CancellationToken.None);
+            vec.Id, "lagroup", "", false, null, 3, user.Id, CancellationToken.None);
 
         Assert.Equal(VecActionResult.Success, result);
         var updated = await dbContext.Vecs.SingleAsync();
@@ -298,7 +298,7 @@ public class VecManagementServiceTests
         await dbContext.SaveChangesAsync();
 
         var result = await CreateService(dbContext).UpdateAsync(
-            vec.Id, "ARRL", "ARRL", false, null, user.Id, CancellationToken.None);
+            vec.Id, "ARRL", "ARRL", false, null, 3, user.Id, CancellationToken.None);
 
         Assert.Equal(VecActionResult.Success, result);
         Assert.Equal("ARRL", (await dbContext.Vecs.SingleAsync()).ExamToolsCode);
@@ -314,7 +314,7 @@ public class VecManagementServiceTests
         dbContext.Vecs.AddRange(glaarg, w5yi);
         await dbContext.SaveChangesAsync();
 
-        var result = await CreateService(dbContext).UpdateAsync(w5yi.Id, "W5YI", "lagroup", false, null, user.Id, CancellationToken.None);
+        var result = await CreateService(dbContext).UpdateAsync(w5yi.Id, "W5YI", "lagroup", false, null, 3, user.Id, CancellationToken.None);
 
         Assert.Equal(VecActionResult.DuplicateExamToolsCode, result);
     }
@@ -329,7 +329,7 @@ public class VecManagementServiceTests
         dbContext.Vecs.AddRange(vecA, vecB);
         await dbContext.SaveChangesAsync();
 
-        var result = await CreateService(dbContext).UpdateAsync(vecB.Id, "ARRL", null, false, null, user.Id, CancellationToken.None);
+        var result = await CreateService(dbContext).UpdateAsync(vecB.Id, "ARRL", null, false, null, 3, user.Id, CancellationToken.None);
 
         Assert.Equal(VecActionResult.DuplicateName, result);
     }

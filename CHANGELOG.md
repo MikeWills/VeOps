@@ -8,6 +8,17 @@ that window, or immediately if it's phase-numbered work already summarized in "C
 design rationale for any entry still lives in its linked `/docs/*.md` file, not here or in
 CLAUDE.md — this file, like CLAUDE.md's Change Log, is pointers only.
 
+- **#116 closed — the missing token, not a missing mechanism (2026-08-29).** See
+  `docs/trigger-points.md`'s "Per-session fan-out" section. Everything else the issue asked for
+  (custom channel, hour-level timing, zero-candidates suppression, the
+  `{{RegisteredCount}}`/`{{SessionDate}}` summary sentence, `@VE` role mentions) had already shipped
+  across #491/#503's work — checked by re-reading #116 directly rather than trusting the trail of
+  comments that referenced it. Only "link to the event" was missing: `{{ZoomJoinUrl}}` was already
+  advertised as a valid token for these triggers, but nothing wired `MessageSessionContext.ZoomJoinUrl`
+  into either digest's placeholder dictionary, so it silently rendered blank on exactly the `PerSession`
+  path #116 needed it on. Added to both `PostDigestAsync` (Discord) and `DispatchEmailPerSessionAsync`
+  (email) identically.
+
 - **Historical import gets a real provenance flag instead of date-window guesses (#88, 2026-08-29).**
   See `docs/session-lifecycle-gate.md`. New `Session.ImportedHistoricallyUtc`, stamped only by
   `SessionIngestionService.ImportHistoricalRangeAsync`, replaces `PaymentEligibilityWindow` (retired,

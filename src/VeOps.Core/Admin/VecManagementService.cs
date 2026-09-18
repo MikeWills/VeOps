@@ -11,7 +11,7 @@ namespace VeOps.Core.Admin;
 /// </summary>
 public class VecManagementService(AppDbContext dbContext, TimeProvider timeProvider)
 {
-    public async Task<(VecActionResult Result, Vec? Vec)> CreateAsync(string name, string? examToolsCode, bool supportsYouthProgram, string? notes, int userId, CancellationToken cancellationToken)
+    public async Task<(VecActionResult Result, Vec? Vec)> CreateAsync(string name, string? examToolsCode, bool supportsYouthProgram, string? notes, int fccProcessingBusinessDays, int userId, CancellationToken cancellationToken)
     {
         if (await dbContext.Vecs.AnyAsync(v => v.Name == name, cancellationToken))
         {
@@ -35,7 +35,7 @@ public class VecManagementService(AppDbContext dbContext, TimeProvider timeProvi
         // the audit needs the id the first save assigns.
         return await AtomicWrite.RunAsync(dbContext, async () =>
         {
-            var vec = new Vec { Name = name, ExamToolsCode = examToolsCode, SupportsYouthProgram = supportsYouthProgram, Notes = notes };
+            var vec = new Vec { Name = name, ExamToolsCode = examToolsCode, SupportsYouthProgram = supportsYouthProgram, Notes = notes, FccProcessingBusinessDays = ClampBusinessDays(fccProcessingBusinessDays) };
             dbContext.Vecs.Add(vec);
             await dbContext.SaveChangesAsync(cancellationToken); // assigns vec.Id, needed for the audit entry below
 
@@ -46,7 +46,7 @@ public class VecManagementService(AppDbContext dbContext, TimeProvider timeProvi
         }, cancellationToken);
     }
 
-    public async Task<VecActionResult> UpdateAsync(int vecId, string name, string? examToolsCode, bool supportsYouthProgram, string? notes, int userId, CancellationToken cancellationToken)
+    public async Task<VecActionResult> UpdateAsync(int vecId, string name, string? examToolsCode, bool supportsYouthProgram, string? notes, int fccProcessingBusinessDays, int userId, CancellationToken cancellationToken)
     {
         var vec = await dbContext.Vecs.FirstOrDefaultAsync(v => v.Id == vecId, cancellationToken);
         if (vec is null)
@@ -79,6 +79,7 @@ public class VecManagementService(AppDbContext dbContext, TimeProvider timeProvi
         vec.ExamToolsCode = examToolsCode;
         vec.SupportsYouthProgram = supportsYouthProgram;
         vec.Notes = notes;
+        vec.FccProcessingBusinessDays = ClampBusinessDays(fccProcessingBusinessDays);
 
         var now = timeProvider.GetUtcNow().UtcDateTime;
         AddAudit(userId, "VecUpdated", vec.Id, $"VEC '{name}' updated.", now);
@@ -140,6 +141,9 @@ public class VecManagementService(AppDbContext dbContext, TimeProvider timeProvi
 
     private void AddAudit(int userId, string action, int entityId, string details, DateTime now) =>
         dbContext.AddAuditLog(userId, action, nameof(Vec), entityId, details, now);
+
+    /// <summary>The form's min/max are client-side only; a direct POST could store a negative or a decade. 0-30 covers any VEC's real turnaround.</summary>
+    private static int ClampBusinessDays(int businessDays) => Math.Clamp(businessDays, 0, 30);
 }
 
 public enum VecActionResult

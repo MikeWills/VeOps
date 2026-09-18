@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using VeOps.Core.Uls;
 
 namespace VeOps.Core.Notifications;
@@ -31,6 +31,10 @@ public static class SessionTimeFormatter
     /// which no real session uses but which the format must not misreport — the Pacific side carries
     /// its own date rather than silently inheriting Eastern's.</para>
     /// </summary>
+    /// <summary>A calendar date, already in the reader's terms — "Wednesday, August 19, 2026". Takes a date, not an instant: no zone conversion happens here.</summary>
+    public static string ForCandidateDate(DateTime date) =>
+        date.ToString("dddd, MMMM d, yyyy", CultureInfo.InvariantCulture);
+
     public static string ForCandidate(DateTime scheduledStartUtc)
     {
         var eastern = ToZone(scheduledStartUtc, UlsSchedule.EasternTimeZone);

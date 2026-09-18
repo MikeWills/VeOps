@@ -127,6 +127,15 @@ which is "here's what was built and why, mostly historical.")
 One-line-or-two pointer per feature, newest first — full design rationale lives in the linked
 `/docs/*.md` file, not here. See "Documentation Structure" below for the policy this follows.
 
+- **`{{FccNoticeExpectedBy}}` on "When a candidate passes" (2026-09-17).** See
+  `docs/trigger-points.md`'s section of that name. Feedback on a real message: put the estimated
+  date in the email. The token is the session's Eastern date plus `Vec.FccProcessingBusinessDays`
+  weekdays (new column, default 3 — ARRL's published 1-3; editable on the VECs screen), formatted
+  `Wednesday, August 19, 2026`. On the VEC because it is a fact about who files, not who ran the
+  session. **Deliberately no FCC fee due date here** — that clock starts from the FCC's own entered
+  date, unknown until the application is in ULS, so it would belong on `FccFeeOutstanding` if ever
+  built.
+
 - **The user manual is served inside the app at `/Help` (2026-09-17).** See `docs/in-app-help.md`.
   *Help → Documentation* was a disabled "Coming soon" button; it now opens the same `docs/wiki`
   pages the GitHub wiki is built from, copied into the build output and rendered by `HelpPages`
@@ -248,17 +257,6 @@ One-line-or-two pointer per feature, newest first — full design rationale live
   2026-09-02, but nothing has run against a real Discord server: the privileged intent is still off,
   no tag is mapped, and the daily switch is off for every team. The doc's "Before turning any of this
   on" is the order to do it in.
-
-- **#116 closed — the missing token, not a missing mechanism (2026-08-29).** See
-  `docs/trigger-points.md`'s "Per-session fan-out" section. Everything else the issue asked for
-  (custom channel, hour-level timing, zero-candidates suppression, the
-  `{{RegisteredCount}}`/`{{SessionDate}}` summary sentence, `@VE` role mentions) had already shipped
-  across #491/#503's work — checked by re-reading #116 directly rather than trusting the trail of
-  comments that referenced it. Only "link to the event" was missing: `{{ZoomJoinUrl}}` was already
-  advertised as a valid token for these triggers, but nothing wired `MessageSessionContext.ZoomJoinUrl`
-  into either digest's placeholder dictionary, so it silently rendered blank on exactly the `PerSession`
-  path #116 needed it on. Added to both `PostDigestAsync` (Discord) and `DispatchEmailPerSessionAsync`
-  (email) identically.
 
 
 **Kept here vs. `CHANGELOG.md`:** this section is a bounded, recent-only window (rule of thumb: cap

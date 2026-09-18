@@ -139,6 +139,34 @@ public class NewTriggerScannerTests
         Assert.Single(sender.SentMessages);
     }
 
+    /// <summary>
+    /// The one date a passed candidate can be told before anything reaches the FCC: when to expect
+    /// the FCC's own fee notice, counted in business days from the session (feedback on the seeded
+    /// "When a candidate passes" message, 2026-09-17). The VEC decides the count — ARRL's published
+    /// figure is 1-3 business days — and Eastern is the calendar it is counted on.
+    /// </summary>
+    [Fact]
+    public async Task CandidatePassed_RendersFccNoticeExpectedBy_InBusinessDaysFromTheSession()
+    {
+        await using var dbContext = CreateContext();
+        var team = await SeedTeamAsync(dbContext);
+        var rule = await SeedRuleAsync(dbContext, team, MessageTrigger.CandidatePassed);
+        rule.Body = "Expect the FCC notice by {{FccNoticeExpectedBy}}.";
+        // Friday 2026-08-14 at 8pm ET is already Saturday in UTC — the count must start from the
+        // Eastern date, so three business days land on Wednesday the 19th, not Thursday.
+        var session = await SeedSessionAsync(dbContext, team, new DateTime(2026, 8, 15, 0, 0, 0, DateTimeKind.Utc));
+        session.Vec.FccProcessingBusinessDays = 3;
+        var candidate = NewCandidate(session);
+        candidate.MarkTested(Now.AddHours(-2));
+        candidate.NewLicenseClass = LicenseClass.Technician;
+        dbContext.Candidates.Add(candidate);
+        await dbContext.SaveChangesAsync();
+
+        var sender = new FakeEmailSender();
+        Assert.Equal(1, (await RunAsync(dbContext, sender, team, MessageTrigger.CandidatePassed)).Sent);
+        Assert.Contains("Expect the FCC notice by Wednesday, August 19, 2026.", Assert.Single(sender.SentMessages).HtmlBody);
+    }
+
     [Fact]
     public async Task CandidatePassed_DoesNotFireForSomeoneWhoHasNot()
     {

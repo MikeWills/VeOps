@@ -1,4 +1,4 @@
-namespace VeOps.Core.Uls;
+﻿namespace VeOps.Core.Uls;
 
 public static class UlsSchedule
 {
@@ -45,4 +45,25 @@ public static class UlsSchedule
     /// </summary>
     public static DateTime ToEastern(DateTime utc) =>
         TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), EasternTimeZone);
+
+    /// <summary>
+    /// <paramref name="date"/> plus <paramref name="businessDays"/> weekdays, weekends skipped and
+    /// federal holidays not — "about", never "on". The input is a calendar date (pass
+    /// <see cref="ToEasternDate"/>'s result, not a raw UTC instant: a Friday-evening session is
+    /// already Saturday in UTC and would lose a day). A weekend start counts from the Monday.
+    /// </summary>
+    public static DateTime AddBusinessDays(DateTime date, int businessDays)
+    {
+        var result = date.Date;
+        for (var remaining = businessDays; remaining > 0; remaining--)
+        {
+            do
+            {
+                result = result.AddDays(1);
+            }
+            while (result.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday);
+        }
+
+        return result;
+    }
 }
