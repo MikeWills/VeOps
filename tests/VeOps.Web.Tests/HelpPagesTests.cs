@@ -91,7 +91,12 @@ public class HelpPagesTests
 
         var html = await client.GetStringAsync("/SessionManager");
 
-        Assert.Contains("href=\"/Help\"", html);
+        // Opens in its own tab, like Support beside it: the reader keeps the screen they were
+        // looking up. The tag helper writes href last, so match the attributes in either order.
+        var link = System.Text.RegularExpressions.Regex.Match(html, "<a [^>]*href=\"/Help\"[^>]*>");
+        Assert.True(link.Success, "Help menu should link to /Help");
+        Assert.Contains("target=\"_blank\"", link.Value);
+        Assert.Contains("rel=\"noopener noreferrer\"", link.Value);
         Assert.DoesNotContain("title=\"Coming soon\"", html);
     }
 
