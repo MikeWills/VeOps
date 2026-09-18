@@ -53,7 +53,7 @@ public class AtomicCreateSqliteTests
         var service = new VecManagementService(dbContext, new FixedTimeProvider(Now));
 
         await Assert.ThrowsAnyAsync<Exception>(() =>
-            service.CreateAsync("ARRL", "arrl", supportsYouthProgram: true, notes: null,
+            service.CreateAsync("ARRL", "arrl", supportsYouthProgram: true, notes: null, fccProcessingBusinessDays: 3,
                 NonexistentUserId, CancellationToken.None));
 
         // Without the transaction the Vec is committed by the first save and survives the second's

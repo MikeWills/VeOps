@@ -1,7 +1,8 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using VeOps.Core.Data;
 using VeOps.Core.Entities;
 using VeOps.Core.Notifications;
+using VeOps.Core.Uls;
 
 namespace VeOps.Core.Messaging.Scanners;
 
@@ -43,7 +44,7 @@ public class CandidatePassedScanner(AppDbContext dbContext) : IMessageTriggerSca
 
         var floorUtc = MessageRuleEligibility.FloorUtc(team, rule);
         var candidates = await dbContext.Candidates
-            .Include(c => c.Session)
+            .Include(c => c.Session).ThenInclude(s => s.Vec)
             .Where(c => c.PiiPurgedUtc == null
                         && c.Email != null
                         && !settled.Contains(c.Id)
@@ -78,7 +79,12 @@ public class CandidatePassedScanner(AppDbContext dbContext) : IMessageTriggerSca
                 // Almost always blank here, and correctly so: the FCC has not issued anything yet.
                 // Offered because a team may write "your call sign, once it arrives, will be…" and a
                 // token that silently does not exist is worse than one that renders empty.
-                ["CallSign"] = candidate.CallSign ?? ""
+                ["CallSign"] = candidate.CallSign ?? "",
+                // The one date the app can promise on the night. The FCC's fee notice follows the
+                // VEC's filing, and the VEC says how long that takes (ARRL: 1-3 business days).
+                // Counted on the Eastern date, not the UTC one — an evening session is tomorrow in UTC.
+                ["FccNoticeExpectedBy"] = SessionTimeFormatter.ForCandidateDate(
+                    UlsSchedule.AddBusinessDays(UlsSchedule.ToEasternDate(candidate.Session.ScheduledStartUtc), candidate.Session.Vec.FccProcessingBusinessDays))
             })
             { SessionLeadCallSign = candidate.Session.TeamLeadCallSign })];
     }

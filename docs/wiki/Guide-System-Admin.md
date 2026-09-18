@@ -1,4 +1,4 @@
-# System Admin
+﻿# System Admin
 
 You run the deployment. Everything a [Team Admin](Guide-Team-Admin.md) can do, you can do for every
 team — read that guide first. This page is what only you can do, plus what you are on the hook for
@@ -12,7 +12,7 @@ server, which is why no single team's admin can edit them.
 | Screen | What it is |
 |---|---|
 | **Teams** | Create a team. Everything else about a team is the Team Admin's. |
-| **VECs** | Shared reference data — the real-world coordinating organisations. One row per VEC across the whole deployment, not one per team. |
+| **VECs** | Shared reference data — the real-world coordinating organisations. One row per VEC across the whole deployment, not one per team. Includes how many business days the VEC takes to file with the FCC, which candidate messages use to say when to expect the FCC's notice. |
 | **Fee Configurations** | The fee structure. |
 | **System Settings** | Deployment-wide settings, including the site-wide banner. |
 

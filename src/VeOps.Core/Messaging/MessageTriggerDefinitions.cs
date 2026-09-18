@@ -1,4 +1,4 @@
-using VeOps.Core.Email;
+﻿using VeOps.Core.Email;
 using VeOps.Core.Entities;
 
 namespace VeOps.Core.Messaging;
@@ -140,7 +140,7 @@ public static class MessageTriggerDefinitions
             MessageSubjectType.Candidate,
             DefaultParameterHours: null,
             LegalRecipients: [MessageRecipient.Candidate, MessageRecipient.TeamAdminAddress, MessageRecipient.SessionLead, MessageRecipient.TeamAdmins, MessageRecipient.SystemAdmins, MessageRecipient.SessionManagers],
-            Placeholders: ["CandidateName", "CandidateFirstName", "SessionDate", "CallSign"]),
+            Placeholders: ["CandidateName", "CandidateFirstName", "SessionDate", "CallSign", "FccNoticeExpectedBy"]),
 
         new(MessageTrigger.LicenseGranted,
             MessageTriggerMechanism.State,

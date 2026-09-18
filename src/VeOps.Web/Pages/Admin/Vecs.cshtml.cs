@@ -34,7 +34,7 @@ public class VecsModel(AppDbContext dbContext, UserManager<User> userManager, Ve
 
         Vecs = (await dbContext.Vecs
                 .OrderBy(v => v.Name)
-                .Select(v => new { v.Id, v.Name, v.ExamToolsCode, v.SupportsYouthProgram, v.Notes })
+                .Select(v => new { v.Id, v.Name, v.ExamToolsCode, v.SupportsYouthProgram, v.Notes, v.FccProcessingBusinessDays })
                 .ToListAsync(HttpContext.RequestAborted))
             .Select(v =>
             {
@@ -44,12 +44,12 @@ public class VecsModel(AppDbContext dbContext, UserManager<User> userManager, Ve
                     : fee.FeeCollectionEnabled
                         ? Usd.Format(fee.ExamFeeAmount ?? 0m)
                         : "Collection off";
-                return new VecRow(v.Id, v.Name, v.ExamToolsCode, v.SupportsYouthProgram, v.Notes, feeSummary);
+                return new VecRow(v.Id, v.Name, v.ExamToolsCode, v.SupportsYouthProgram, v.Notes, v.FccProcessingBusinessDays, feeSummary);
             })
             .ToList();
     }
 
-    public async Task<IActionResult> OnPostCreateAsync(string name, string? examToolsCode, bool supportsYouthProgram, string? notes)
+    public async Task<IActionResult> OnPostCreateAsync(string name, string? examToolsCode, bool supportsYouthProgram, string? notes, int fccProcessingBusinessDays)
     {
         // Role re-checked here, not just by the [Authorize(Roles = ...)] attribute (#257). The role
         // in the cookie is a claim baked in at sign-in; the row is the truth. SetRoleAsync now
@@ -62,7 +62,7 @@ public class VecsModel(AppDbContext dbContext, UserManager<User> userManager, Ve
             return Forbid();
         }
 
-        var (result, _) = await vecManagementService.CreateAsync(name, examToolsCode, supportsYouthProgram, notes, user.Id, CancellationToken.None);
+        var (result, _) = await vecManagementService.CreateAsync(name, examToolsCode, supportsYouthProgram, notes, fccProcessingBusinessDays, user.Id, CancellationToken.None);
         TempData[result == VecActionResult.Success ? "StatusMessage" : "ErrorMessage"] = result switch
         {
             VecActionResult.Success => $"VEC '{name}' created.",
@@ -76,7 +76,7 @@ public class VecsModel(AppDbContext dbContext, UserManager<User> userManager, Ve
         return RedirectToPage();
     }
 
-    public async Task<IActionResult> OnPostUpdateAsync(int vecId, string name, string? examToolsCode, bool supportsYouthProgram, string? notes)
+    public async Task<IActionResult> OnPostUpdateAsync(int vecId, string name, string? examToolsCode, bool supportsYouthProgram, string? notes, int fccProcessingBusinessDays)
     {
         // Role re-checked here, not just by the [Authorize(Roles = ...)] attribute (#257). The role
         // in the cookie is a claim baked in at sign-in; the row is the truth. SetRoleAsync now
@@ -89,7 +89,7 @@ public class VecsModel(AppDbContext dbContext, UserManager<User> userManager, Ve
             return Forbid();
         }
 
-        var result = await vecManagementService.UpdateAsync(vecId, name, examToolsCode, supportsYouthProgram, notes, user.Id, CancellationToken.None);
+        var result = await vecManagementService.UpdateAsync(vecId, name, examToolsCode, supportsYouthProgram, notes, fccProcessingBusinessDays, user.Id, CancellationToken.None);
         TempData[result == VecActionResult.Success ? "StatusMessage" : "ErrorMessage"] = result switch
         {
             VecActionResult.Success => $"VEC '{name}' updated.",
@@ -105,7 +105,7 @@ public class VecsModel(AppDbContext dbContext, UserManager<User> userManager, Ve
         $"Another VEC already matches the ExamTools code '{code}' — ingestion could not tell them apart.";
 
     /// <summary>FeeSummary is null when this VEC has no fee configuration in effect — the state that silently blocks ingestion.</summary>
-    public record VecRow(int Id, string Name, string? ExamToolsCode, bool SupportsYouthProgram, string? Notes, string? FeeSummary)
+    public record VecRow(int Id, string Name, string? ExamToolsCode, bool SupportsYouthProgram, string? Notes, int FccProcessingBusinessDays, string? FeeSummary)
     {
         /// <summary>
         /// The code ingestion matches ExamTools' session <c>vec</c> field against — the override when

@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using VeOps.Core.Admin;
 using VeOps.Core.Data;
@@ -89,7 +89,7 @@ public class RequiredInputGuardTests
         var user = await SeedUserAsync(dbContext);
 
         var (result, vec) = await new VecManagementService(dbContext, new FixedTimeProvider(Now))
-            .CreateAsync(name!, "arrl", supportsYouthProgram: false, notes: null, user.Id, CancellationToken.None);
+            .CreateAsync(name!, "arrl", supportsYouthProgram: false, notes: null, fccProcessingBusinessDays: 3, user.Id, CancellationToken.None);
 
         Assert.Equal(VecActionResult.NameRequired, result);
         Assert.Null(vec);
@@ -102,9 +102,9 @@ public class RequiredInputGuardTests
         await using var dbContext = CreateContext();
         var user = await SeedUserAsync(dbContext);
         var service = new VecManagementService(dbContext, new FixedTimeProvider(Now));
-        var (_, vec) = await service.CreateAsync("ARRL", "arrl", false, null, user.Id, CancellationToken.None);
+        var (_, vec) = await service.CreateAsync("ARRL", "arrl", false, null, 3, user.Id, CancellationToken.None);
 
-        var result = await service.UpdateAsync(vec!.Id, "   ", "arrl", false, null, user.Id, CancellationToken.None);
+        var result = await service.UpdateAsync(vec!.Id, "   ", "arrl", false, null, 3, user.Id, CancellationToken.None);
 
         Assert.Equal(VecActionResult.NameRequired, result);
         Assert.Equal("ARRL", (await dbContext.Vecs.SingleAsync()).Name);

@@ -1,4 +1,4 @@
-# Team Admin
+﻿# Team Admin
 
 You own a team's configuration. Everything a [Session Manager](Guide-Session-Manager.md) can do,
 you can do — read that guide first, because running sessions is still most of the work. This page
@@ -55,6 +55,11 @@ Two behaviors that surprise people:
   A person's inbox is not a resource that has to exist, so the app deliberately does not catch up.
 - **Suppressed is final.** When a message is held back — a muted team, or the FCC-issue switches
   below — it is marked suppressed, not queued. Turning the switch back off never releases a flood.
+
+A message on **When a candidate passes** can include `{{FccNoticeExpectedBy}}` — the date by which
+the FCC's fee notice should have arrived, counted in business days from the session. How many is a
+property of the VEC (ARRL publishes 1-3), set by a System Admin on the VECs screen. Say "about":
+weekends are skipped, federal holidays are not.
 
 **FCC Status** is the manual switch for when the FCC itself is broken. When their processing stalls,
 flip the master switch (and the per-population sub-switches) to stop the app nagging candidates

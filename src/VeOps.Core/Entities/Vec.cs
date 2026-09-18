@@ -1,4 +1,4 @@
-namespace VeOps.Core.Entities;
+﻿namespace VeOps.Core.Entities;
 
 public class Vec
 {
@@ -26,6 +26,16 @@ public class Vec
     public bool SupportsYouthProgram { get; set; }
 
     public string? Notes { get; set; }
+
+    /// <summary>
+    /// How many business days this VEC takes to file a session with the FCC — ARRL publishes 1-3, so
+    /// the default is the outer figure. Backs <c>{{FccNoticeExpectedBy}}</c> on the "When a candidate
+    /// passes" trigger: the FCC's fee notice cannot arrive before the VEC files, and this is the only
+    /// date the app can promise a candidate on the night. A real default rather than null, like
+    /// <c>Team.PurgeUnpaidLinkDays</c>: it is a business setting, not something unset until entered.
+    /// </summary>
+    public int FccProcessingBusinessDays { get; set; } = 3;
+
 
     public List<FeeConfiguration> FeeConfigurations { get; } = [];
     public List<Session> Sessions { get; } = [];

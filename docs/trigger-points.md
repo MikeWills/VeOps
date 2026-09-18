@@ -1,4 +1,4 @@
-# Trigger points — configurable outbound messages
+﻿# Trigger points — configurable outbound messages
 
 Issue [#401](https://github.com/MikeWills/VeOps/issues/401). **PR1: the engine, with
 behaviour frozen. PR2: the admin screen, and the parameters become real. PR3: three new trigger
@@ -1248,6 +1248,33 @@ is ever wanted back, the shape is a sibling trigger ("when a candidate does not 
 per-rule Passed/Failed/Either option: the recipient list, the tone and the tokens all differ, and a
 rule that can silently flip between congratulating and consoling is a worse thing to own than two
 rules with honest names.
+
+## `{{FccNoticeExpectedBy}}` — the one date a passed candidate can be given (2026-09-17)
+
+Feedback on a real "When a candidate passes" message: *"I'd calculate and put the estimated dates
+into the email ('we expect you to receive this notice from the FCC before <3 business days after the
+session>')."* The candidate's next step is paying the FCC's own fee, and the thing that starts that
+clock is the FCC's notice — which cannot arrive before the VEC files the session. ARRL publishes 1-3
+business days for that.
+
+`CandidatePassedScanner` now renders **`{{FccNoticeExpectedBy}}`**: the session's Eastern date plus
+`Vec.FccProcessingBusinessDays` weekdays, formatted `Wednesday, August 19, 2026`. Three decisions:
+
+- **The count lives on the VEC, not the team or the rule.** It is a fact about who files — ARRL's
+  turnaround is ARRL's whether the team is HRCC or MARC — and a self-hoster under a different VEC
+  edits one row on the VECs screen (SystemAdmin, like the rest of that table). Default `3`, ARRL's
+  outer figure, for existing rows too: the migration sets `defaultValue: 3` rather than EF's `0`,
+  which would have rendered the session date itself.
+- **Counted on the Eastern date** (`UlsSchedule.ToEasternDate`, then `AddBusinessDays`). Most sessions
+  here start after 8pm ET, which is tomorrow in UTC, so a raw `.Date` would lose a day for the
+  majority of them — the same trap as issue #248. Weekends are skipped; federal holidays are not, which
+  is why any message should say "about", and why the seeded default does not exist (a team writes its
+  own wording).
+- **No FCC fee due date on this trigger.** Mike: *"we don't know for sure when it will be submitted,
+  and if you plan on 13 days out and ARRL submits it the next day, now the expiration date is wrong."*
+  The ten-day clock starts from the FCC's own entered date, which exists only once the application
+  is in ULS — so if that date is ever offered, it belongs on `FccFeeOutstanding` ("While the FCC is
+  waiting for its fee"), computed from the ULS history, not estimated here.
 
 ## A manual message could not be edited at all (2026-09-09)
 
