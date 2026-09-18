@@ -131,7 +131,8 @@ One-line-or-two pointer per feature, newest first — full design rationale live
   `docs/trigger-points.md`'s section of that name. Feedback on a real message: put the estimated
   date in the email. The token is the session's Eastern date plus `Vec.FccProcessingBusinessDays`
   weekdays (new column, default 3 — ARRL's published 1-3; editable on the VECs screen), formatted
-  `Wednesday, August 19, 2026`. On the VEC because it is a fact about who files, not who ran the
+  `Wednesday, August 19, 2026`; weekends and observed federal holidays skipped (`FederalHolidays`,
+  rule-computed, 2026-09-18). On the VEC because it is a fact about who files, not who ran the
   session. **Deliberately no FCC fee due date here** — that clock starts from the FCC's own entered
   date, unknown until the application is in ULS, so it would belong on `FccFeeOutstanding` if ever
   built.

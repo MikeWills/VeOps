@@ -47,8 +47,9 @@ public static class UlsSchedule
         TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), EasternTimeZone);
 
     /// <summary>
-    /// <paramref name="date"/> plus <paramref name="businessDays"/> weekdays, weekends skipped and
-    /// federal holidays not — "about", never "on". The input is a calendar date (pass
+    /// <paramref name="date"/> plus <paramref name="businessDays"/> weekdays, weekends and observed
+    /// federal holidays skipped (<see cref="FederalHolidays"/>) — still "about", never "on", since
+    /// one-off closures and the VEC's own extra days are unknowable. The input is a calendar date (pass
     /// <see cref="ToEasternDate"/>'s result, not a raw UTC instant: a Friday-evening session is
     /// already Saturday in UTC and would lose a day). A weekend start counts from the Monday.
     /// </summary>
@@ -61,7 +62,7 @@ public static class UlsSchedule
             {
                 result = result.AddDays(1);
             }
-            while (result.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday);
+            while (result.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday || FederalHolidays.IsObserved(result));
         }
 
         return result;
