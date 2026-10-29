@@ -1,5 +1,6 @@
 ﻿@page "{id:int}"
 @model VeOps.Web.Pages.SessionManager.DetailModel
+@using VeOps.Core.VolunteerExaminers
 @{
     ViewData["Title"] = Model.Session.BreadcrumbLabel;
     ViewData["ActiveNav"] = "Sessions";
@@ -413,6 +414,14 @@
             <p class="eyebrow">Volunteer examiners</p>
             <h2>VE roster</h2>
         </div>
+        @* Compares Zoom's list for the ended meeting with the roster (#576). Zoom only has the list once the
+           host has ended the meeting, so the button's title says so. *@
+        @if (Model.CanRunDayOfActions && Model.Session.ZoomJoinUrl is not null)
+        {
+            <form method="post" asp-page-handler="CheckAttendance">
+                <button type="submit" class="btn-secondary btn-sm" title="Compare who was on Zoom with this roster. End the Zoom meeting first."><i class="bi bi-people" aria-hidden="true"></i> Check attendance</button>
+            </form>
+        }
         @* Read-only on purpose: the roster comes from ExamTools and is fully reconciled there on
            every poll, so an in-app add/remove was undone on the next tick. See docs/session-manager-ui.md. *@
         @if (Model.CanEdit)
@@ -445,6 +454,49 @@
             </span>
         }
     </div>
+    @if (Model.Attendance is { } audit)
+    {
+        <div class="attendance-audit" id="attendance-audit">
+            @if (audit.Status == VeAttendanceAuditStatus.Ready && audit.Comparison is { } found)
+            {
+                <p class="eyebrow">Attendance check</p>
+                <p class="mono">Matched on call sign only, so look the lists over yourself: a VE who joined as "iPhone" shows up as missing and as an extra.</p>
+                <p class="eyebrow">On the roster and on Zoom (@found.Present.Count)</p>
+                <div class="roster-list">
+                    @foreach (var p in found.Present)
+                    {
+                        <span class="ve-chip"><span class="mono">@(p.Ve.CallSign ?? "—")</span> — @p.Ve.Name <span class="mono">(@string.Join(", ", p.ZoomNames))</span></span>
+                    }
+                </div>
+                <p class="eyebrow">On the roster, not matched on Zoom (@found.NotInZoom.Count)</p>
+                <div class="roster-list">
+                    @foreach (var v in found.NotInZoom)
+                    {
+                        <span class="ve-chip"><span class="mono">@(v.CallSign ?? "—")</span> — @v.Name</span>
+                    }
+                </div>
+                <p class="eyebrow">On Zoom, not on the roster (@found.NotOnRoster.Count)</p>
+                <div class="roster-list">
+                    @foreach (var zoomName in found.NotOnRoster)
+                    {
+                        <span class="ve-chip">@zoomName</span>
+                    }
+                </div>
+            }
+            else
+            {
+                <p class="eyebrow">Attendance check</p>
+                <p>@(audit.Status switch
+                {
+                    VeAttendanceAuditStatus.NotEndedYet => "Zoom has no attendance list for this meeting yet. End the Zoom meeting, then check again; Zoom can take a few minutes to have it ready.",
+                    VeAttendanceAuditStatus.NoZoomMeeting => "This session has no Zoom meeting, so there is no attendance to check.",
+                    VeAttendanceAuditStatus.ZoomNotConfigured => "This team has no Zoom connection set up.",
+                    VeAttendanceAuditStatus.ZoomFailed => "Zoom did not return the attendance list. A team admin should check that the team's Zoom app has the \"past participants\" permission.",
+                    _ => "This session could not be found."
+                })</p>
+            }
+        </div>
+    }
 </footer>
 
 @if (Model.CanDeleteSession)

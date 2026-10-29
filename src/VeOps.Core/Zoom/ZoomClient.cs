@@ -163,6 +163,53 @@ public sealed class ZoomClient : IZoomClient, IDisposable
         return meetings;
     }
 
+    /// <summary>
+    /// Verified live 2026-10-28 on a Zoom Pro account: this endpoint answers 404 <c>3001</c> ("Meeting
+    /// does not exist") while the meeting is still open, and 200 once it has ended — immediately, in
+    /// the one test run. Zoom's own help text says reports can take up to 30 minutes, so a 404 is
+    /// reported as "not ready" and never treated as "nobody attended". Pages are followed with the same
+    /// bounded loop as <see cref="ListMeetingsAsync"/>; a stuck token must not hold a page request open.
+    /// </summary>
+    public async Task<ZoomPastParticipants> GetPastParticipantsAsync(ZoomCredentials credentials, string meetingId, CancellationToken cancellationToken)
+    {
+        var url = $"{ApiBaseUrl}/v2/past_meetings/{Uri.EscapeDataString(meetingId)}/participants?page_size=300";
+        var names = new List<string>();
+        string? pageToken = null;
+        var pages = 0;
+
+        do
+        {
+            var pageUrl = pageToken is null ? url : $"{url}&next_page_token={Uri.EscapeDataString(pageToken)}";
+            var response = await SendAsync(credentials, HttpMethod.Get, pageUrl, body: null, cancellationToken, treatNotFoundAsSuccess: true);
+
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                _logger.LogInformation("Zoom has no past-meeting record for {ZoomMeetingId} (team {TeamId}) yet — still open or just ended.", meetingId, credentials.TeamId);
+                return new ZoomPastParticipants(false, []);
+            }
+
+            var page = await response.Content.ReadFromJsonAsync<ZoomPastParticipantsWireResponse>(JsonOptions, cancellationToken)
+                ?? throw new InvalidOperationException("Zoom past-meeting participants response body was empty.");
+
+            names.AddRange(page.Participants
+                .Select(p => p.Name ?? p.UserName)
+                .Where(n => !string.IsNullOrWhiteSpace(n))!);
+
+            pageToken = string.IsNullOrEmpty(page.NextPageToken) ? null : page.NextPageToken;
+            pages++;
+        }
+        while (pageToken is not null && pages < MaxMeetingListPages);
+
+        if (pageToken is not null)
+        {
+            _logger.LogWarning(
+                "Zoom past-meeting participants for {ZoomMeetingId} stopped at the {PageLimit}-page limit for team {TeamId} with more pages available — the attendance list is incomplete",
+                meetingId, MaxMeetingListPages, credentials.TeamId);
+        }
+
+        return new ZoomPastParticipants(true, names);
+    }
+
     private static ZoomMeetingWireRequest ToWireRequest(ZoomMeetingRequest request) => new()
     {
         Topic = request.Topic,

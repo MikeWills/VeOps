@@ -72,6 +72,7 @@ public class TeamPipelineTests
         public Task UpdateMeetingAsync(ZoomCredentials c, string id, ZoomMeetingRequest r, CancellationToken t) => throw new InvalidOperationException();
         public Task DeleteMeetingAsync(ZoomCredentials c, string id, CancellationToken t) => throw new InvalidOperationException();
         public Task<IReadOnlyList<ZoomMeeting>> ListMeetingsAsync(ZoomCredentials c, CancellationToken t) => throw new InvalidOperationException();
+        public Task<ZoomPastParticipants> GetPastParticipantsAsync(ZoomCredentials c, string id, CancellationToken t) => throw new InvalidOperationException();
     }
 
     private sealed class UnusedDiscordClient : IDiscordEventClient

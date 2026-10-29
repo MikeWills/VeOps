@@ -16,6 +16,13 @@ public class ZoomMeeting
     public DateTime? StartTimeUtc { get; set; }
 }
 
+/// <summary>
+/// Who joined a finished Zoom meeting, by display name only (#576). <see cref="MeetingEnded"/> false
+/// means Zoom has no past-meeting record yet — the meeting is still open or has only just ended — so
+/// <see cref="Names"/> is empty because nothing is available, not because nobody came.
+/// </summary>
+public record ZoomPastParticipants(bool MeetingEnded, IReadOnlyList<string> Names);
+
 // Wire DTOs below mirror Zoom's snake_case JSON exactly — see
 // https://developers.zoom.us/docs/api/meetings/ ("Create a meeting" / "Update a meeting").
 
@@ -86,6 +93,26 @@ internal class ZoomMeetingWireResponse
 
     [JsonPropertyName("join_url")]
     public string JoinUrl { get; set; } = "";
+}
+
+// Wire DTOs for GET /past_meetings/{meetingId}/participants — used only by GetPastParticipantsAsync.
+// Verified live 2026-10-28 on a Zoom Pro account; the display name arrives as "name" (the Dashboard
+// endpoint calls it "user_name", so both are read in case Zoom ever aligns them).
+
+internal class ZoomPastParticipantsWireResponse
+{
+    public List<ZoomPastParticipantWireEntry> Participants { get; set; } = [];
+
+    [JsonPropertyName("next_page_token")]
+    public string? NextPageToken { get; set; }
+}
+
+internal class ZoomPastParticipantWireEntry
+{
+    public string? Name { get; set; }
+
+    [JsonPropertyName("user_name")]
+    public string? UserName { get; set; }
 }
 
 // Wire DTOs for GET /users/{userId}/meetings ("List meetings") — used only by ListMeetingsAsync's

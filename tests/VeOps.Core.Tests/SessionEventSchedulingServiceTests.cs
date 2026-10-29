@@ -63,6 +63,9 @@ public class SessionEventSchedulingServiceTests
             return Task.CompletedTask;
         }
 
+        public Task<ZoomPastParticipants> GetPastParticipantsAsync(ZoomCredentials credentials, string meetingId, CancellationToken cancellationToken) =>
+            Task.FromResult(new ZoomPastParticipants(true, []));
+
         public Task<IReadOnlyList<ZoomMeeting>> ListMeetingsAsync(ZoomCredentials credentials, CancellationToken cancellationToken)
         {
             CredentialsUsed.Add(credentials);
@@ -719,6 +722,9 @@ public class SessionEventSchedulingServiceTests
 
         public Task<IReadOnlyList<ZoomMeeting>> ListMeetingsAsync(ZoomCredentials credentials, CancellationToken cancellationToken) =>
             Task.FromResult<IReadOnlyList<ZoomMeeting>>([]);
+
+        public Task<ZoomPastParticipants> GetPastParticipantsAsync(ZoomCredentials credentials, string meetingId, CancellationToken cancellationToken) =>
+            Task.FromResult(new ZoomPastParticipants(true, []));
     }
 
     [Fact]
