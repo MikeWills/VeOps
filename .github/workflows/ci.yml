@@ -20,4 +20,15 @@ jobs:
 
       - run: dotnet build --configuration Release --no-restore
 
+      # Every WebApplicationFactory host builds its own configuration, and each reload-on-change JSON
+      # file (Program.cs adds three explicitly, plus the default appsettings pair) holds a
+      # FileSystemWatcher, i.e. one inotify instance. ubuntu-latest moved from 24.04 to 26.04 (seen
+      # 2026-10-29) and the ~530 Web tests then ran out of the 128-instance limit ("configured user
+      # limit (128) on the number of inotify instances"), failing about half of them. Polling instead
+      # of inotify costs a stat every four seconds per file and nothing here edits config mid-test.
+      # `hostBuilder:reloadConfigOnChange=false` was tried first and did not help: it only affects the
+      # default appsettings files, not Program.cs's own AddJsonFile calls.
+      # https://learn.microsoft.com/aspnet/core/fundamentals/file-providers#watch-for-changes
       - run: dotnet test --configuration Release --no-build
+        env:
+          DOTNET_USE_POLLING_FILE_WATCHER: 'true'
