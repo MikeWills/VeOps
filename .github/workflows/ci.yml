@@ -20,4 +20,13 @@ jobs:
 
       - run: dotnet build --configuration Release --no-restore
 
+      # Every WebApplicationFactory host watches appsettings*.json, and each watcher holds an inotify
+      # instance. ubuntu-latest moved from 24.04 to 26.04 (seen 2026-10-29) and the ~530 Web tests then
+      # ran out of the 128-instance limit ("configured user limit (128) on the number of inotify
+      # instances"), failing about half of them. Nothing here edits config files while a test runs,
+      # so reload-on-change is switched off for the run. `__` rather than `:` because a colon is not
+      # a valid environment-variable name on every platform.
+      # https://learn.microsoft.com/aspnet/core/fundamentals/host/generic-host#reload-config-on-change
       - run: dotnet test --configuration Release --no-build
+        env:
+          DOTNET_hostBuilder__reloadConfigOnChange: 'false'
