@@ -25,6 +25,15 @@
          not have to re-derive the answer. -->
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
     <PackageReference Include="Square" Version="45.0.1" />
+    <!-- Transitive pins, not new dependencies: both arrive at 10.0.10 through
+         Microsoft.AspNetCore.DataProtection (Xml, then Pkcs) and MailKit/MimeKit (Pkcs), and
+         10.0.10 has NuGet-audit advisories (high: GHSA-846f-f764-76mx, GHSA-7hqp-7c5m-4vq6,
+         GHSA-c399-9853-6jmj, GHSA-r955-8q5j-3h83; moderate: GHSA-2fmv-rv2c-59x7), fixed in 10.0.13.
+         TreatWarningsAsErrors turns the audit warning into a failed restore, so the whole solution
+         stopped building. Drop these two lines once DataProtection and MailKit themselves resolve
+         to a patched version; until then they are what keeps the build green. -->
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.14" />
+    <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.14" />
   </ItemGroup>
 
 
