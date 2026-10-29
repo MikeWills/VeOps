@@ -8,6 +8,25 @@ that window, or immediately if it's phase-numbered work already summarized in "C
 design rationale for any entry still lives in its linked `/docs/*.md` file, not here or in
 CLAUDE.md — this file, like CLAUDE.md's Change Log, is pointers only.
 
+- **VE tags follow Discord roles now (#519, 2026-09-02).** See `docs/discord-tag-sync.md`. A team's
+  Discord roles are read and applied to its `VeTag` assignments: map a tag to a role, and holding the
+  role means holding the tag while not holding it means not holding it. **One-directional and
+  read-only against Discord** — no role, nickname or permission is ever written back, and a tag still
+  grants nothing (`VeTagsGrantNoAccessTests` unchanged; the `Discord*` prefix is exempted from its
+  property-name rule with the reasoning recorded in the test it caught). Matched VEs and mapped tags
+  only: a VE not in the server keeps every tag, a member who is not a VE is never given a record, and
+  an unmapped tag is untouched. Built as four steps — map, check, apply, daily job — the last **off
+  for every team until switched on**, because it removes tags and a drifted display name would do that
+  unattended. Mike's ruling on hand edits: a mapped tag removed in the app comes back on the next run;
+  the place to make a change stick is Discord. Two things worth carrying: an **empty member list means
+  "could not read", never "nobody holds a role"** (see Known Constraints — read literally it would
+  strip every mapped tag on the team), and the PII purge now clears `DiscordUserId` alongside
+  `DiscordUsername`, since a snowflake never changes and keeping it would have left a permanent handle
+  on someone's account after their details aged out. **Shipped in `v0.34.0` and inert** — deployed
+  2026-09-02, but nothing has run against a real Discord server: the privileged intent is still off,
+  no tag is mapped, and the daily switch is off for every team. The doc's "Before turning any of this
+  on" is the order to do it in.
+
 - **#116 closed — the missing token, not a missing mechanism (2026-08-29).** See
   `docs/trigger-points.md`'s "Per-session fan-out" section. Everything else the issue asked for
   (custom channel, hour-level timing, zero-candidates suppression, the

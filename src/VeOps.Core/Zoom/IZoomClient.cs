@@ -20,4 +20,14 @@ public interface IZoomClient
     /// same reasoning as IDiscordEventClient.ListEventsAsync, see docs/zoom-discord-scheduling.md.
     /// </summary>
     Task<IReadOnlyList<ZoomMeeting>> ListMeetingsAsync(ZoomCredentials credentials, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Display names of everyone who joined a meeting that has ended — the VE attendance audit (#576).
+    /// Needs the <c>meeting:read:list_past_participants:admin</c> scope on the team's Zoom app. A meeting
+    /// that is still open returns <c>MeetingEnded = false</c> rather than throwing: that is an expected
+    /// state the Session Manager can act on (end the meeting, ask again). Anything else, a missing scope
+    /// above all, throws so it is never shown as an empty attendance list. Zoom's live participant list
+    /// is a Business-plan API and is deliberately not used — see docs/zoom-discord-scheduling.md.
+    /// </summary>
+    Task<ZoomPastParticipants> GetPastParticipantsAsync(ZoomCredentials credentials, string meetingId, CancellationToken cancellationToken);
 }

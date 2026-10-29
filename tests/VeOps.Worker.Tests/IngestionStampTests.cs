@@ -114,6 +114,7 @@ public class IngestionStampTests
         public Task UpdateMeetingAsync(ZoomCredentials c, string id, ZoomMeetingRequest r, CancellationToken ct) => Nope<object>();
         public Task DeleteMeetingAsync(ZoomCredentials c, string id, CancellationToken ct) => Nope<object>();
         public Task<IReadOnlyList<ZoomMeeting>> ListMeetingsAsync(ZoomCredentials c, CancellationToken ct) => Nope<IReadOnlyList<ZoomMeeting>>();
+        public Task<ZoomPastParticipants> GetPastParticipantsAsync(ZoomCredentials c, string id, CancellationToken ct) => Nope<ZoomPastParticipants>();
 
         public Task<DiscordEvent> CreateEventAsync(ulong g, DiscordEventRequest r, CancellationToken ct) => Nope<DiscordEvent>();
         public Task UpdateEventAsync(ulong g, string id, DiscordEventRequest r, CancellationToken ct) => Nope<object>();

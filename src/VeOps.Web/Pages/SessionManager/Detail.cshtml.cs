@@ -47,6 +47,7 @@ public class DetailModel(
     CandidateNotificationService candidateNotificationService,
     VecSubmissionService vecSubmissionService,
     ManualCandidateRefreshService manualRefreshService,
+    VeAttendanceAuditService attendanceAuditService,
     TimeProvider timeProvider) : PageModel
 {
     [BindProperty(SupportsGet = true)]
@@ -78,6 +79,10 @@ public class DetailModel(
     /// <summary>Every candidate row on this session, withdrawn included — what deleting the session would actually remove.</summary>
     public int TotalCandidateCount => Candidates.Count + WithdrawnCandidates.Count;
     public IReadOnlyList<VeChip> VeRoster { get; private set; } = [];
+
+    /// <summary>Set only by the "Check attendance" POST, which re-renders this page rather than redirecting: the result is for one look and is deliberately never stored (#576).</summary>
+    public VeAttendanceAuditResult? Attendance { get; private set; }
+
     public bool CanEdit { get; private set; }
 
     /// <summary>Gates the two day-of controls (Refresh candidates, Create retest payment) a TeamLead
@@ -209,6 +214,20 @@ public class DetailModel(
         var (success, message) = result.Describe(teamName: null);
         Apply(new ActionOutcome(success, message));
         return RedirectToPage(new { id = Id });
+    }
+
+    // Read-only, so it shares the day-of gate rather than CanEdit: the Session Manager is the one filing
+    // with the VEC, but a TeamLead running the session may need the same check. Posts and re-renders
+    // instead of redirecting because nothing is stored — see VeAttendanceAuditService.
+    public async Task<IActionResult> OnPostCheckAttendanceAsync()
+    {
+        var auth = await AuthorizeDayOfActionsAsync();
+        if (auth is null) return Forbid();
+
+        Attendance = await attendanceAuditService.CheckAsync(Id, HttpContext.RequestAborted);
+
+        var loaded = await LoadForDisplayAsync();
+        return loaded ? Page() : NotFound();
     }
 
     // The VE roster is displayed here but not editable: VolunteerExaminerSyncService fully

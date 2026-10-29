@@ -24,6 +24,9 @@ Discord's own dashboards, done once by whoever owns the accounts.
    `meeting:write:admin`). The `:admin` variants are the ones you want — Server-to-Server apps
    act at the account level, so even managing meetings only under your own user still needs the
    admin-scoped versions ([confirmed on the Zoom developer forum](https://devforum.zoom.us/t/server-to-server-oauth-app-permissions-and-scopes/92331)).
+   **Optional, for the VE attendance audit:** also add `meeting:read:list_past_participants:admin`
+   (see [`ve-attendance-audit.md`](ve-attendance-audit.md) — the button reports a plain error
+   without it).
 5. **Activation** tab → activate the app. Per Zoom's docs, [you cannot generate an access token
    at all until the app is activated](https://developers.zoom.us/docs/internal-apps/create/) —
    easy step to miss and get a confusing auth failure from.
