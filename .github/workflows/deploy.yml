@@ -49,7 +49,11 @@ jobs:
 
       - run: dotnet build --configuration Release --no-restore
 
+      # Same inotify workaround as ci.yml (see the comment there): ubuntu-latest is 26.04 now and the
+      # Web tests exhaust its 128 inotify instances. 2026.10.0 failed here for exactly that reason.
       - run: dotnet test --configuration Release --no-build
+        env:
+          DOTNET_USE_POLLING_FILE_WATCHER: 'true'
 
   deploy:
     needs: build-and-test
