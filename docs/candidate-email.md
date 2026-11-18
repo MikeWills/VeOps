@@ -14,7 +14,7 @@ being scoped: **several candidates at once, and a picker over which template to 
 "Getting started locally" ships as the first template on that mechanism, and a blank draft covers the
 cases no template anticipated.
 
-Reached from Session Detail → **Email candidates**, beside "Refresh candidates".
+Reached from Session Detail → **Email candidates**, beside "Refresh session".
 
 ## Decisions
 

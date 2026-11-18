@@ -43,7 +43,7 @@ and managing its people. If somebody only needs to run sessions, Session Manager
 |---|:---:|:---:|:---:|:---:|
 | **Sessions and candidates** |
 | See sessions, candidates, Applicant Status | ✅ | ✅ | ✅ | ✅ |
-| Refresh candidates · Create retest payment | ✅ | ✅ | ✅ | ✅ |
+| Refresh session · Create retest payment | ✅ | ✅ | ✅ | ✅ |
 | Renewal Monitor | ✅ | ✅ | ✅ | ✅ |
 | Every other session write action | ❌ | ✅ | ✅ | ✅ |
 | Email candidates, in bulk or one at a time | ❌ | ✅ | ✅ | ✅ |
@@ -92,11 +92,11 @@ Team Lead is read-only everywhere except:
 
 1. **The Renewal Monitor** — open to every signed-in user, on the reasoning that checking whether a
    club member's license is lapsing is not a privileged act.
-2. **The two day-of session actions** — *Refresh candidates* and *Create retest payment* on a
+2. **The two day-of session actions** — *Refresh session* and *Create retest payment* on a
    session's page. These are a key part of actually running a session, and the Session Manager may
    not be available to do them.
 
-Worth knowing about *Refresh candidates*: it is not a pure read. It also mints payment links and
+Worth knowing about *Refresh session*: it is not a pure read. It also mints payment links and
 sends registration confirmations to anyone newly registered — which is exactly the point when a
 walk-in appears.
 

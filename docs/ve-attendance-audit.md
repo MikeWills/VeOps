@@ -17,7 +17,7 @@ with the VEC. It is a read-only aid: nothing is blocked, recorded or stored.
   Session Manager judges them by eye: on both, on the roster only, on Zoom only. Rejoins repeat in
   Zoom's report (one name six times in the real test), so names are de-duplicated ignoring case and
   runs of spaces.
-- **Who can press it.** The day-of gate (`CanRunDayOfActions`), the same as *Refresh candidates*.
+- **Who can press it.** The day-of gate (`CanRunDayOfActions`), the same as *Refresh session*.
   It is read-only, so this is about who is working the session, not about protecting data.
 
 Code: `ZoomAttendanceMatcher` (pure matching), `VeAttendanceAuditService` (loads the session, calls

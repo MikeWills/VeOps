@@ -21,7 +21,7 @@ rather than here, because they're read with a terminal open. This page is the wa
 |---|---|---|
 | A VEC filing came back **Unknown** | Session Manager | [ARRL filing unconfirmed](../runbooks/arrl-filing-unconfirmed.md) — ⚠️ do **not** submit again first |
 | The filing page says ExamTools hasn't closed the session | Session Manager | Close it in ExamTools. Marking it completed here is not the same thing |
-| A walk-in isn't showing up | Session Manager | Register them in ExamTools, then press **Refresh candidates** |
+| A walk-in isn't showing up | Session Manager | Register them in ExamTools, then press **Refresh session** |
 | No Zoom link or Discord event | Team Admin | Those integrations are optional — check whether the team has them configured |
 
 ## Everything is affected

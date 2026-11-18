@@ -51,7 +51,7 @@ retried, with the retry updating the row rather than inserting past the unique i
 
 So if Zoom or Square was unconfigured, or either API call happened to fail at that exact moment, the
 candidate got an email with a **blank link** and nothing retries — the guard field is already set,
-so neither the next poll nor another "Refresh candidates" click resends it.
+so neither the next poll nor another "Refresh session" click resends it.
 
 **The only recovery is a Session Manager clicking "Resend confirmation email" by hand.** Fix the
 integration first, then resend.

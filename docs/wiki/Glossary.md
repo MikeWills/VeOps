@@ -43,7 +43,7 @@ Amateur radio and FCC terms first, then words this app invented.
 | **Unmatched payment** | Money arrived that does not correspond to a known candidate. Usually a different email address. |
 | **Applicant Status** | The list of everyone who has passed and is still waiting on the FCC. |
 | **Historical import** | Backfilling old, already-finished sessions. Imported sessions are flagged so the app knows not to email their candidates or chase their fees. |
-| **Refresh candidates** | Pull ExamTools right now. Also creates payment links and sends confirmations for anyone new — not a passive reload. |
+| **Refresh session** | Pull ExamTools right now. Also creates payment links and sends confirmations for anyone new — not a passive reload. |
 | **Job** | Background work that runs on a schedule. Everything automatic in this app is a job comparing stored state against a feed, not a reaction to a button. |
 | **Tag** | A label on a VE. Grants no access to anything. Where Discord sync is on, mapped tags follow Discord roles. |
 

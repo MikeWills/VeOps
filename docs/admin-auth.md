@@ -18,7 +18,7 @@ well once the multi-team foundation (Phase 6.5) gave each `Team` its own credent
 - **SessionManager** (unchanged): full visibility/edit on their own team's sessions.
 - **TeamLead** (unchanged): scoped to whichever sessions their assigned manager can see, read-only —
   with two deliberate exceptions: the Renewal Monitor, and the two day-of session actions
-  (Refresh candidates, Create retest payment); each has its own section below.
+  (Refresh session, Create retest payment); each has its own section below.
 
 `UserRole` (`VeOps.Core/Entities/Enums.cs`) is `{ SystemAdmin, TeamAdmin,
 SessionManager, TeamLead }`. Deliberately **not** using ASP.NET Core Identity's own Role tables
@@ -226,7 +226,7 @@ document rather than adding a second exception here.
 
 ### The second exception — the day-of session actions (2026-08-27)
 
-A TeamLead can press **Refresh candidates** and **Create retest payment** on Session Detail.
+A TeamLead can press **Refresh session** and **Create retest payment** on Session Detail.
 Signed off by Mike during role-access testing: *"These are a key part of running a test session.
 The SM might not be available to do that for them."* A lead running the session at the door is
 exactly who needs to pull in a walk-in who just registered in ExamTools, and to mint the retest

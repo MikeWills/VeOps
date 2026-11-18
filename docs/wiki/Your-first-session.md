@@ -39,7 +39,7 @@ only work most sessions need.
 
 Two buttons matter.
 
-**Refresh candidates** pulls ExamTools immediately instead of waiting for the next pass. Press it
+**Refresh session** pulls ExamTools immediately instead of waiting for the next pass. Press it
 when someone has just been registered as a walk-in: it ingests them, creates their payment link, and
 sends their confirmation email in one go.
 
