@@ -8,6 +8,7 @@ using System.Text;
 using VeOps.Core.Authorization;
 using VeOps.Core.Data;
 using VeOps.Core.Entities;
+using VeOps.Core.Uls;
 
 namespace VeOps.Web.Pages.Admin;
 
@@ -236,9 +237,12 @@ public class AuditLogModel(AppDbContext dbContext, UserManager<User> userManager
             query = query.Where(a => a.UserId == userId);
         }
 
+        // From/To are Eastern calendar days — the date the "When" column displays — so each bound is
+        // Eastern midnight converted to UTC, not UTC midnight. As UTC days, an 8 PM ET entry (already
+        // tomorrow in UTC) showed one date and filtered under the next. See UlsSchedule.ToEasternDate.
         if (DateFrom is { } from)
         {
-            var fromUtc = from.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+            var fromUtc = EasternMidnightUtc(from);
             query = query.Where(a => a.TimestampUtc >= fromUtc);
         }
 
@@ -246,7 +250,7 @@ public class AuditLogModel(AppDbContext dbContext, UserManager<User> userManager
         {
             // Exclusive upper bound on the next day, so "to = today" includes everything logged
             // today rather than only the instant of midnight.
-            var toUtc = to.AddDays(1).ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+            var toUtc = EasternMidnightUtc(to.AddDays(1));
             query = query.Where(a => a.TimestampUtc < toUtc);
         }
 
@@ -258,6 +262,13 @@ public class AuditLogModel(AppDbContext dbContext, UserManager<User> userManager
 
         return query;
     }
+
+    /// <summary>The UTC instant at which the given Eastern calendar day begins. Midnight is never
+    /// inside a DST gap (those are at 2 AM), so the conversion cannot be invalid.</summary>
+    private static DateTime EasternMidnightUtc(DateOnly easternDay) =>
+        TimeZoneInfo.ConvertTimeToUtc(
+            DateTime.SpecifyKind(easternDay.ToDateTime(TimeOnly.MinValue), DateTimeKind.Unspecified),
+            UlsSchedule.EasternTimeZone);
 
     public bool HasFilters =>
         !string.IsNullOrWhiteSpace(Action) || !string.IsNullOrWhiteSpace(EntityType) || UserId is not null
