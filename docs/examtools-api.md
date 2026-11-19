@@ -194,3 +194,54 @@ change/redeploy if a third ExamTools host ever shows up — an enum would need b
   up the change.
 - Editable on the admin Team Settings page (`Pages/Admin/TeamSettings.cshtml`) alongside the rest
   of the ExamTools credentials — blank clears the override back to the global default.
+
+## Creating a session (captured 2026-11-19, examtools.dev sandbox only)
+
+Captured for issue #580 (candidate booking) and #518 (recurring sessions). **Not used by this app
+today** — it is read-only against ExamTools. Everything below was observed by saving the New Session
+form on **examtools.dev** (the sandbox; never run write calls on exam.tools or alpha) while signed in
+as the WX0MIK test team. The call authenticates with the same session cookie as every other `/api/veUser/*`
+endpoint, so the stored `Team.ExamToolsUsername` login would be the actor (see the attribution
+constraint in CLAUDE.md).
+
+`POST /api/veUser/addEditSession` — one endpoint for add and edit; `_id: null` creates. Returns 200.
+
+```json
+{
+  "_id": null,
+  "team": "<team ObjectId>",          "teamLoc": "<saved-location ObjectId>",
+  "vec": "arrl",                      "teamLeadCallsign": "WX0MIK",
+  "summary": "Event name",            "duration": 3600,
+  "online_session": true,             "schedule_only": false,
+  "prereg_required": false,           "invite_only": false,   "no_pin": false,
+  "max_participants": 0,              "elements": [],         "test_fee": 15,
+  "time_zone": "America/Chicago",     "start_date": "2026-12-01T01:00:00.000Z",
+  "city": "Mankato", "state": "MN", "zip": "56001-",
+  "emailRegistrationName": "", "externalRegistrationLink": "", "formattedAddr": "", "address": "",
+  "location": null, "geoPoint": null, "cveNotification": null, "contactEmail": null
+}
+```
+
+- `duration` is **seconds**. `start_date` is a UTC instant; the form's date and time are in `time_zone`.
+- **`online_session` is the remote / in-person flag** (#575). In-person presumably fills the address,
+  `location` and `geoPoint` fields; not captured.
+- `teamLoc` is a saved location picked from the team's own list (an "Online" entry exists for remote).
+  The team ObjectId and `teamLoc` come from `GET /api/teams/team`.
+- The new session reads back from `GET /api/veUser/sessions/{from}/{to}?group=all` with `state: "pend"`.
+- **Edit** is the same `POST /api/veUser/addEditSession` with `_id` set to the **session definition id**
+  (`sessionDef._id`, not the per-date session `_id`). The form re-posts the whole stored definition
+  (plus `created`, `modified`, `owner`/`ownerDoc`, `__v`) with the changed field, e.g. `duration: 5400`.
+  Verified: the list showed 19:00-20:30 afterwards. A cheap way to build an edit is read-modify-write
+  of the stored definition, not a hand-built body.
+- **Delete** is `DELETE /api/veUser/addEditSession/{sessionDefId}` with no body; the UI asks "This
+  cannot be undone" first. Verified on two sandbox sessions (WX0MIK).
+- **In-person** (captured 2026-11-19): `online_session: false`, `teamLoc` = a saved non-Online location
+  of the team, and the address fields filled from it: `address` ("100 East Main Street"), `formattedAddr`,
+  `city`, `state`, `zip`, and `geoPoint` as GeoJSON `{"type":"Point","coordinates":[lng,lat]}`
+  (longitude first). `location` stayed `null`. The form's location list is filtered by session type: an
+  in-person session offers only physical locations, an online one only the "Online" entry. For the
+  Online entry `zip` is `"56001-"` and `geoPoint` is `null`.
+- **Rejection shape:** an invalid body (no team) returns **HTTP 403**
+  `{"type":"ForbiddenError","message":"Invalid Team","data":"","code":403}`. A failure is therefore a
+  non-200 status with a JSON body, unlike login, which answers 200 with an error body. Only this one
+  error was probed; other validation failures were not.
