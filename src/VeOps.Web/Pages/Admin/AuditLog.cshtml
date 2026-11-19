@@ -11,11 +11,23 @@
         <p class="eyebrow">@Model.TotalCount.ToString("N0") @(Model.TotalCount == 1 ? "entry" : "entries")@(Model.HasFilters ? " matching" : "")</p>
         <h1>Audit Log</h1>
     </div>
+    @* Export-what-you-see: the hidden fields repeat every active filter, or the file and the screen
+       would disagree about which entries are in it. POST so the click is the only thing that can
+       write the AuditLogExported row; the form tag helper emits the antiforgery token itself. *@
+    <form method="post" asp-page-handler="Export" class="inline-form">
+        <input type="hidden" name="action" value="@Model.Action" />
+        <input type="hidden" name="entityType" value="@Model.EntityType" />
+        <input type="hidden" name="userId" value="@Model.UserId" />
+        <input type="hidden" name="dateFrom" value="@Model.DateFrom?.ToString("yyyy-MM-dd")" />
+        <input type="hidden" name="dateTo" value="@Model.DateTo?.ToString("yyyy-MM-dd")" />
+        <input type="hidden" name="search" value="@Model.Search" />
+        <button type="submit" class="btn-secondary btn-sm"><i class="bi bi-download" aria-hidden="true"></i> Export CSV</button>
+    </form>
 </div>
 
 @* GET, so a filtered view is a shareable URL and the back button works. Every control posts its own
    query-string key, which BuildPageUrl then re-emits on the pager links. *@
-<form method="get" class="filters" style="margin-bottom:20px; align-items:flex-start;">
+<form method="get" class="filters" style="margin-bottom:20px; align-items:flex-end;">
     @if (Model.AvailableActions.Count > 0)
     {
         <div class="filter-dropdown">
