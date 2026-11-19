@@ -80,7 +80,7 @@ that team's own mail credentials.
 | **Job History** | Did the overnight work actually run, and what did it do |
 | **Job Schedule** | When each job is due next |
 | **Reconciliation** | Payments and candidates that do not line up |
-| **Audit Log** | Who changed what, and when |
+| **Audit Log** | Who changed what, and when. **Export CSV** downloads every entry matching the current filters, not just the page on screen, and the export itself is logged |
 | **Team Maintenance** | Team-level housekeeping |
 
 **Job History going quiet is the signal worth watching** — it means the background work stopped, and
