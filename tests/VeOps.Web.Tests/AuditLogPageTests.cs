@@ -161,6 +161,34 @@ public class AuditLogPageTests : IClassFixture<WebAppFactory>
         Assert.Equal(5, RowCount(html));
     }
 
+    /// <summary>
+    /// The From/To fields are <b>Eastern calendar days</b>, because that is the date the "When" column
+    /// shows. They were UTC days, so an entry logged at 8:00 PM ET on Nov 17 (01:00 UTC on Nov 18)
+    /// displayed as Nov 17 yet fell outside a filter of Nov 17 — and an 11:30 PM ET Nov 16 entry
+    /// (04:30 UTC Nov 17) fell inside it. Evening ET is when sessions run, so it was most of the log.
+    /// </summary>
+    [Fact]
+    public async Task DateRange_IsEasternCalendarDays_MatchingTheDateTheRowDisplays()
+    {
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.AuditLogs.RemoveRange(await db.AuditLogs.ToListAsync());
+            db.AuditLogs.AddRange(
+                new AuditLog { Action = "A", EntityType = "T", EntityId = 1, Details = "Evening Nov 17 ET", TimestampUtc = new DateTime(2026, 11, 18, 1, 0, 0, DateTimeKind.Utc) },
+                new AuditLog { Action = "A", EntityType = "T", EntityId = 2, Details = "Late Nov 16 ET", TimestampUtc = new DateTime(2026, 11, 17, 4, 30, 0, DateTimeKind.Utc) },
+                new AuditLog { Action = "A", EntityType = "T", EntityId = 3, Details = "Morning Nov 17 ET", TimestampUtc = new DateTime(2026, 11, 17, 15, 0, 0, DateTimeKind.Utc) });
+            await db.SaveChangesAsync();
+        }
+
+        var html = await GetAsync($"{Url}?dateFrom=2026-11-17&dateTo=2026-11-17");
+
+        Assert.Equal(2, RowCount(html));
+        Assert.Contains("Evening Nov 17 ET", html);
+        Assert.Contains("Morning Nov 17 ET", html);
+        Assert.DoesNotContain("Late Nov 16 ET", html);
+    }
+
     [Fact]
     public async Task DetailsSearch_MatchesOnSubstring()
     {

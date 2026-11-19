@@ -3,9 +3,12 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
+using System.Text;
 using VeOps.Core.Authorization;
 using VeOps.Core.Data;
 using VeOps.Core.Entities;
+using VeOps.Core.Uls;
 
 namespace VeOps.Web.Pages.Admin;
 
@@ -30,8 +33,15 @@ namespace VeOps.Web.Pages.Admin;
 /// </summary>
 [Authorize(Roles = RoleGroups.Admins)]
 [RemembersFilters]
-public class AuditLogModel(AppDbContext dbContext, UserManager<User> userManager, AdminAccessScope adminAccessScope) : PageModel
+public class AuditLogModel(AppDbContext dbContext, UserManager<User> userManager, AdminAccessScope adminAccessScope, TimeProvider timeProvider) : PageModel
 {
+    /// <summary>
+    /// Most rows one export will carry. Over this the export refuses rather than quietly truncating —
+    /// a file that silently stops at row 50,000 looks complete and is not, which is the one thing an
+    /// audit export must never do. Narrow the filters (the date range is the usual lever) and retry.
+    /// </summary>
+    internal const int ExportRowLimit = 50_000;
+
     internal static readonly int[] AllowedPageSizes = [25, 50, 100, 200];
     private const int DefaultPageSize = 25;
 
@@ -142,6 +152,66 @@ public class AuditLogModel(AppDbContext dbContext, UserManager<User> userManager
     }
 
     /// <summary>
+    /// CSV of <b>everything matching the current filters</b>, not the page on screen — see
+    /// <c>VeDirectoryExportTests</c> for why a short CSV is the failure to guard against.
+    ///
+    /// <para><b>POST, not GET</b>, and it writes an <c>AuditLogExported</c> row: the log holds names,
+    /// call signs and payment references, and a file someone can mail onward is a different exposure
+    /// from a screen. A GET would let a cross-site link forge that attestation (#265/L-11). The new
+    /// row is added after the query, so it is not in its own file — the next export will show it.</para>
+    ///
+    /// <para>Scoped through the same <c>ScopeAuditLog</c> and <c>ApplyFilters</c> as the page, so a
+    /// TeamAdmin cannot export entries they cannot see. Timestamps are UTC ISO plus an Eastern column,
+    /// because the screen shows Eastern and a reader matching the file to it should not have to convert.</para>
+    /// </summary>
+    public async Task<IActionResult> OnPostExportAsync()
+    {
+        var user = await userManager.GetUserWithManagerAsync(dbContext, User);
+        if (user is null)
+        {
+            return Forbid();
+        }
+
+        var query = ApplyFilters(adminAccessScope.ScopeAuditLog(dbContext.AuditLogs, user));
+
+        var count = await query.CountAsync(HttpContext.RequestAborted);
+        if (count > ExportRowLimit)
+        {
+            return BadRequest($"{count:N0} entries match; one export carries at most {ExportRowLimit:N0}. Narrow the filters (the date range is the easiest way) and try again.");
+        }
+
+        var rows = await query
+            .OrderByDescending(a => a.TimestampUtc)
+            .ThenByDescending(a => a.Id)
+            .Select(a => new AuditLogRow(
+                a.TimestampUtc, a.User != null ? a.User.Name : null, a.Action, a.EntityType, a.EntityId, a.Details))
+            .ToListAsync(HttpContext.RequestAborted);
+
+        var csv = new StringBuilder();
+        csv.AppendLine("WhenUtc,WhenEastern,User,Action,EntityType,EntityId,Details");
+        foreach (var row in rows)
+        {
+            csv.AppendLine(CsvExport.Row(
+                row.TimestampUtc.ToString("o", CultureInfo.InvariantCulture),
+                EasternTimeFormatter.Format(row.TimestampUtc, "yyyy-MM-dd HH:mm:ss"),
+                row.UserName ?? "(background job)",
+                row.Action,
+                row.EntityType,
+                row.EntityId.ToString(CultureInfo.InvariantCulture),
+                row.Details));
+        }
+
+        var now = timeProvider.GetUtcNow().UtcDateTime;
+        dbContext.AddAuditLog(user.Id, "AuditLogExported", nameof(AuditLog), 0,
+            $"Exported {rows.Count} audit log entr{(rows.Count == 1 ? "y" : "ies")}.", now,
+            SourceIp.For(HttpContext));
+        await dbContext.SaveChangesAsync(HttpContext.RequestAborted);
+
+        var stamp = now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture);
+        return File(CsvExport.ToBytes(csv), "text/csv", $"audit-log-{stamp}.csv");
+    }
+
+    /// <summary>
     /// <c>ThenByDescending(Id)</c> above is not decoration. Bulk writes land many rows on the same
     /// timestamp — 176 of them in about a second, which is the case this page exists to survive — and
     /// paging over a non-deterministic order silently drops and repeats rows across page boundaries.
@@ -167,9 +237,12 @@ public class AuditLogModel(AppDbContext dbContext, UserManager<User> userManager
             query = query.Where(a => a.UserId == userId);
         }
 
+        // From/To are Eastern calendar days — the date the "When" column displays — so each bound is
+        // Eastern midnight converted to UTC, not UTC midnight. As UTC days, an 8 PM ET entry (already
+        // tomorrow in UTC) showed one date and filtered under the next. See UlsSchedule.ToEasternDate.
         if (DateFrom is { } from)
         {
-            var fromUtc = from.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+            var fromUtc = EasternMidnightUtc(from);
             query = query.Where(a => a.TimestampUtc >= fromUtc);
         }
 
@@ -177,7 +250,7 @@ public class AuditLogModel(AppDbContext dbContext, UserManager<User> userManager
         {
             // Exclusive upper bound on the next day, so "to = today" includes everything logged
             // today rather than only the instant of midnight.
-            var toUtc = to.AddDays(1).ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+            var toUtc = EasternMidnightUtc(to.AddDays(1));
             query = query.Where(a => a.TimestampUtc < toUtc);
         }
 
@@ -189,6 +262,13 @@ public class AuditLogModel(AppDbContext dbContext, UserManager<User> userManager
 
         return query;
     }
+
+    /// <summary>The UTC instant at which the given Eastern calendar day begins. Midnight is never
+    /// inside a DST gap (those are at 2 AM), so the conversion cannot be invalid.</summary>
+    private static DateTime EasternMidnightUtc(DateOnly easternDay) =>
+        TimeZoneInfo.ConvertTimeToUtc(
+            DateTime.SpecifyKind(easternDay.ToDateTime(TimeOnly.MinValue), DateTimeKind.Unspecified),
+            UlsSchedule.EasternTimeZone);
 
     public bool HasFilters =>
         !string.IsNullOrWhiteSpace(Action) || !string.IsNullOrWhiteSpace(EntityType) || UserId is not null
