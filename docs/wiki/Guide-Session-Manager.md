@@ -39,7 +39,7 @@ What you actually do:
 
 Two buttons matter, and a Team Lead can press both if you are not there:
 
-- **Refresh candidates** — pulls ExamTools right now instead of waiting for the next pass. This is
+- **Refresh session** — pulls ExamTools right now instead of waiting for the next pass. This is
   what you press when a walk-in was just registered in ExamTools: it ingests them, creates their
   payment link, and sends their confirmation email in one go.
 - **Create retest payment** — for a candidate taking another element the same day.

@@ -26,7 +26,7 @@ against its trigger.
 
 | `EmailTemplate.Key` | Recipient | Trigger | Idempotency guard |
 |---|---|---|---|
-| `RegistrationConfirmation` | Candidate | Candidate ingested from ExamTools — either the ~5-minute poll tick, or a Session Manager clicking "Refresh candidates" | `Candidate.RegistrationConfirmationSentUtc` |
+| `RegistrationConfirmation` | Candidate | Candidate ingested from ExamTools — either the ~5-minute poll tick, or a Session Manager clicking "Refresh session" | `Candidate.RegistrationConfirmationSentUtc` |
 | `DayBeforeReminder` | Candidate | Their session's `ScheduledStartUtc` falls on tomorrow's UTC calendar date — checked by a separate 24-hour job | `Candidate.DayBeforeReminderSentUtc` |
 | `FccFeeReminder5Day` | Candidate | **The FCC's** application fee is still outstanding — `FccPaymentStatus = PendingVerification` and FCC entered the application 5+ days ago. Not the team's exam fee; see #219 | `Candidate.FccFeeReminderSentUtc` |
 | ~~`PaymentExpirationNotice`~~ | — | **Retired (2026-08-25).** Its trigger (`PaymentUnpaid`) and the `Payment.ExpiredUnpaid` bookkeeping write it depended on are both gone — see `docs/trigger-points.md`'s "PaymentUnpaid removed" section and CLAUDE.md's "No fee, no test" Known Constraint. Row kept here for history. | — |
@@ -149,7 +149,7 @@ This runs two ways, both executing the identical sequence for a given `Team`:
 1. **`SessionIngestionJob`** — the background poll tick, on `SystemSettings.SessionIngestionIntervalMinutes`
    (flat cadence per team, default 60 minutes; there is no "surge near session start" behavior —
    that was removed in favor of item 2 below).
-2. **"Refresh candidates"** — a button on the session detail page
+2. **"Refresh session"** — a button on the session detail page
    (`Pages/SessionManager/Detail.cshtml`, `OnPostRefreshCandidatesAsync`, wired to
    `ManualCandidateRefreshService`). A Session Manager who sees a new registrant in ExamTools can
    pull them in — and trigger their confirmation email — immediately instead of waiting for the
@@ -186,7 +186,7 @@ Two consequences of removing an automatic send, both deliberate:
   candidate page, and `MarkCompletedAsync` returns how many are still waiting so its status message
   can say so. A number in a one-off message is gone on the next click; the row marker is not.
 
-### What one click of "Refresh candidates" actually sends
+### What one click of "Refresh session" actually sends
 
 Audited for #193, because the button's own `TODO` worried it would train Session Managers to expect
 "one click, one email". The answer is narrower and safer than that:
@@ -199,7 +199,7 @@ Manager who presses it after every ExamTools change is not generating mail.
 Nothing else in the pipeline emails a candidate at all. The reminders and the payment passes are
 separate daily jobs, and the three per-candidate emails are buttons.
 
-| Email | Trigger | Guard | Sent by "Refresh candidates"? |
+| Email | Trigger | Guard | Sent by "Refresh session"? |
 |---|---|---|---|
 | Registration confirmation | pipeline (scheduled + manual) | `RegistrationConfirmationSentUtc` null, and session not ended | **Yes**, once per candidate |
 | Registration confirmation (resend) | per-candidate button | none — deliberate, and re-stamps | No |
@@ -226,7 +226,7 @@ The send-once properties are pinned by `RegistrationConfirmation_AlreadySent_IsN
 send succeeds — **not** conditioned on `ZoomJoinUrl`/`PaymentLinkUrl` actually having a value. If
 Zoom or Square is unconfigured, or either API call happens to fail at that exact moment, the
 candidate gets an email with a blank link, and nothing automatically retries — the guard field is
-already set, so neither the next poll nor another "Refresh candidates" click will resend it. The
+already set, so neither the next poll nor another "Refresh session" click will resend it. The
 only recovery today is a Session Manager noticing and clicking "Resend confirmation email" by hand.
 
 ## Per-team configuration

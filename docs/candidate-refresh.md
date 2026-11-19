@@ -17,7 +17,7 @@ instead of requiring a restart — a deliberate divergence from the Fcc jobs' ow
 settings once at startup.
 
 For the case where a Session Manager needs a last-minute registrant pulled in *right now* — a
-"Refresh candidates" button on the session detail page (`Pages/SessionManager/Detail.cshtml(.cs)`,
+"Refresh session" button on the session detail page (`Pages/SessionManager/Detail.cshtml(.cs)`,
 `OnPostRefreshCandidatesAsync`) runs `ManualCandidateRefreshService`
 (`VeOps.Core/Ingestion/`), which is the exact same five-step per-team pipeline
 `SessionIngestionJob` runs on its own tick — ingestion → VE roster sync → Zoom/Discord scheduling →
